@@ -1,0 +1,2 @@
+# codeexplic
+programacion de ia 
