@@ -185,7 +185,7 @@ export async function buildDigestFromZipFile(file: File): Promise<ProjectDigest>
   for (const entry of sorted) {
     const path = entry.name.replace(/^\.\//, '');
     allFiles.push({ path, size: 0 }); // size real se ajusta abajo
-    const size = entry._data?.uncompressedSize ?? 0;
+    const size = (entry as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize ?? 0;
     allFiles[allFiles.length - 1].size = size;
 
     if (textFiles.size >= MAX_TEXT_FILES || totalTextBytes >= MAX_TOTAL_TEXT_BYTES) continue;
