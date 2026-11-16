@@ -1,0 +1,956 @@
+==============================================================================
+ DOCUMENTO ARD - FASE 4: DRIVERS Y CONSTRAINTS (TEMA 5)
+ Sistema   : CodeExplain - Analisis & Explicacion de Software con IA
+ Referencia: ARD solicitado para "Showare" (aplicado a CodeExplain por la
+             decision de alcance de la Fase 1)
+ Version   : 1.0
+ Fecha     : 11/11/2026
+ Entradas  : Documentacion_Fase1 (pain points), Fase2 (84 req.),
+             Fase3 (SRS v1.0, 85 req. verificables)
+ Salida    : Filtro de ASRs, escenarios medibles, drivers, constraints,
+             matriz de conversion y decisiones arquitectonicas (ADR)
+==============================================================================
+
+CONTROL DE VERSIONES
++------+------------+------------------------------------------+-----------+
+| Ver  | Fecha      | Cambio                                   | Autor     |
++------+------------+------------------------------------------+-----------+
+| 0.1  | 11/11/2026 | Filtro inicial de ASRs desde el SRS      | Equipo CE |
+| 1.0  | 11/11/2026 | ARD completo con escenarios y ADRs       | Equipo CE |
++------+------------+------------------------------------------+-----------+
+
+COMO LEER ESTE DOCUMENTO
+- ASR-xx  : Architecturally Significant Requirement (requerimiento que moldea
+            la arquitectura).
+- ESC-xx  : escenario medible de 6 partes.
+- D-xxx-xx: Driver (meta de calidad que empuja la arquitectura).
+- C-xxx-xx: Constraint (regla impuesta que limita opciones).
+- ADR-xx  : Architecture Decision Record (decision tomada y su justificacion).
+- Todo sale de los IDs de la Fase 3 (RF-FE, RF-BE, RNF, RN, RE); no se
+  inventan requerimientos nuevos.
+- [P] = propuesto, aun no implementado.
+
+
+==============================================================================
+ 1. PROPOSITO Y ALCANCE DEL ARD
+==============================================================================
+
+1.1 PROPOSITO
+Este ARD responde una sola pregunta: de los 85 requerimientos del SRS,
+cuales moldean de verdad la arquitectura de CodeExplain y por que. Su salida
+es el insumo directo de la Fase 5 (arquitectura objetivo): que modulos
+existen, que se puede cambiar barato y que cambio obliga a reescribir.
+
+1.2 QUE ES UN ASR (criterio operativo)
+Un requerimiento es arquitectonicamente significativo si al cambiar su
+respuesta se cumple al menos UNA de estas condiciones:
+  A. Obliga a reescribir uno o mas modulos (no solo una vista o un campo).
+  B. Cambia el modelo de datos o introduce/elimina una base de datos.
+  C. Cambia la topologia de despliegue (cliente/servidor, procesos, terceros).
+  D. Cambia el flujo de datos sensible (que sale del equipo y hacia donde).
+
+Si el cambio se resuelve editando un componente aislado, NO es ASR: es un
+requerimiento funcional normal y se queda en el SRS.
+
+1.3 ALCANCE
+  Dentro: filtro de ASRs, escenarios medibles, drivers, constraints, matriz
+  de conversion, decisiones arquitectonicas y riesgos.
+  Fuera : diseno detallado de clases, modelo fisico de BD, codigo, plan de
+  sprint (eso es Fase 5 en adelante).
+
+1.4 RELACION CON LAS FASES ANTERIORES
+  Fase 1 -> necesidades y pain points.
+  Fase 2 -> inventario de 15 modulos y 84 requerimientos.
+  Fase 3 -> SRS con 85 requerimientos verificables y 34 pruebas.
+  Fase 4 -> este ARD: 18 ASRs, 18 escenarios, 14 drivers, 15 constraints,
+            13 ADRs (10 activos + 3 futuros).
+  Fase 5 -> arquitectura objetivo y plan de implementacion.
+
+
+==============================================================================
+ 2. METAS DE NEGOCIO (las que justifican los drivers)
+==============================================================================
+
++-------+--------------------------------------------+---------------------------+------------+
+| ID    | Meta de negocio                            | Metrica de exito          | Dueno      |
++-------+--------------------------------------------+---------------------------+------------+
+| BG-01 | Analizar un proyecto real y demostrarlo    | 1 proyecto real analizado | Wilder     |
+|       | en la presentacion                         | en <= 2 min               |            |
+| BG-02 | Explicar el mismo codigo a 3 audiencias    | 3 niveles con respuestas  | Wilder     |
+|       | (estudiante, desarrollador, arquitecto)    | claramente distintas      |            |
+| BG-03 | Reemplazar trabajo manual de documentacion | 4 tipos de documento      | U1/U5      |
+|       |                                            | descargables en <= 30 s   |            |
+| BG-04 | Operar sin friccion: sin BD, sin servicios | Arranca con 2 comandos    | U6         |
+|       | extra, en el equipo del usuario            | (npm install + npm run dev)|           |
+| BG-05 | Generar confianza: el codigo del usuario   | 0 secretos expuestos y    | U1/U5      |
+|       | no se filtra ni se pierde                  | aviso antes de enviar     |            |
+| BG-06 | Costo operativo controlado                 | Free tier de Gemini,      | Wilder     |
+|       |                                            | 1 servidor, 0 infra extra |            |
+| BG-07 | Producto mantenible y demostrable tecnicamente | Lint 0 errores y      | Dev        |
+|       |                                            | modulos desacoplados      |            |
++-------+--------------------------------------------+---------------------------+------------+
+
+Lectura: BG-04, BG-05 y BG-06 son los que mas restringen la arquitectura;
+BG-01, BG-02 y BG-03 son los que mas la empujan (drivers de rendimiento y
+correctitud).
+
+
+==============================================================================
+ 3. FILTRO DE ASRs (que se queda y que no)
+==============================================================================
+
+3.1 TABLA DE FILTRO
+Criterio A = reescribe modulos; B = cambia BD; C = cambia topologia;
+D = cambia flujo de datos sensibles.
+
++----------------------------+--------------------------------------+-----+--------+---------------------------+
+| Requerimiento(s) Fase 3    | Cambio que lo dispara                | ASR | Criterio| Resultado                 |
++----------------------------+--------------------------------------+-----+--------+---------------------------+
+| RF-FE-14/15/16, RF-BE-08,  | Subir ZIP de 200 MB o 2 000 archivos | SI  | A,C    | ASR-01 Driver rendimiento |
+| RNF-BE-06                  | y analizarlo en <= 60 s              |     |        |                           |
+| RF-BE-07                   | Analizar un repo remoto por URL      | SI  | A,B,C  | ASR-02 Driver escala      |
+| RNF-BE-01                  | p95 <= 10 s con 20 usuarios          | SI  | A,C    | ASR-03 Driver rendimiento |
+| RN-02, RF-BE-11, RNF-BE-07 | Operar sin IA y con 99% disponibilidad| SI | A,C    | ASR-04 Driver disponibilidad|
+| RNF-BE-03, RF-BE-06        | Enviar solo digest (JSON <= 10 MB)   | SI  | C,D    | ASR-05 Constraint tecnico |
+| RF-BE-03/04/05/22, RF-FE-43| Persistir proyectos e historial      | SI  | A,B    | ASR-06 Driver datos       |
+| W-01 (auth multiusuario)   | Pasar a multiusuario con login       | SI* | A,B,C,D| ASR-07 Driver seg. latente|
+| RN-04, RNF-BE-02           | Aviso y minimizacion de datos        | SI  | D      | ASR-08 Constraint regul.  |
+| RF-BE-24/25, RE-04         | Gestionar la API key solo server-side| SI  | C,D    | ASR-09 Constraint tecnico |
+| RF-FE-24                  | Renderizar Markdown sin XSS          | SI  | A      | ASR-10 Driver seguridad   |
+| RN-01, RF-BE-21            | Documento siempre del proyecto activo| SI  | A      | ASR-11 Driver correctitud |
+| RF-BE-18                   | Depender de una fuente externa de CVE| SI  | A,C    | ASR-12 Driver resiliencia |
+| RNF-BE-04/05, RNF-FE-01    | Contratos JSON y pruebas minimas     | SI  | A      | ASR-13 Driver mantenib.   |
+| RNF-FE-02/03               | 3 navegadores y teclado              | SI  | A      | ASR-14 Constraint plataf. |
+| RE-01/02/03                | Desplegar en Windows, 1 servidor     | SI  | C      | ASR-15 Constraint tecnico |
+| RNF-BE-08                  | 50 usuarios concurrentes             | SI  | A,C    | ASR-16 Driver escala      |
+| RF-FE-01..07, RF-BE-01     | Cambiar el shell o el sidebar        | NO  | -      | Requerimiento normal      |
+| RF-FE-08..11, RF-BE-02     | Cambiar tarjetas o health            | NO  | -      | Requerimiento normal      |
+| RF-FE-17..23, RF-BE-09/10  | Cambiar burbujas o prompts           | NO  | -      | Requerimiento normal      |
+| RF-FE-25/26, RF-BE-13      | Cambiar el dashboard                 | NO  | -      | Requerimiento normal      |
+| RF-FE-27/28, RF-BE-14      | Cambiar la vista de arquitectura     | NO  | -      | Requerimiento normal      |
+| RF-FE-29/30, RF-BE-15      | Cambiar el diagrama C4               | NO  | -      | Requerimiento normal      |
+| RF-FE-31/32, RF-BE-16      | Cambiar la vista de BD                | NO  | -      | Requerimiento normal      |
+| RF-FE-33/34, RF-BE-17      | Cambiar la vista de casos de uso     | NO  | -      | Requerimiento normal      |
+| RF-FE-35/36/37, RF-BE-19   | Cambiar deuda o riesgos              | NO  | -      | Requerimiento normal      |
+| RF-FE-38..41, RF-BE-20     | Cambiar plantillas de documento      | NO  | -      | Requerimiento normal      |
+| RF-FE-42/44, RF-FE-45/46   | Cambiar historial o tabla de repos   | NO  | -      | Requerimiento normal      |
++----------------------------+--------------------------------------+-----+--------+---------------------------+
+
+* ASR-07 (autenticacion) esta fuera de v1.0 (W-01), pero se documenta porque
+  si el negocio lo activa, obliga a cambiar BD, endpoints y flujo de datos.
+
+3.2 RESULTADO DEL FILTRO
+  Candidatos revisados        : 85 requerimientos agrupados en 27 filas.
+  ASRs confirmados            : 18 (15 activos + 1 latente ASR-07 + 2 de
+                                negocio ASR-17/18).
+  Requerimientos normales     : el resto (67), se resuelven sin tocar la
+                                arquitectura.
+  Regla practica              : si el cambio se hace en una vista o en un
+                                handler aislado, NO entra al ARD.
+
+3.3 CATALOGO DE ASRs (resumen)
++--------+------------------------------+---------------------------+-------------------+
+| ASR    | Enunciado corto              | Clase                     | Impacto si cambia |
++--------+------------------------------+---------------------------+-------------------+
+| ASR-01 | Analizar ZIP grande en <=60 s| Driver rendimiento        | Extractor + API   |
+| ASR-02 | Ingesta por URL Git          | Driver escalabilidad      | Nuevo modulo + BD |
+| ASR-03 | Chat p95 <= 10 s             | Driver rendimiento        | Proveedor + chat  |
+| ASR-04 | Fallback y 99% disponibilidad| Driver disponibilidad     | Motor + arranque  |
+| ASR-05 | Digest-only, JSON <= 10 MB   | Constraint tecnico        | Flujo cliente/srv |
+| ASR-06 | Persistir proyectos/historial| Driver datos              | BD nueva          |
+| ASR-07 | Multiusuario (latente)       | Driver seguridad          | BD + auth global  |
+| ASR-08 | Privacidad del codigo        | Constraint regulatorio    | Flujo de datos    |
+| ASR-09 | Key solo server-side         | Constraint tecnico        | Despliegue        |
+| ASR-10 | Markdown sin XSS             | Driver seguridad          | Render del chat   |
+| ASR-11 | Documento del proyecto activo| Driver correctitud        | Generador + ctx   |
+| ASR-12 | CVE con fuente externa       | Driver resiliencia        | Integracion       |
+| ASR-13 | Contratos y pruebas          | Driver mantenibilidad     | Capas y tests     |
+| ASR-14 | Navegadores y teclado        | Constraint plataforma     | UI                |
+| ASR-15 | Windows, 1 servidor, 3100    | Constraint tecnico        | Despliegue        |
+| ASR-16 | 50 usuarios concurrentes     | Driver escalabilidad      | Estado y limites  |
+| ASR-17 | Costo free tier              | Constraint negocio        | Infra y cache     |
+| ASR-18 | Demo con fecha fija          | Constraint negocio        | Priorizacion      |
++--------+------------------------------+---------------------------+-------------------+
+
+Nota: ASR-17 y ASR-18 salen de BG-06 y BG-01 (metas de negocio) y no de un
+RF puntual; se incluyen porque limitan opciones de arquitectura igual que un
+requerimiento tecnico.
+
+
+==============================================================================
+ 4. ESCENARIOS MEDIBLES (6 PARTES)
+==============================================================================
+
+Formato: fuente de estimulo + estimulo + entorno + artefacto + respuesta +
+medida. Cada escenario convierte un RNF ambiguo en algo observable.
+
+ESC-01 | ASR-01 | D-PERF-01
+  Fuente   : Usuario
+  Estimulo : Sube un ZIP de 50 MB con 2 000 archivos (300 de texto)
+  Entorno  : Chrome 120, 16 GB RAM, build de produccion, sin otras apps
+  Artefacto: Extractor JSZip + POST /api/analyze
+  Respuesta: Digest generado y analisis devuelto; la UI sigue respondiendo
+  Medida   : <= 60 s en total; memoria pico <= 512 MB; 0 congelamientos > 2 s
+
+ESC-02 | ASR-01 | C-TEC-06
+  Fuente   : Usuario
+  Estimulo : Intenta subir un ZIP de 210 MB
+  Entorno  : Navegador con 16 GB RAM
+  Artefacto: Validador de ingesta (UploadModal)
+  Respuesta: Rechazo controlado con mensaje de tamano maximo
+  Medida   : Mensaje en <= 2 s; 0 llamadas a /api/analyze; UI usable
+
+ESC-03 | ASR-01 | D-PERF-03
+  Fuente   : Usuario
+  Estimulo : 100 cambios de vista seguidos
+  Entorno  : Build de produccion, Chrome 120
+  Artefacto: SPA (App.tsx + 12 vistas)
+  Respuesta: Render de la vista solicitada sin recargar la pagina
+  Medida   : p95 <= 100 ms entre clic y primer frame; 0 recargas completas
+
+ESC-04 | ASR-03 | D-PERF-02
+  Fuente   : 20 usuarios concurrentes
+  Estimulo : 100 mensajes de 200 caracteres en nivel intermedio
+  Entorno  : IA activa (GEMINI_API_KEY valida), red estable
+  Artefacto: POST /api/gemini/chat
+  Respuesta: Respuesta completa con {reply, level, model}
+  Medida   : p95 <= 10 000 ms; 0 timeouts; 0 respuestas vacias
+
+ESC-05 | ASR-04 | D-AVAIL-01
+  Fuente   : Proveedor de IA
+  Estimulo : Gemini devuelve 429/500 o no hay API key
+  Entorno  : Operacion normal
+  Artefacto: Chat y motor de respaldo
+  Respuesta: Respuesta heuristica con model de fallback; sesion no se corta
+  Medida   : HTTP 200 en <= 500 ms; 100% de consultas con reply no vacio
+
+ESC-06 | ASR-04 | D-AVAIL-01
+  Fuente   : Operador (health check)
+  Estimulo : GET /api/health cada 5 min durante 8 h de demo
+  Entorno  : Servidor local en 3100
+  Artefacto: Servidor Express
+  Respuesta: {status:"ok"} con el motor IA activo reportado
+  Medida   : >= 99% de 96 comprobaciones exitosas (<= 9 fallos)
+
+ESC-07 | ASR-09 | D-SEC-01
+  Fuente   : Atacante / auditor
+  Estimulo : Busca la API key en el bundle y en el trafico de red
+  Entorno  : Build de produccion
+  Artefacto: dist/ + respuestas de /api/*
+  Respuesta: La key no aparece en ningun artefacto del cliente
+  Medida   : 0 coincidencias de la key en dist/ y en 100 respuestas
+
+ESC-08 | ASR-10 | D-SEC-03
+  Fuente   : Usuario malicioso
+  Estimulo : Pregunta que provoca una respuesta con <script> o <img onerror>
+  Entorno  : Chat con Markdown habilitado
+  Artefacto: Renderizador del chat
+  Respuesta: El contenido se muestra como texto seguro, sin ejecutar codigo
+  Medida   : 0 ejecuciones de script; 0 peticiones no esperadas
+
+ESC-09 | ASR-05 | C-TEC-03
+  Fuente   : Cliente
+  Estimulo : POST con body JSON de 11 MB
+  Entorno  : Servidor normal
+  Artefacto: express.json({limit:'10mb'})
+  Respuesta: Rechazo controlado
+  Medida   : HTTP 413 en <= 1 s; proceso sin caida
+
+ESC-10 | ASR-16 | D-SCAL-01
+  Fuente   : 50 usuarios concurrentes
+  Estimulo : 10 minutos de consultas en modo fallback
+  Entorno  : 1 proceso Node, sin BD
+  Artefacto: Servidor Express
+  Respuesta: Todas las consultas atendidas
+  Medida   : tasa de error < 1%; p95 <= 1 000 ms; 0 reinicios
+
+ESC-11 | ASR-13 | D-MAIN-01
+  Fuente   : Desarrollador
+  Estimulo : Envia un body invalido a cualquier endpoint
+  Entorno  : Mantenimiento
+  Artefacto: Contratos de API
+  Respuesta: JSON {error:"..."} con el codigo HTTP correcto
+  Medida   : 100% de endpoints devuelven {error} en 400/500; 0 stack traces
+
+ESC-12 | ASR-13 | D-MAIN-01
+  Fuente   : CI / desarrollador
+  Estimulo : Ejecuta `npm run lint` y el smoke de 3 endpoints
+  Entorno  : Pre-release
+  Artefacto: Repositorio + servidor local
+  Respuesta: Reporte de calidad
+  Medida   : 0 errores de lint; 3/3 smoke con 2xx; <= 5 min
+
+ESC-13 | ASR-08 | C-REG-01
+  Fuente   : Usuario
+  Estimulo : Primera consulta de la sesion con codigo del proyecto
+  Entorno  : Sesion nueva
+  Artefacto: UI del chat + flujo hacia Gemini
+  Respuesta: Aviso de transferencia antes del primer envio
+  Medida   : Aviso visible antes del POST; 1 vez por sesion; 100% de sesiones
+
+ESC-14 | ASR-11 | D-MAIN-03
+  Fuente   : Usuario
+  Estimulo : Genera un OpenAPI del proyecto activo
+  Entorno  : Proyecto con nombre y stack conocidos
+  Artefacto: POST /api/gemini/document + vista previa
+  Respuesta: YAML con el nombre del proyecto y "openapi: 3.1.0"
+  Medida   : 100% de documentos con el nombre correcto; 0 menciones a otros
+             proyectos
+
+ESC-15 | ASR-12 | D-AVAIL-02
+  Fuente   : Fuente externa de CVE
+  Estimulo : Timeout o error 503 al consultar vulnerabilidades
+  Entorno  : Analisis de riesgos
+  Artefacto: Integracion CVE
+  Respuesta: Lista vacia con aviso; la vista sigue funcionando
+  Medida   : HTTP 200 en <= 6 s; 0 errores en consola; vista usable
+
+ESC-16 | ASR-14 | C-TEC-07
+  Fuente   : Usuario
+  Estimulo : Recorre las 12 vistas en Chrome, Edge y Firefox
+  Entorno  : Ultimas 2 versiones de cada navegador
+  Artefacto: SPA completa
+  Respuesta: Render correcto en todos
+  Medida   : 12/12 vistas sin errores de consola por navegador
+
+ESC-17 | ASR-04 | D-AVAIL-01
+  Fuente   : Administrador
+  Estimulo : Arranca el servidor con una key invalida
+  Entorno  : Arranque en frio
+  Artefacto: Inicializacion de GoogleGenAI
+  Respuesta: El servidor arranca y opera en fallback
+  Medida   : /api/health responde 200 con ai="fallback" en <= 5 s
+
+ESC-18 | ASR-01 | RN-03
+  Fuente   : Usuario
+  Estimulo : ZIP con node_modules, imagenes y un .env
+  Entorno  : Analisis normal
+  Artefacto: Extractor + digest
+  Respuesta: Digest sin node_modules ni binarios; .env no se prioriza
+  Medida   : 0 archivos de node_modules en el digest; 0 binarios en SLOC;
+             0 secretos en textSample
+
+Lectura de los escenarios: ESC-01/04/10 son de rendimiento; ESC-05/06/15/17
+de disponibilidad; ESC-07/08/13 de seguridad y privacidad; ESC-11/12/14 de
+mantenibilidad y correctitud; ESC-02/03/09/16/18 son constraints verificables.
+
+
+==============================================================================
+ 5. CLASIFICACION: DRIVERS vs CONSTRAINTS
+==============================================================================
+
+Definicion aplicada:
+  DRIVER     = meta de calidad que la arquitectura debe alcanzar y que admite
+               varias soluciones (rendimiento, disponibilidad, seguridad,
+               mantenibilidad, escalabilidad, usabilidad).
+  CONSTRAINT = regla impuesta desde afuera (tecnologia, negocio, regulacion)
+               que elimina opciones antes de disenar.
+
++--------+----------------+---------------------------+-------------------------------+
+| ID     | Clase          | Categoria                 | ASR / Escenario               |
++--------+----------------+---------------------------+-------------------------------+
+| D-PERF-01 | Driver      | Rendimiento (throughput)  | ASR-01 / ESC-01, ESC-02, ESC-18|
+| D-PERF-02 | Driver      | Rendimiento (latencia IA) | ASR-03 / ESC-04               |
+| D-PERF-03 | Driver      | Rendimiento (UI)          | RNF-FE-01 / ESC-03            |
+| D-AVAIL-01| Driver      | Disponibilidad            | ASR-04 / ESC-05, ESC-06, ESC-17|
+| D-AVAIL-02| Driver      | Resiliencia ante terceros | ASR-12 / ESC-15               |
+| D-SEC-01  | Driver      | Seguridad (confidencial.) | ASR-09 / ESC-07               |
+| D-SEC-02  | Driver      | Seguridad (acceso)        | ASR-07 (latente)              |
+| D-SEC-03  | Driver      | Seguridad (integridad)    | ASR-10 / ESC-08               |
+| D-DATA-01 | Driver      | Persistencia/consistencia | ASR-06                        |
+| D-MAIN-01 | Driver      | Mantenibilidad            | ASR-13 / ESC-11, ESC-12       |
+| D-MAIN-02 | Driver      | Correctitud contextual    | ASR-11 / ESC-14               |
+| D-SCAL-01 | Driver      | Escalabilidad (usuarios)  | ASR-16 / ESC-10               |
+| D-SCAL-02 | Driver      | Escalabilidad (fuentes)   | ASR-02                        |
+| D-USA-01  | Driver      | Usabilidad/accesibilidad  | RNF-FE-02/03 / ESC-16         |
+| C-TEC-01  | Constraint  | Tecnico (despliegue)      | ASR-15 / RE-01/02/03          |
+| C-TEC-02  | Constraint  | Tecnico (secretos)        | ASR-09 / RE-04                |
+| C-TEC-03  | Constraint  | Tecnico (payload/digest)  | ASR-05 / RNF-BE-03 / ESC-09   |
+| C-TEC-04  | Constraint  | Tecnico (stack fijado)    | RE-01, package.json           |
+| C-TEC-05  | Constraint  | Tecnico (extraccion cli.) | ASR-01 / JSZip                |
+| C-TEC-06  | Constraint  | Tecnico (limites ingesta) | ASR-01 / ESC-02               |
+| C-TEC-07  | Constraint  | Tecnico (plataforma)      | ASR-14 / ESC-16               |
+| C-BIZ-01  | Constraint  | Negocio (costo)           | ASR-17 / BG-06                |
+| C-BIZ-02  | Constraint  | Negocio (proveedor IA)    | ASR-03/04 / cuotas            |
+| C-BIZ-03  | Constraint  | Negocio (plazo demo)      | ASR-18 / BG-01                |
+| C-BIZ-04  | Constraint  | Negocio (single-user v1)  | ASR-07 / W-01                 |
+| C-REG-01  | Constraint  | Regulatorio (datos)       | ASR-08 / ESC-13               |
+| C-REG-02  | Constraint  | Regulatorio (PI)          | ASR-08                        |
+| C-REG-03  | Constraint  | Regulatorio (Gemini ToS)  | ASR-08 / C-BIZ-02             |
+| C-REG-04  | Constraint  | Regulatorio (transfer.)   | ASR-08 / ESC-13               |
++--------+----------------+---------------------------+-------------------------------+
+
+Resumen: 14 drivers y 15 constraints. Los drivers se detallan en la seccion 6
+y los constraints en la seccion 7.
+
+
+==============================================================================
+ 6. DRIVERS EN DETALLE
+==============================================================================
+
+Formato: meta, ASR/escenario, tacticas candidatas, decision preliminar y
+riesgo principal.
+
+--- 6.1 RENDIMIENTO ---------------------------------------------------------
+
+D-PERF-01 | Analisis de proyectos en tiempo acotado
+  Meta       : Analizar un proyecto real en <= 2 min sin congelar la UI.
+  ASR / ESC  : ASR-01 / ESC-01, ESC-02, ESC-18.
+  Tacticas   : limites duros de ingesta; extraccion incremental; ordenar por
+               prioridad; truncado de muestras; Web Worker; progreso por pasos.
+  Decision   : ADR-01 (extraccion en cliente) + ADR-05 (limites).
+  Riesgo     : memoria del navegador en ZIP de 200 MB.
+
+D-PERF-02 | Latencia del chat con IA
+  Meta       : p95 <= 10 s con 20 usuarios y 100 mensajes.
+  ASR / ESC  : ASR-03 / ESC-04.
+  Tacticas   : timeout explicito; fallback inmediato; prompt corto; cache de
+               respuestas repetidas; streaming de la respuesta.
+  Decision   : ADR-03 (Gemini + fallback) y timeouts en el handler.
+  Riesgo     : cuota o latencia variable del proveedor (C-BIZ-02).
+
+D-PERF-03 | Rendimiento de la interfaz
+  Meta       : p95 <= 100 ms al cambiar de vista, sin recargar.
+  ASR / ESC  : RNF-FE-01 / ESC-03.
+  Tacticas   : navegacion por estado; componentes memoizados; evitar fetch en
+               cada render; datos ya cargados en memoria.
+  Decision   : ADR-08 (SPA por estado).
+  Riesgo     : vistas que recargan datos en cada montaje.
+
+--- 6.2 DISPONIBILIDAD Y RESILIENCIA ---------------------------------------
+
+D-AVAIL-01 | Disponibilidad y degradacion graceful
+  Meta       : >= 99% en 8 h de demo; nunca dejar al usuario sin respuesta.
+  ASR / ESC  : ASR-04 / ESC-05, ESC-06, ESC-17.
+  Tacticas   : fallback heuristico; health check; arranque tolerante a key
+               invalida; reinicio documentado; timeouts; reintentos acotados.
+  Decision   : ADR-03 y ADR-09.
+  Riesgo     : proceso unico sin supervisor (si cae, no se levanta solo).
+
+D-AVAIL-02 | Resiliencia ante terceros (Git, CVE, IA)
+  Meta       : Un tercero caido no rompe la vista ni la sesion.
+  ASR / ESC  : ASR-12 / ESC-15.
+  Tacticas   : circuit breaker; timeout 5 s; cache con TTL; respuesta parcial
+               con aviso; degradacion a lista vacia.
+  Decision   : ADR-10 (CVE) y ADR-03 (IA).
+  Riesgo     : dependencia de disponibilidad de GitHub/OSV.
+
+--- 6.3 SEGURIDAD ----------------------------------------------------------
+
+D-SEC-01 | Confidencialidad de credenciales
+  Meta       : 0 exposiciones de la API key en cliente, respuestas o logs.
+  ASR / ESC  : ASR-09 / ESC-07.
+  Tacticas   : key solo en process.env; no incluirla en prompts de error;
+               no loggear headers; revision de bundle en cada release.
+  Decision   : ADR-09 + C-TEC-02.
+  Riesgo     : fuga accidental en un mensaje de error o en un ejemplo.
+
+D-SEC-02 | Control de acceso (latente)
+  Meta       : Si se activa multiusuario, cada usuario ve solo sus proyectos.
+  ASR / ESC  : ASR-07 (W-01, fuera de v1.0).
+  Tacticas   : autenticacion por token; RBAC; filtro por user_id en cada query.
+  Decision   : ADR-12 (futuro).
+  Riesgo     : disenar la BD sin user_id y tener que migrar despues.
+
+D-SEC-03 | Integridad del contenido renderizado
+  Meta       : 0 ejecuciones de script desde respuestas de IA.
+  ASR / ESC  : ASR-10 / ESC-08.
+  Tacticas   : sanitizacion con allowlist; render de codigo como texto; CSP;
+               no usar dangerouslySetInnerHTML sin sanitizar.
+  Decision   : ADR-06.
+  Riesgo     : respuestas de IA que imitan HTML.
+
+--- 6.4 DATOS Y CORRECTITUD -------------------------------------------------
+
+D-DATA-01 | Persistencia y consistencia
+  Meta       : Proyectos, analisis e historial sobreviven al reinicio.
+  ASR / ESC  : ASR-06 (sin escenario aun: no implementado).
+  Tacticas   : esquema del DER 4.5 del SRS; migraciones versionadas;
+               transacciones; respaldo; ids estables.
+  Decision   : ADR-04 (v1 en memoria) y ADR-11 (futuro SQLite/Postgres).
+  Riesgo     : cambiar de memoria a BD obliga a reescribir 4 modulos.
+
+D-MAIN-02 | Correctitud contextual
+  Meta       : Todo documento y respuesta usa el proyecto activo (RN-01).
+  ASR / ESC  : ASR-11 / ESC-14.
+  Tacticas   : un unico contexto de proyecto en el servidor; validacion del
+               nombre en la respuesta; pruebas de coherencia.
+  Decision   : propagacion de projectContext en todos los endpoints.
+  Riesgo     : plantillas fijas que mencionan otro proyecto.
+
+--- 6.5 MANTENIBILIDAD ------------------------------------------------------
+
+D-MAIN-01 | Modificabilidad y testabilidad
+  Meta       : 0 errores de lint; 3/3 smoke; contratos JSON estables.
+  ASR / ESC  : ASR-13 / ESC-11, ESC-12.
+  Tacticas   : separar vistas / lib / server; handlers con validacion; errores
+               estandar; smoke test; tipado TypeScript estricto.
+  Decision   : ADR-07 y estructura actual de carpetas.
+  Riesgo     : logica de negocio dentro de las vistas.
+
+--- 6.6 ESCALABILIDAD -------------------------------------------------------
+
+D-SCAL-01 | Concurrencia de usuarios
+  Meta       : 50 usuarios concurrentes con error < 1% y p95 <= 1 s (fallback).
+  ASR / ESC  : ASR-16 / ESC-10.
+  Tacticas   : servidor sin estado de sesion; limites de tasa; cache; evitar
+               bloquear el event loop con ZIP grandes.
+  Decision   : ADR-02 (un proceso) + ADR-01 (extraccion en cliente).
+  Riesgo     : analisis pesados en el servidor bloquearian a todos.
+
+D-SCAL-02 | Escalabilidad de fuentes
+  Meta       : Soportar N repos remotos sin cambiar el nucleo.
+  ASR / ESC  : ASR-02 (propuesto).
+  Tacticas   : adaptador de ingesta por proveedor (GitHub/GitLab/Bitbucket);
+               cola de trabajos; cache de repos; limite de tamano.
+  Decision   : ADR-13 (futuro adaptador).
+  Riesgo     : acoplar el parser a la API de un solo proveedor.
+
+--- 6.7 USABILIDAD ----------------------------------------------------------
+
+D-USA-01 | Usabilidad y accesibilidad
+  Meta       : 12/12 vistas usables con teclado y en 3 navegadores.
+  ASR / ESC  : ASR-14 / ESC-16.
+  Tacticas   : foco visible; aria-current; contraste; atajos; estados vacios y
+               de error claros; animaciones no bloqueantes.
+  Decision   : ADR-08 (componentes compartidos).
+  Riesgo     : componentes con estilos aislados que no heredan accesibilidad.
+
+
+==============================================================================
+ 7. CONSTRAINTS EN DETALLE
+==============================================================================
+
+--- 7.1 TECNICOS ------------------------------------------------------------
+
+C-TEC-01 | Despliegue local en un solo servidor Windows
+  Origen      : RE-01/02/03, BG-04, BG-06.
+  Restringe   : nada de Kubernetes, colas gestionadas, microservicios ni
+                servicios cloud obligatorios; un solo proceso Node.
+  Verificacion: `npm install` + `npm run dev` arranca en 3100 en Windows 11.
+  Si se viola : reescritura de configuracion y del modelo de despliegue.
+
+C-TEC-02 | Secretos solo del lado servidor
+  Origen      : RE-04, RNF-BE-02.
+  Restringe   : prohibido usar variables con prefijo publico en el cliente;
+                prohibido incrustar la key en el bundle.
+  Verificacion: ESC-07 (0 coincidencias en dist/ y respuestas).
+  Si se viola : incidente de seguridad y rotacion obligatoria de la key.
+
+C-TEC-03 | Payload JSON <= 10 MB y digest-only
+  Origen      : RNF-BE-03, RF-BE-06.
+  Restringe   : el ZIP nunca viaja al servidor; el analisis remoto solo recibe
+                inventario + muestra (<= 48 KB).
+  Verificacion: ESC-09 (413) y revision del request en /api/analyze.
+  Si se viola : se rompe el limite de Express y el modelo de privacidad.
+
+C-TEC-04 | Stack fijado
+  Origen      : package.json y RE-01.
+  Restringe   : React 19, Vite 8, Express 4, TypeScript 7, Node 20+,
+                Gemini 2.5 Flash. Cambiar de framework obliga a reescribir la
+                SPA y el servidor.
+  Verificacion: `npm ls` sin conflictos; build de produccion OK.
+  Si se viola : reescritura completa de la capa de presentacion.
+
+C-TEC-05 | Extraccion en el navegador (JSZip, ES2022)
+  Origen      : ASR-01, ADR-01.
+  Restringe   : el navegador debe poder descomprimir; no hay parser nativo de
+                AST en servidor; el analisis es estatico y superficial.
+  Verificacion: ESC-01 y ESC-18.
+  Si se viola : habria que mover la extraccion al servidor (nuevo modulo y
+                cambio de topologia).
+
+C-TEC-06 | Limites duros de ingesta
+  Origen      : RF-FE-14, analyzeProject.ts.
+  Restringe   : ZIP <= 200 MB; <= 300 archivos de texto; <= 4 MB de texto
+                total; <= 6 KB por archivo en la muestra; <= 48 KB de muestra.
+  Verificacion: ESC-02 y revision de constantes MAX_*.
+  Si se viola : se degrada el rendimiento y se supera el payload del servidor.
+
+C-TEC-07 | Compatibilidad de navegadores
+  Origen      : RNF-FE-03.
+  Restringe   : no usar APIs experimentales sin fallback; ES2022 como base.
+  Verificacion: ESC-16.
+  Si se viola : la demo falla en el navegador del stakeholder.
+
+--- 7.2 NEGOCIO -------------------------------------------------------------
+
+C-BIZ-01 | Costo operativo minimo
+  Origen      : BG-06.
+  Restringe   : free tier de Gemini; sin base de datos gestionada; sin
+                servicios de pago; sin infraestructura adicional.
+  Verificacion: 1 proceso Node + 1 key gratuita; costo mensual $0 en demo.
+  Si se viola : el proyecto deja de ser viable para el presupuesto actual.
+
+C-BIZ-02 | Dependencia de un proveedor de IA y sus cuotas
+  Origen      : @google/genai, S1/S5.
+  Restringe   : el modelo, los limites y la latencia dependen de Google; no
+                se puede garantizar disponibilidad propia al 100%.
+  Verificacion: fallback probado (ESC-05) y monitoreo de cuota.
+  Si se viola : sin fallback, la app queda inutilizable al agotar cuota.
+
+C-BIZ-03 | Plazo fijo de demostracion
+  Origen      : BG-01, fecha 11/11/2026.
+  Restringe   : solo los 39 Must entran en la demo; los Could se posponen.
+  Verificacion: alcance MoSCoW de la Fase 3 (3.5).
+  Si se viola : se entrega una demo incompleta o inestable.
+
+C-BIZ-04 | Single-user en v1.0
+  Origen      : W-01, alcance del SRS.
+  Restringe   : no hay login, sesiones ni aislamiento por usuario; el estado
+                es compartido en el proceso.
+  Verificacion: no existe tabla users ni middleware de auth.
+  Si se viola : hay que introducir ASR-07 y cambiar la BD.
+
+--- 7.3 REGULATORIOS --------------------------------------------------------
+
+C-REG-01 | Proteccion de datos personales
+  Origen      : RGPD/GDPR (UE) y Ley 1581 de 2012 (Colombia) como referencia
+                local; a confirmar jurisdiccion con el stakeholder.
+  Restringe   : el codigo puede contener datos personales (emails, telefonos,
+                nombres en fixtures); hay que minimizar, avisar y permitir
+                eliminar.
+  Verificacion: ESC-13 (aviso) + revision de que .env y secretos no se envian.
+  Si se viola : sancion legal y perdida de confianza.
+
+C-REG-02 | Propiedad intelectual del codigo analizado
+  Origen      : el usuario sube codigo de su empresa o de terceros.
+  Restringe   : el usuario declara tener permiso; no se redistribuye el codigo;
+                no se almacena mas alla de la sesion.
+  Verificacion: aviso de uso y ausencia de persistencia del codigo en v1.0.
+  Si se viola : reclamo legal del titular del codigo.
+
+C-REG-03 | Terminos de uso del proveedor de IA
+  Origen      : Google Gemini API Terms.
+  Restringe   : el contenido enviado se rige por la politica de Google; hay
+                que informar al usuario y no enviar secretos.
+  Verificacion: aviso ESC-13 + filtro de .env en el digest (ESC-18).
+  Si se viola : uso indebido de la cuenta y posible suspension.
+
+C-REG-04 | Transferencia internacional de datos
+  Origen      : el proveedor de IA procesa fuera del pais del usuario.
+  Restringe   : requiere consentimiento informado antes del primer envio.
+  Verificacion: ESC-13 (aviso 1 vez por sesion).
+  Si se viola : transferencia sin base legal.
+
+Nota: las jurisdicciones exactas (UE / Colombia / otra) deben confirmarse en
+la validacion del ARD (seccion 11). El diseno es conservador: aviso + minima
+retencion + no envio de secretos.
+
+
+==============================================================================
+ 8. MATRIZ DE CONVERSION: REQUERIMIENTO CRUDO -> PROCESO -> DRIVER/CONSTRAINT
+==============================================================================
+
++----+------------------------------------------+-------------------------------------+---------------------------+
+| N# | Requerimiento crudo (voz del usuario)    | Proceso aplicado                    | Resultado                 |
++----+------------------------------------------+-------------------------------------+---------------------------+
+|  1 | "Quiero subir mi proyecto completo"      | Medir tamano, tiempo y lugar de     | D-PERF-01 + C-TEC-06      |
+|    |                                          | extraccion; fijar 200 MB / 60 s     |                           |
+|  2 | "No quiero pagar servidores"             | Revisar free tier y topologia       | C-BIZ-01                  |
+|  3 | "No quiero que mi codigo se suba"        | Definir que viaja al servidor       | C-TEC-03 + C-REG-01       |
+|  4 | "La IA debe responder rapido"            | Convertir a p95 con carga concreta  | D-PERF-02 (ESC-04)        |
+|  5 | "Si la IA falla, la app debe seguir"     | Definir respuesta de degradacion    | D-AVAIL-01 (ESC-05)       |
+|  6 | "Que se vea bien en cualquier navegador" | Fijar matriz de compatibilidad      | C-TEC-07 (ESC-16)         |
+|  7 | "Debe correr en mi Windows"              | Fijar SO, puerto y ruta ASCII       | C-TEC-01 (RE-01/02/03)    |
+|  8 | "Los documentos deben ser de mi proyecto"| Validar contexto en la respuesta    | D-MAIN-02 (ESC-14)        |
+|  9 | "Necesito guardar el historial"          | Evaluar persistencia y esquema      | D-DATA-01 (ASR-06)        |
+| 10 | "Que no se pierda nada al recargar"      | Evaluar estado vs BD                | D-DATA-01 (ASR-06)        |
+| 11 | "Que el chat se vea con titulos y codigo"| Formato Markdown + sanitizacion     | D-SEC-03 (ESC-08)         |
+| 12 | "Que nadie inyecte codigo en el chat"    | Politica de sanitizacion            | D-SEC-03 (ESC-08)         |
+| 13 | "La clave no debe verse en el navegador" | Separar cliente/servidor            | C-TEC-02 + D-SEC-01       |
+| 14 | "Quiero analizar un repo de GitHub"      | Evaluar descarga remota y formatos  | D-SCAL-02 (ASR-02)        |
+| 15 | "Que aguante varios usuarios a la vez"   | Medir concurrencia y estado         | D-SCAL-01 (ESC-10)        |
+| 16 | "Que no se caiga en una demo de 8 horas" | Medir disponibilidad y reinicio     | D-AVAIL-01 (ESC-06)       |
+| 17 | "Que avise antes de mandar mi codigo"    | Definir consentimiento y momento    | C-REG-04 (ESC-13)         |
+| 18 | "Debe cumplir proteccion de datos"       | Identificar jurisdiccion y minimos  | C-REG-01 (ESC-13)         |
+| 19 | "El codigo es de mi empresa"             | Revisar PI y retencion              | C-REG-02                  |
+| 20 | "Que sea facil de mantener y probar"     | Definir contratos y smoke tests     | D-MAIN-01 (ESC-11/12)     |
+| 21 | "Que no dependa de servicios de pago"    | Restringir infraestructura          | C-BIZ-01 + C-BIZ-02       |
+| 22 | "Tengo que presentarlo el 11/11"         | Congelar alcance Must               | C-BIZ-03 (ASR-18)         |
+| 23 | "Que imagenes y binarios no rompan nada" | Filtrar por extension y tamano      | D-PERF-01 (ESC-18)        |
+| 24 | "Que la app abra rapido y no recargue"   | Medir navegacion entre vistas       | D-PERF-03 (ESC-03)        |
+| 25 | "Quiero poder marcarlo como favorito"    | Evaluar persistencia del estado     | D-DATA-01 (ASR-06)        |
+| 26 | "Que los riesgos salgan de fuentes reales"| Integracion externa + resiliencia  | D-AVAIL-02 (ESC-15)       |
++----+------------------------------------------+-------------------------------------+---------------------------+
+
+Regla de lectura: si el resultado es un Driver, hay libertad de diseno; si es
+un Constraint, la opcion ya esta cerrada antes de disenar.
+
+
+==============================================================================
+ 9. DECISIONES ARQUITECTONICAS (ADR) DERIVADAS
+==============================================================================
+
+ADR-01 | Extraccion en el navegador y envio solo del digest
+  Contexto    : el ZIP puede pesar 200 MB y contener codigo privado.
+  Fuerza      : C-TEC-03, C-TEC-05, C-REG-01, D-PERF-01.
+  Alternativas: (a) subir el ZIP al servidor (descartada: payload y privacidad);
+                (b) parsear en un worker del servidor (descartada: costo y
+                memoria del unico proceso).
+  Decision    : JSZip en el cliente + digest <= 48 KB.
+  Consecuencia: servidor liviano y privado; analisis estatico y superficial;
+                limites de 300 archivos / 4 MB.
+
+ADR-02 | Backend monolitico Express en un solo proceso
+  Contexto    : demo local, 1 servidor, bajo costo.
+  Fuerza      : C-TEC-01, C-BIZ-01, BG-04.
+  Alternativas: microservicios (descartada por operacion); serverless
+                (descartada por requisito local).
+  Decision    : un proceso Node con Express y Vite middleware.
+  Consecuencia: simple de arrancar; un fallo tumba todo; el escalado se hace
+                vertical o con varias instancias sin estado (ADR-11).
+
+ADR-03 | Gemini 2.5 Flash + motor heuristico de respaldo
+  Contexto    : se necesita IA de calidad sin garantizar disponibilidad.
+  Fuerza      : D-PERF-02, D-AVAIL-01, C-BIZ-02, RN-02.
+  Alternativas: solo IA (descartada: cuota y caidas); solo heuristico
+                (descartada: calidad insuficiente).
+  Decision    : try Gemini; catch -> fallback local por nivel.
+  Consecuencia: la sesion nunca se corta; el campo model indica el motor.
+
+ADR-04 | Sin base de datos en v1.0, con DER preparado
+  Contexto    : el alcance excluye persistencia (W-01, C-BIZ-04).
+  Fuerza      : C-TEC-01, C-BIZ-01, BG-04, D-DATA-01.
+  Alternativas: SQLite desde el inicio (postergada); Postgres (descartada por
+                operacion).
+  Decision    : estado en memoria; DER de 13 tablas listo en el SRS 4.5.
+  Consecuencia: demo simple; al activar ASR-06 se reescriben proyectos,
+                historial y chat, y se agrega capa de repositorio.
+
+ADR-05 | Limites duros de ingesta
+  Contexto    : el navegador y el payload tienen techo.
+  Fuerza      : D-PERF-01, C-TEC-03, C-TEC-06.
+  Alternativas: sin limites (descartada: cuelgues y 413); limites mas altos
+                (descartada: memoria).
+  Decision    : 200 MB ZIP, 300 archivos de texto, 4 MB de texto, 6 KB por
+                archivo, 48 KB de muestra, 30 dependencias.
+  Consecuencia: resultados consistentes; proyectos enormes se analizan
+                parcialmente (documentado).
+
+ADR-06 | Sanitizacion del Markdown del chat
+  Contexto    : la IA puede devolver HTML malicioso.
+  Fuerza      : D-SEC-03, ASR-10.
+  Alternativas: render crudo (descartada: XSS); solo texto plano (descartada:
+                legibilidad).
+  Decision    : Markdown con allowlist y bloques de codigo como texto.
+  Consecuencia: respuestas legibles y seguras; se pierde HTML embebido.
+
+ADR-07 | Contrato de errores uniforme
+  Contexto    : 7 endpoints y varios clientes.
+  Fuerza      : D-MAIN-01, ASR-13.
+  Alternativas: errores ad hoc (descartada: mantenimiento).
+  Decision    : {error: string} con 400/500 y 413 para payload.
+  Consecuencia: cliente simple; los mensajes deben cuidar no filtrar secretos.
+
+ADR-08 | Navegacion por estado en una SPA
+  Contexto    : 12 vistas y requisito de no recargar.
+  Fuerza      : D-PERF-03, D-USA-01, RNF-FE-01.
+  Alternativas: router con URLs por vista (postergada); multipagina
+                (descartada: recarga).
+  Decision    : ViewType en estado + sidebar.
+  Consecuencia: navegacion instantanea; sin enlaces profundos (se puede
+                agregar router sin cambiar las vistas).
+
+ADR-09 | Configuracion por entorno y arranque tolerante
+  Contexto    : la key puede faltar o ser invalida.
+  Fuerza      : C-TEC-02, D-AVAIL-01, RE-02.
+  Alternativas: fallar al arrancar sin key (descartada: rompe la demo).
+  Decision    : dotenv + try/catch en GoogleGenAI + PORT configurable.
+  Consecuencia: siempre arranca; el modo IA se reporta en /api/health.
+
+ADR-10 | Integracion CVE con timeout, cache y degradacion [P]
+  Contexto    : fuente externa con latencia y caidas.
+  Fuerza      : D-AVAIL-02, ASR-12.
+  Alternativas: consulta sincrona sin timeout (descartada).
+  Decision    : timeout 5 s, cache TTL 24 h, respuesta vacia con aviso.
+  Consecuencia: la vista de riesgos nunca se bloquea; datos pueden estar
+                desactualizados hasta 24 h.
+
+ADR-11 | Persistencia SQLite/Postgres cuando se active ASR-06 [Futuro]
+  Contexto    : si el negocio pide historial real.
+  Fuerza      : D-DATA-01, ASR-06.
+  Alternativas: SQLite (simple, local) vs Postgres (multiusuario).
+  Decision    : SQLite para v1.1 local; Postgres si se activa ASR-07.
+  Consecuencia: aparece capa de repositorio y migraciones; cambio de 4 modulos.
+
+ADR-12 | Multiusuario con JWT cuando se active ASR-07 [Futuro]
+  Contexto    : W-01 fuera de alcance.
+  Fuerza      : D-SEC-02, C-REG-01.
+  Alternativas: sesiones en servidor vs JWT.
+  Decision    : JWT corto + refresh, user_id en todas las tablas.
+  Consecuencia: la BD debe nacer con user_id para no migrar dos veces.
+
+ADR-13 | Adaptador de ingesta por proveedor Git [Futuro]
+  Contexto    : GitHub, GitLab y Bitbucket tienen APIs distintas.
+  Fuerza      : D-SCAL-02, ASR-02.
+  Alternativas: acoplar a GitHub (descartada: limita el producto).
+  Decision    : interfaz comun `fetchRepo(url, branch) -> zip`.
+  Consecuencia: agregar un proveedor no toca el analizador.
+
+
+==============================================================================
+ 10. TRAZABILIDAD ARD <-> SRS
+==============================================================================
+
++--------+---------------------------+-----------+-----------+--------+-----------+
+| ASR    | Requisito Fase 3         | Escenario | Driver/C  | ADR    | Prueba    |
++--------+---------------------------+-----------+-----------+--------+-----------+
+| ASR-01 | RF-FE-14, RF-BE-08,       | ESC-01/02 | D-PERF-01 | ADR-01 | TC-05/07  |
+|        | RNF-BE-06                 | ESC-18    | C-TEC-06  | ADR-05 | TC-09     |
+| ASR-02 | RF-BE-07                  | (futuro)  | D-SCAL-02 | ADR-13 | TC-13/14  |
+| ASR-03 | RNF-BE-01                 | ESC-04    | D-PERF-02 | ADR-03 | TC-19     |
+| ASR-04 | RN-02, RF-BE-11, RNF-BE-07| ESC-05/06 | D-AVAIL-01| ADR-03 | TC-11/18  |
+|        |                           | ESC-17    |           | ADR-09 | TC-26     |
+| ASR-05 | RNF-BE-03, RF-BE-06       | ESC-09    | C-TEC-03  | ADR-01 | TC-24     |
+| ASR-06 | RF-BE-03/04/05/22, FE-43  | (futuro)  | D-DATA-01 | ADR-04 | TC-28/34  |
+|        |                           |           |           | ADR-11 |           |
+| ASR-07 | W-01 (fuera de v1.0)      | (futuro)  | D-SEC-02  | ADR-12 | -         |
+| ASR-08 | RN-04, RNF-BE-02          | ESC-13    | C-REG-01/4| ADR-09 | TC-29     |
+| ASR-09 | RF-BE-24/25, RE-04        | ESC-07    | C-TEC-02  | ADR-09 | TC-25     |
+|        |                           |           | D-SEC-01  |        |           |
+| ASR-10 | RF-FE-24                  | ESC-08    | D-SEC-03  | ADR-06 | TC-20     |
+| ASR-11 | RN-01, RF-BE-21           | ESC-14    | D-MAIN-02 | ADR-07 | TC-22/23  |
+| ASR-12 | RF-BE-18                  | ESC-15    | D-AVAIL-02| ADR-10 | Manual    |
+| ASR-13 | RNF-BE-04/05, RNF-FE-01   | ESC-11/12 | D-MAIN-01 | ADR-07 | TC-27     |
+| ASR-14 | RNF-FE-02/03              | ESC-16    | C-TEC-07  | ADR-08 | TC-33     |
+| ASR-15 | RE-01/02/03               | -         | C-TEC-01  | ADR-02 | TC-26     |
+| ASR-16 | RNF-BE-08                 | ESC-10    | D-SCAL-01 | ADR-02 | Manual    |
+| ASR-17 | BG-06                     | -         | C-BIZ-01  | ADR-02 | -         |
+| ASR-18 | BG-01                     | -         | C-BIZ-03  | -      | -         |
++--------+---------------------------+-----------+-----------+--------+-----------+
+
+Cobertura: 18/18 ASR con driver o constraint asignado; 16/18 con escenario o
+prueba; 2 (ASR-07 y ASR-06) son futuros y tienen ADR preparado.
+
+
+==============================================================================
+ 11. RIESGOS ARQUITECTONICOS Y PUNTOS DE SENSIBILIDAD
+==============================================================================
+
+11.1 RIESGOS
++------+--------------------------------------------+-----+-----+----------------------------------+
+| R#   | Riesgo                                     | Prob| Imp | Mitigacion                       |
++------+--------------------------------------------+-----+-----+----------------------------------+
+| R-01 | Cuota de Gemini agotada en la demo         | M   | A   | Fallback probado + monitoreo     |
+| R-02 | ZIP enorme congela el navegador            | M   | A   | Limites + progreso + Worker      |
+| R-03 | Key filtrada en un error o log             | B   | A   | Revision de bundle + no loggear  |
+| R-04 | Se activa multiusuario y hay que migrar BD | M   | A   | user_id desde el diseno (ADR-12) |
+| R-05 | Fuente CVE caida bloquea la vista          | A   | M   | Timeout + cache + lista vacia    |
+| R-06 | Proceso unico se cae y no se levanta       | M   | M   | Reinicio documentado + health    |
+| R-07 | Analisis superficial genera respuestas     | A   | M   | Aviso de alcance + nivel        |
+|      | genericas                                  |     |     | explicito en la UI               |
+| R-08 | Regulacion exige borrado y no hay BD       | B   | A   | No persistir codigo en v1.0      |
+| R-09 | Respuesta Markdown con HTML malicioso      | M   | A   | Sanitizacion allowlist (ADR-06)  |
+| R-10 | Deuda por plantillas fijas en documentos   | A   | M   | ADR-03 + RN-01 + pruebas        |
++------+--------------------------------------------+-----+-----+----------------------------------+
+
+11.2 PUNTOS DE SENSIBILIDAD (donde una decision cambia todo)
+SP-01 Ubicacion del analisis: cliente (actual) vs servidor.
+      Cliente  -> privacidad y servidor liviano; limite de memoria y sin AST.
+      Servidor -> analisis profundo; costo, payload y riesgo de datos.
+SP-02 Proveedor de IA: Gemini (actual) vs modelo local.
+      Gemini  -> calidad y velocidad; cuota, costo y transferencia de datos.
+      Local   -> privacidad total; hardware y latencia.
+SP-03 Persistencia: memoria (actual) vs SQLite vs Postgres.
+      Memoria -> cero operacion; se pierde al reiniciar.
+      SQLite  -> historial local; un solo escritor.
+      Postgres-> multiusuario; operacion y costo.
+SP-04 Tenencia: single-user (actual) vs multi-tenant.
+      Single  -> simple; sin aislamiento.
+      Multi   -> requiere auth, user_id y filtros en toda la BD.
+
+Regla: SP-01 y SP-03 son los dos cambios que mas modulos reescriben; cualquier
+decision futura debe pasar por un ADR nuevo.
+
+
+==============================================================================
+ 12. VALIDACION DEL ARD
+==============================================================================
+
+12.1 CHECKLIST DE REVISION
+  [ ] Los 18 ASR salen de requerimientos del SRS (sin inventar).
+  [ ] Cada ASR tiene driver o constraint asignado.
+  [ ] Cada RNF ambiguo tiene escenario de 6 partes con medida.
+  [ ] Los constraints estan clasificados (tecnico/negocio/regulatorio).
+  [ ] Cada driver tiene al menos una tactica y un ADR.
+  [ ] Los ADR documentan alternativas descartadas y consecuencias.
+  [ ] La matriz de conversion cubre las voces del usuario de la Fase 1.
+  [ ] La trazabilidad llega hasta una prueba (TC) o marca "futuro".
+  [ ] Los riesgos tienen mitigacion y ASR asociado.
+  [ ] La jurisdiccion regulatoria esta confirmada o marcada como pendiente.
+
+12.2 WALKTHROUGH CON EL STAKEHOLDER (60 min)
+  00-10  Metas de negocio (BG-01..07) y metrica de exito.
+  10-25  Filtro de ASR: que se queda y que no (seccion 3).
+  25-40  Escenarios medibles: validar umbrales (60 s, 10 s, 99%, 200 MB).
+  40-50  Drivers vs constraints y ADRs (seccion 9).
+  50-60  Riesgos, decisiones pendientes y firma.
+
+12.3 DECISIONES A CONFIRMAR
++-----+------------------------------------------+-------------+----------------+
+| D#  | Decision pendiente                       | Dueno       | Estado         |
++-----+------------------------------------------+-------------+----------------+
+| D-01| Jurisdiccion regulatoria aplicable       | Wilder      | Pendiente      |
+| D-02| Aceptar limites de ingesta (200 MB/300)  | Wilder      | Pendiente      |
+| D-03| Aceptar analisis en cliente (privacidad) | Wilder      | Pendiente      |
+| D-04| Postergar BD a v1.1                      | Wilder/Dev  | Pendiente      |
+| D-05| Umbral de latencia 10 s / 99% disponib.  | Wilder      | Pendiente      |
+| D-06| Aceptar dependencia de Gemini + fallback | Wilder      | Pendiente      |
++-----+------------------------------------------+-------------+----------------+
+
+12.4 CRITERIOS DE SALIDA
+  [ ] 18 ASR aprobados y ninguno agregado sin pasar por el filtro.
+  [ ] Escenarios con umbrales aceptados por el stakeholder.
+  [ ] 13 ADR revisados (al menos los 10 activos).
+  [ ] Riesgos aceptados con mitigacion.
+  [ ] Decisiones D-01..D-06 cerradas y firmadas.
+
+
+==============================================================================
+ 13. ANEXOS
+==============================================================================
+
+ANEXO A. GLOSARIO DE TACTICAS
+  Cache-aside        : leer cache, si falla ir al origen y guardar.
+  Circuit breaker    : cortar llamadas a un tercero tras N fallos.
+  Bulkhead           : aislar recursos para que un fallo no arrastre todo.
+  Timeout + retry     : limite de espera y reintento con backoff.
+  Rate limiting      : limitar peticiones por usuario/ventana.
+  Graceful degrade   : responder con lo minimo disponible en vez de fallar.
+  Sanitization       : limpiar HTML/Markdown con allowlist.
+  Stateless          : no guardar sesion en el proceso (permite replicas).
+  Worker             : mover trabajo pesado fuera del hilo de UI.
+  Streaming          : enviar la respuesta por partes.
+  Migration          : cambio versionado del esquema de BD.
+  Feature flag       : activar/desactivar una capacidad sin recompilar.
+
+ANEXO B. PLANTILLA DE ESCENARIO (para nuevos ASR)
+  ESC-xx | ASR-xx | D-xxx / C-xxx
+    Fuente   :
+    Estimulo :
+    Entorno  :
+    Artefacto:
+    Respuesta:
+    Medida   :
+
+ANEXO C. INVENTARIO DE DOCUMENTOS
+  Documentacion_Fase1_CodeExplain.txt      (fuentes primarias)
+  Documentacion_Fase2_CodeExplain.txt      (inventario y requerimientos)
+  Documentacion_Fase3_SRS_CodeExplain.txt  (SRS v1.0, 85 req.)
+  Documentacion_Fase4_ARD_CodeExplain.txt  (este documento)
+  server.ts                                (3 endpoints implementados)
+  src/lib/analyzeProject.ts                (digest y limites reales)
+  src/components/UploadModal.tsx           (ingesta y progreso)
+  src/views/*.tsx                          (12 vistas)
+
+ANEXO D. SIGUIENTE FASE (FASE 5 - ARQUITECTURA OBJETIVO)
+  1. Aprobar este ARD y cerrar D-01..D-06.
+  2. Dibujar la arquitectura objetivo (componentes, capas, despliegue).
+  3. Detallar los ADR activos y su plan de implementacion.
+  4. Definir el backlog tecnico a partir de los 18 ASR y 13 ADR.
+  5. Actualizar el plan de pruebas con los escenarios ESC-01..ESC-18.
+
+==============================================================================
+ FIN DEL DOCUMENTO ARD - CodeExplain v1.0 (Fase 4)
+==============================================================================

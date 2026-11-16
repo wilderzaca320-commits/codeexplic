@@ -1,0 +1,1212 @@
+==============================================================================
+ DOCUMENTO UX RESEARCH & DESIGN SPECIFICATION + GUIA DX - FASE 6 (TEMA 6)
+ Sistema   : CodeExplain - Analisis & Explicacion de Software con IA
+ Alcance   : el enunciado menciona "Showare"; se aplica a CodeExplain por la
+             decision de alcance tomada en la Fase 1.
+ Version   : 1.0
+ Fecha     : 11/11/2026
+ Entradas  : F1 (necesidades), F2 (15 modulos), F3 (SRS 85 req.), F4 (ARD),
+             F5 (arquitectura del conocimiento)
+ Salidas   : UX Research + IA + wireframes + spec de prototipo Figma +
+             Design System + plan de pruebas + guia DX
+==============================================================================
+
+CONTROL DE VERSIONES
++------+------------+------------------------------------------+-----------+
+| Ver  | Fecha      | Cambio                                   | Autor     |
++------+------------+------------------------------------------+-----------+
+| 0.1  | 11/11/2026 | Personas, journey y heuristica            | Equipo CE |
+| 1.0  | 11/11/2026 | Documento completo + Design System + DX   | Equipo CE |
++------+------------+------------------------------------------+-----------+
+
+COMO LEER ESTE DOCUMENTO
+- Todo se basa en el codigo real de CodeExplain (12 vistas, 3 endpoints,
+  tokens de src/index.css). No hay datos inventados.
+- [P] = propuesto / pendiente de implementar.
+- [HECHO] = verificado en el repositorio el 11/11/2026.
+- Codigos: P# persona, J# etapa del journey, F-# flujo, W-# wireframe,
+  C# componente, H-# hallazgo heuristico, T# tarea de test, UD-# decision UX.
+- Documento ASCII: sin acentos, para evitar problemas de codificacion.
+
+
+==============================================================================
+ 1. RESUMEN EJECUTIVO
+==============================================================================
+
+1.1 QUE SE ENTREGA
+  - 3 personas + mapa de empatia + journey map con dolores y oportunidades.
+  - Arquitectura de informacion: sitemap real de 12 vistas y 3 flujos.
+  - 6 wireframes de baja fidelidad en ASCII.
+  - Especificacion del prototipo de alta fidelidad en Figma (frames,
+    componentes, conexiones y handoff). El archivo Figma se produce en el
+    sprint 1; aqui queda especificado para no depender de una herramienta.
+  - Design System con tokens reales y contraste medido (WCAG AA).
+  - Plan de pruebas con 5 usuarios + evaluacion heuristica ya ejecutada.
+  - Guia DX: setup en un comando, README, contribucion, OpenAPI + SDK,
+    CI/CD con preview por PR y reduccion de carga cognitiva.
+
+1.2 HALLAZGOS QUE JUSTIFICAN LA FASE [HECHO]
++-----+------------------------------------------------------------+------------------+
+| #   | Hallazgo verificado                                        | Impacto          |
++-----+------------------------------------------------------------+------------------+
+| 1   | 0 atributos aria-*, 0 role, 0 alt y 0 tabIndex en 13       | Critico: la app  |
+|     | archivos .tsx, con 110 onClick. Navegacion solo con raton. | no es accesible. |
+| 2   | <html lang="en"> en index.html con interfaz en espanol.    | WCAG 3.1.1 falla.|
+| 3   | Etiquetas de grupo del sidebar en 10px y color #475569     | 2.61:1 < 4.5:1.  |
+|     | sobre #070b09 (contraste medido).                          | WCAG 1.4.3 falla.|
+| 4   | "Cuota de Tokens 68% / 682,410 / 1.0M" y "AI CORE V2.4"    | Datos falsos     |
+|     | estan hardcodeados en Sidebar.tsx y se muestran como reales| presentados como |
+|     |                                                            | reales.          |
+| 5   | El analisis de ZIP es un setInterval de demo (UploadModal) | La promesa      |
+|     | y /api/analyze no existe.                                  | central no esta. |
+| 6   | README es el boilerplate de AI Studio en ingles, apunta a  | DX: onboarding   |
+|     | .env.local (que no existe) y tiene una linea con encoding  | roto en el paso 1|
+|     | roto.                                                      |                  |
+| 7   | `npm start` = `node server.ts` (falla en Node < 22.6) y    | DX: comandos     |
+|     | `clean` = `rm -rf` (falla en Windows).                     | rotos.           |
+| 8   | `lint` = `tsc --noEmit`: no hay ESLint, tests, CI ni       | Sin red de       |
+|     | Docker.                                                    | seguridad.       |
++-----+------------------------------------------------------------+------------------+
+
+1.3 PRINCIPIOS
+  UX
+  U1. Evidencia antes que simulacion: nada se muestra como dato real si es mock.
+  U2. Una tarea, un camino: cada objetivo tiene una ruta principal y una salida.
+  U3. Progreso visible: toda operacion larga muestra que hace y cuanto falta.
+  U4. Accesible por defecto: teclado, foco, contraste y lector de pantalla.
+  U5. El error explica y ofrece la salida, no solo "algo fallo".
+  U6. El conocimiento se cita: toda afirmacion enlaza a su evidencia (F5).
+  DX
+  D1. Un comando para levantar el entorno, cero pasos manuales.
+  D2. El error aparece en < 10 min y en el mismo PR que lo causa.
+  D3. El contrato de API es la fuente de verdad y genera tipos.
+  D4. Las decisiones se documentan donde se leen (ADR + README).
+  D5. Lo repetitivo se automatiza: formato, lint, dependencias, releases.
+
+1.4 METRICAS DE EXITO
++---------------------------+---------------------------+---------------------+
+| Dimension                 | Metrica                   | Objetivo v1         |
++---------------------------+---------------------------+---------------------+
+| Usabilidad                | Tasa de exito tareas T1-T5| >= 80%              |
+| Usabilidad                | Tiempo medio T1 (analizar)| <= 3 min            |
+| Usabilidad                | Errores criticos por tarea| 0                   |
+| Usabilidad                | SUS                       | >= 75               |
+| Accesibilidad             | Criterios WCAG 2.2 AA     | 100% del checklist  |
+| Accesibilidad             | Navegacion completa teclado| Si                 |
+| DX                        | Tiempo de setup           | <= 5 min            |
+| DX                        | CI de PR (p95)            | <= 5 min            |
+| DX                        | Cobertura de tests        | >= 60%              |
+| DX                        | Lead time de cambio       | <= 1 dia            |
+
+
+==============================================================================
+ 2. UX RESEARCH
+==============================================================================
+
+2.1 METODO Y FUENTES
+  Fuentes primarias de F1: entrevistas a 6 stakeholders, encuesta Likert a 24
+  personas, focus group de 5 participantes y analisis documental.
+  En esta fase se sintetizan en 3 arquetipos y se contrastan con el codigo
+  real (vistas, flujos y fricciones verificadas).
+
+2.2 USER PERSONAS
+
+P1. ANA - DESARROLLADORA JUNIOR (aprende leyendo codigo ajeno)
+  Perfil : 23 anos, 1 ano de experiencia, frontend React. Entra a un proyecto
+           heredado y necesita entenderlo sin molestar al equipo.
+  Objetivo: saber que hace el sistema, por donde empieza y que puede romper.
+  Contexto: 30-60 min disponibles, muchas pestanas abiertas, poca paciencia.
+  Nivel de conocimiento del dominio: bajo.
+  Frase  : "Necesito que alguien me explique este repo como si tuviera 20
+           minutos, no un manual de 200 paginas."
+
+P2. MARCO - TECH LEAD / ARQUITECTO (audita antes de un release)
+  Perfil : 38 anos, 12 de experiencia, responsable de 4 equipos.
+  Objetivo: decidir si el release es seguro; priorizar deuda y riesgos.
+  Contexto: reuniones, revisiones, necesita datos defendibles y exportables.
+  Nivel: alto.
+  Frase  : "No quiero una opinion; quiero ver el riesgo, su evidencia y
+           cuanto cuesta arreglarlo."
+
+P3. LUCIA - DOCENTE / CONSULTORA (explica y documenta para terceros)
+  Perfil : 45 anos, dicta cursos y asesora equipos.
+  Objetivo: producir material comprensible en 3 niveles y reutilizarlo.
+  Contexto: prepara clases y entregables; valora exportar y citar.
+  Nivel: medio-alto.
+  Frase  : "Si no puedo mostrar de donde sale cada afirmacion, no lo uso
+           en clase."
+
+2.3 MAPA DE EMPATIA
++---------------------+---------------------------+---------------------------+
+| Cuadrante           | P1 Ana                    | P2 Marco                  |
++---------------------+---------------------------+---------------------------+
+| DICE                | "no entiendo este modulo" | "esto no pasa QA"         |
+|                     | "donde empiezo"           | "cuanto cuesta arreglarlo"|
++---------------------+---------------------------+---------------------------+
+| PIENSA              | "me van a juzgar si       | "si esto falla en         |
+|                     | pregunto demasiado"       | produccion es mi firma"   |
++---------------------+---------------------------+---------------------------+
+| HACE                | abre 8 pestanas, busca    | compara versiones, pide   |
+|                     | en Google, lee README     | evidencia, exporta informe|
++---------------------+---------------------------+---------------------------+
+| SIENTE              | ansiedad por el tiempo    | presion por decidir rapido|
+|                     | y verguenza por preguntar | con informacion incompleta|
++---------------------+---------------------------+---------------------------+
+| DOLORES             | analisis simulado, sin    | metricas sin fuente, sin  |
+|                     | mapa de entrada, ingles   | historial, sin exportar   |
++---------------------+---------------------------+---------------------------+
+| GANANCIAS           | ruta guiada en 20 min,    | riesgo priorizado con     |
+|                     | explicacion en 3 niveles  | evidencia y horas de deuda|
++---------------------+---------------------------+---------------------------+
+
++---------------------+-------------------------------------------------------+
+| Cuadrante           | P3 Lucia                                              |
++---------------------+-------------------------------------------------------+
+| DICE                | "esto lo tengo que explicar manana"                   |
+| PIENSA              | "el material debe servir para principiantes y expertos"|
+| HACE                | prepara diapositivas, exporta documentos, cita fuentes|
+| SIENTE              | orgullo por material claro; frustracion si no cita    |
+| DOLORES             | documentacion generica, sin nivel, sin trazabilidad   |
+| GANANCIAS           | generar 3 versiones de un mismo analisis y exportarlas|
++---------------------+-------------------------------------------------------+
+
+2.4 CUSTOMER JOURNEY MAP
+  Etapas del recorrido real de la app. Emocion: (+) buena, (=) neutra, (-) mala.
+
++----------+---------------------+------------------+---------------------+-----------------------------+------------------+
+| #        | Etapa / accion      | Piensa / siente  | Dolor (evidencia)   | Oportunidad                 | Vista / artefacto|
++----------+---------------------+------------------+---------------------+-----------------------------+------------------+
+| J1       | Descubre la app     | "otra herramienta | Propuesta poco      | Landing con ejemplo real    | README, /        |
+|          | y decide probarla   | de analisis..."   | clara; README en    | y promesa medible           |                  |
+|          |                     | (=)               | ingles [HECHO]      |                             |                  |
++----------+---------------------+------------------+---------------------+-----------------------------+------------------+
+| J2       | Instala y entra     | "espero que no    | setup manual, .env  | docker compose up + seed    | Guia DX 8.2      |
+|          |                     | sea complicado"   | y README roto       | demo; estado vacio guiado   |                  |
+|          |                     | (-)               | [HECHO]             |                             |                  |
++----------+---------------------+------------------+---------------------+-----------------------------+------------------+
+| J3       | Sube su proyecto    | "ojala detecte    | analisis simulado,  | ingesta real con progreso   | W-2, modal       |
+|          | (ZIP / URL)         | algo util"        | sin estado de error | por fases y cancelar        |                  |
+|          |                     | (-)               | [HECHO]             |                             |                  |
++----------+---------------------+------------------+---------------------+-----------------------------+------------------+
+| J4       | Explora el analisis | "ahora que veo?"  | 12 vistas sin      | vision general como home,   | W-3, 12 vistas   |
+|          |                     | (=)               | jerarquia de tarea  | breadcrumb y siguiente paso |                  |
++----------+---------------------+------------------+---------------------+-----------------------------+------------------+
+| J5       | Pregunta a la IA    | "entiendo mejor   | chat sin markdown   | citas [KU], niveles y       | W-4, Chat        |
+|          |                     | asi?"             | ni citas            | prompt sugerido             |                  |
+|          |                     | (+)               |                     |                             |                  |
++----------+---------------------+------------------+---------------------+-----------------------------+------------------+
+| J6       | Genera documentos   | "esto lo puedo    | sin plantilla ni    | README/OpenAPI/C4/ADR con   | W-6, Generador   |
+|          |                     | compartir?"       | checksum            | vista previa y version      |                  |
+|          |                     | (+)               |                     |                             |                  |
++----------+---------------------+------------------+---------------------+-----------------------------+------------------+
+| J7       | Vuelve al dia       | "perdi el         | estado en memoria;  | persistencia (v1.1) +       | Historial        |
+|          | siguiente           | analisis"         | recargar borra todo | historial con favoritos     |                  |
+|          |                     | (-)               | [HECHO]             |                             |                  |
++----------+---------------------+------------------+---------------------+-----------------------------+------------------+
+
+2.5 MATRIZ DOLOR -> OPORTUNIDAD -> ENTREGABLE
++-----+----------------------------------+--------------------------------+-------------------+
+| D#  | Dolor                            | Oportunidad                    | Entregable        |
++-----+----------------------------------+--------------------------------+-------------------+
+| D1  | No se de donde empezar           | Home = Vision general + "que  | W-3, C-08         |
+|     |                                  | hacer ahora"                   |                   |
+| D2  | Analisis simulado                | Pipeline real con 5 fases y    | F-01, DX 8.5      |
+|     |                                  | errores recuperables           |                   |
+| D3  | Sin persistencia                 | Estado en localStorage +       | UD-02             |
+|     |                                  | exportar JSON                  |                   |
+| D4  | Chat sin formato ni evidencia    | Markdown seguro + citas [KU]   | W-4, C-12         |
+| D5  | Datos falsos visibles            | Modo demo etiquetado o datos   | H-06              |
+|     |                                  | reales; nunca mezclados        |                   |
+| D6  | Accesibilidad nula               | Teclado, foco, contraste, ARIA | Seccion 6.8       |
++-----+----------------------------------+--------------------------------+-------------------+
+
+2.6 JOBS TO BE DOING
+  JTBD-1: "Cuando heredo un proyecto, quiero entender su estructura en menos
+          de 20 minutos para poder hacer mi primer cambio sin romper nada."
+  JTBD-2: "Cuando preparo un release, quiero ver riesgos y deuda priorizados
+          con evidencia para decidir si publico o espero."
+  JTBD-3: "Cuando enseno o entrego un analisis, quiero generar material en
+          tres niveles que pueda citar y reutilizar."
+
+
+==============================================================================
+ 3. ARQUITECTURA DE INFORMACION
+==============================================================================
+
+3.1 SITEMAP REAL (12 vistas, 3 grupos del sidebar) [HECHO]
+  CodeExplain
+  |
+  +-- Global (siempre visible)
+  |   +-- Selector de proyecto (header)
+  |   +-- Busqueda global (Ctrl+K)              [P]
+  |   +-- Subir proyecto (modal)                W-2
+  |   +-- Ayuda / glosario / atajos             [P]
+  |
+  +-- EXPLORAR (03)
+  |   +-- Proyectos                            proyectos
+  |   +-- Repositorios Analizados              repositorios-analizados
+  |   +-- Historial de Consultas               historial-consultas
+  |
+  +-- ANALISIS DE SISTEMAS (06)
+  |   +-- Vision General                       vision-general
+  |   +-- Arquitectura & Modulos               arquitectura-modulos
+  |   +-- Diagramas C4 & UML                   diagramas-c4-uml
+  |   +-- Modelo de Datos / BD                 modelo-datos-bd
+  |   +-- Casos de Uso & Requerimientos        casos-de-uso-requerimientos
+  |   +-- Riesgos & Validacion                 riesgos-validacion
+  |
+  +-- HERRAMIENTAS IA (03)
+      +-- Chat con Asistente IA                chat-asistente-ia
+      +-- Generador de Documentacion           generador-documentacion
+      +-- Auditor de Deuda Tecnica             auditor-deuda-tecnica
+
+  Regla IA-1: los 12 items se mapean 1:1 con las dimensiones de la taxonomia
+  de F5 (K1.PRY.*). Ninguna vista existe sin nodo de conocimiento.
+  Regla IA-2: la vista inicial es vision-general; el logo tambien lleva ahi.
+  Regla IA-3: los contadores "03/06/03" reflejan el numero real de items.
+
+3.2 MODELO DE NAVEGACION
+  Nivel 0  Shell: sidebar + header + area de contenido.
+  Nivel 1  Grupo del sidebar (Explorar / Analisis / Herramientas IA).
+  Nivel 2  Vista (12).
+  Nivel 3  Detalle en panel o modal (modulo, tabla, riesgo, documento).
+  Transversal: selector de proyecto, busqueda global, ayuda, subir.
+
+  Breadcrumb: Proyecto > Grupo > Vista > Detalle.
+  En movil (< 960px): sidebar colapsado en drawer; breadcrumb a "Vista > Detalle".
+
+3.3 USER FLOWS
+
+F-01 ANALIZAR UN PROYECTO (camino principal)
+  1. Usuario pulsa "Subir proyecto" (header o vista Proyectos).
+  2. Modal W-2: elige pestana ZIP o URL.
+  3. Sistema valida tamano y extension; muestra error inline si falla.
+  4. Pulsa "Analizar". Se abre progreso con 5 fases:
+     Inventario -> Dependencias -> Modulos -> Metricas -> Hallazgos.
+  5. Cada fase muestra estado (pendiente / en curso / hecho / error) y
+     permite cancelar.
+  6. Al terminar: toast "Analisis listo" + CTA "Ver vision general".
+  7. Vision general muestra metricas, semaforo de riesgo y "siguiente paso".
+  8. Si una fase falla: se conserva lo calculado, se explica el motivo y se
+     ofrece reintentar solo esa fase.
+
+F-02 CONSULTAR A LA IA
+  1. Usuario abre Chat (sidebar o CTA contextual desde cualquier vista).
+  2. El contexto de la vista activa se adjunta como referencia (modulo, riesgo).
+  3. Elige nivel: Basico / Intermedio / Avanzado (recordado por sesion).
+  4. Escribe o elige una pregunta sugerida.
+  5. Respuesta en streaming con Markdown seguro y citas [KU-xxxxx].
+  6. Puede copiar, guardar en historial o convertir en documento.
+  7. Si Gemini no esta disponible: aviso claro "modo heuristico" y respuesta
+     local; nunca se muestra como si fuera IA.
+
+F-03 GENERAR DOCUMENTACION
+  1. Abre Generador de Documentacion.
+  2. Selecciona tipo: README, OpenAPI, C4, ADR.
+  3. Ve vista previa por secciones y que KUs la componen.
+  4. Genera: estado por seccion (ok / sin informacion).
+  5. Descarga .md / .puml / .json o copia; se registra version y checksum.
+  6. Puede volver al analisis desde cada seccion citada.
+
+3.4 REGLAS DE INTERACCION
+  IA-4. Toda vista tiene titulo, subtitulo de una linea y accion primaria.
+  IA-5. Toda vista tiene estado vacio con una accion (no solo texto).
+  IA-6. Toda vista tiene estado de carga (skeleton) y de error (reintentar).
+  IA-7. Las acciones destructivas piden confirmacion y se pueden deshacer.
+  IA-8. El proyecto activo se muestra siempre en el header.
+  IA-9. Navegacion por teclado: Ctrl/Cmd+K buscador, G+P/A/C ir a,
+        Esc cerrar, ? ayuda. [P]
+
+3.5 BUSQUEDA GLOBAL [P]
+  - Abre overlay con Ctrl/Cmd+K.
+  - Busca en: vistas, proyectos, modulos, tablas, riesgos, documentos, KUs.
+  - Resultados agrupados por tipo con su breadcrumb.
+  - Enter abre; flechas navegan; Esc cierra.
+  - Sin resultados: sugiere quitar filtros y ofrece el glosario.
+
+
+==============================================================================
+ 4. WIREFRAMES DE BAJA FIDELIDAD
+==============================================================================
+
+4.1 W-1 SHELL (escritorio 1440x900)
++--------+------------------------------------------------------------------+
+| LOGO   | [Proyecto: OpenCommerce v]   [Buscar Ctrl+K]   [Subir]  [Ayuda] |
+| AI 2.4 +------------------------------------------------------------------+
+|        | Breadcrumb: Proyecto > Analisis > Vision General                 |
+| EXPLOR |------------------------------------------------------------------|
+|  - Proy| Titulo de vista                                    [Accion 1]  |
+|  - Repo| Subtitulo de una linea                                         |
+|  - Hist|------------------------------------------------------------------|
+|        | +----------------+ +----------------+ +----------------+         |
+| ANALIS | | Metrica        | | Metrica        | | Metrica        |         |
+|  - Visi| | valor + delta  | | valor + delta  | | valor + delta  |         |
+|  - Arqu| +----------------+ +----------------+ +----------------+         |
+|  - Diag|                                                                  |
+|  - Dato| +--------------------------------+ +---------------------------+ |
+|  - Caso| | Contenido principal            | | Panel: siguiente paso /   | |
+|  - Ries| | (tabla, grafo, lista)          | | relacionado / evidencia   | |
+|        | +--------------------------------+ +---------------------------+ |
+| HERRAM |                                                                  |
+|  - Chat|                                                                  |
+|  - Doc |                                                                  |
+|  - Deud|                                                                  |
+|--------|                                                                  |
+| Cuota  |                                                                  |
++--------+------------------------------------------------------------------+
+
+4.2 W-2 MODAL DE INGESTA
++--------------------------------------------------------------+
+| Subir proyecto                                          [x]  |
++--------------------------------------------------------------+
+| [ ZIP ]  [ URL ]                                             |
+|                                                              |
+|  +--------------------------------------------------------+  |
+|  |  Arrastra tu .zip aqui o [Seleccionar archivo]          |  |
+|  |  Max 50 MB - se analiza en local, no se sube el codigo  |  |
+|  +--------------------------------------------------------+  |
+|                                                              |
+|  Nombre del proyecto  [_______________________________]      |
+|                                                              |
+|  [ ] Guardar el analisis en este equipo (localStorage)       |
+|                                                              |
+|  (i) El codigo no se envia al servidor; solo un inventario.  |
+|                                                              |
+|                              [Cancelar]  [Analizar ->]       |
++--------------------------------------------------------------+
+  Estados: inicial / archivo invalido / analizando (5 fases) / error / listo.
+
+4.3 W-3 VISION GENERAL
++------------------------------------------------------------------+
+| Vision General                            [Reanalizar] [Exportar]|
++------------------------------------------------------------------+
+| Proyecto  OpenCommerce v2.4     Stack: TS, Node    Archivos: 1 248|
+| SLOC 84 210    Modulos 34    Salud AST 96%    Deuda 120 h        |
++------------------------------------------------------------------+
+| +------------------+ +------------------+ +------------------+    |
+| | Riesgo alto      | | SPOF             | | Cobertura doc    |    |
+| | 4 hallazgos      | | 2 componentes    | | 62%              |    |
+| +------------------+ +------------------+ +------------------+    |
+|                                                                  |
+| Siguiente paso sugerido                                          |
+|  1. Revisar 4 riesgos altos            [Ver riesgos]             |
+|  2. Explorar 34 modulos                [Ver arquitectura]        |
+|  3. Generar README                     [Generar]                 |
+|                                                                  |
+| Actividad reciente                                               |
+|  - Analisis ZIP 11/11 18:20        - Consulta "que hace payments"|
++------------------------------------------------------------------+
+
+4.4 W-4 CHAT
++----------------------------------------------------+-------------+
+| Chat con Asistente IA                    [Nuevo]   | Contexto    |
++----------------------------------------------------+  Vista:     |
+| Nivel:  (Basico) (Intermedio) (Avanzado)           |  Vision gral|
+|                                                    |  Proyecto:  |
+|  +----------------------------------------------+  |  OpenCommerce|
+|  | TU: que hace el modulo payments?             |  |             |
+|  +----------------------------------------------+  | Preguntas   |
+|  +----------------------------------------------+  |  sugeridas  |
+|  | IA: Payments procesa cobros y usa Redis      |  |  - Que hace |
+|  | para idempotencia [KU-00042].                |  |    payments |
+|  |   Evidencia: server.ts L59-L75               |  |  - Riesgos  |
+|  |   [Copiar] [Guardar] [Ver evidencia]         |  |  - Deuda    |
+|  +----------------------------------------------+  |             |
+|                                                    |             |
+|  [ Escribe tu pregunta...                    ] [->]|             |
++----------------------------------------------------+-------------+
+
+4.5 W-5 RIESGOS & VALIDACION
++------------------------------------------------------------------+
+| Riesgos & Validacion                       [Filtros] [Exportar]  |
++------------------------------------------------------------------+
+| Severidad: [Todas v]  Categoria: [Todas v]   Buscar [_________]  |
++------------------------------------------------------------------+
+| ID    | Riesgo                  | Sev.  | Evidencia      | Estado |
+| R-01  | Webhook sin firma       | Alta  | api/hook.ts:22 | Abierto|
+| R-02  | Dependencia obsoleta    | Media | package.json   | Abierto|
+| R-03  | SPOF en Redis           | Alta  | infra/cache.ts | Revisar|
++------------------------------------------------------------------+
+| Detalle del riesgo seleccionado                                  |
+|  Descripcion / Impacto / Mitigacion sugerida / KUs relacionadas  |
++------------------------------------------------------------------+
+
+4.6 W-6 GENERADOR DE DOCUMENTACION
++------------------------------------------------------------------+
+| Generador de Documentacion                                       |
++------------------------------------------------------------------+
+| Tipo: [README v] [OpenAPI] [C4] [ADR]        Nivel: [Intermedio v]|
++------------------------------------------------------------------+
+| Secciones (vista previa)                  | Composicion           |
+|  [ok] Vision                              | 12 KUs                |
+|  [ok] Stack                               |  8 KUs                |
+|  [!!] Arquitectura                        |  4 KUs, falta 2       |
+|  [ok] Datos                               |  6 KUs                |
+|  [ok] Riesgos                             |  9 KUs                |
++------------------------------------------------------------------+
+| [Generar]  [Descargar .md]  [Copiar]      Version 1.0.0 - 11/11   |
++------------------------------------------------------------------+
+
+4.7 ESPECIFICACIONES DE INTERACCION
+  W-1: sidebar colapsable (240px -> 64px); estado activo con barra neon y
+       aria-current="page"; tooltip en modo colapsado.
+  W-2: drag & drop con feedback; validacion antes de enviar; foco atrapado;
+       Esc cierra; al cerrar con analisis en curso, confirmar.
+  W-3: metricas clicables que llevan a su vista; "siguiente paso" derivado de
+       los hallazgos, no generico.
+  W-4: autoscroll solo si el usuario esta al final; streaming cancelable;
+       citas clicables que abren la ficha de la KU.
+  W-5: orden por severidad por defecto; filtros persistidos en la URL.
+  W-6: toda seccion sin informacion se marca "sin informacion", nunca se
+       inventa texto (regla de F5).
+
+
+==============================================================================
+ 5. PROTOTIPO DE ALTA FIDELIDAD (FIGMA)
+==============================================================================
+
+5.1 ALCANCE
+  Un archivo Figma con 3 paginas y 18 frames. Se construye en el sprint 1
+  (ver 9.1) usando los tokens de la seccion 6, de modo que el prototipo y la
+  app compartan la misma fuente de verdad.
+
+5.2 ESTRUCTURA DEL ARCHIVO
+  Pagina 1 "01 - Foundations"  : color, tipografia, espaciado, iconos, motion.
+  Pagina 2 "02 - Components"   : 18 componentes con variantes y estados.
+  Pagina 3 "03 - Product"      : 18 frames de pantalla + 3 flujos conectados.
+
+5.3 FRAMES
++------+---------------------------+------------------+---------------------+
+| ID   | Frame                     | Tamano           | Flujo              |
++------+---------------------------+------------------+---------------------+
+| F-01 | Shell vacio (sin proyecto)| 1440x900         | -                   |
+| F-02 | Proyectos (lista)         | 1440x900         | F-01                |
+| F-03 | Modal subir - ZIP         | 720x560          | F-01                |
+| F-04 | Modal subir - progreso    | 720x560          | F-01                |
+| F-05 | Modal subir - error       | 720x560          | F-01                |
+| F-06 | Vision general            | 1440x900         | F-01                |
+| F-07 | Arquitectura & modulos    | 1440x900         | -                   |
+| F-08 | Diagramas C4 & UML        | 1440x900         | -                   |
+| F-09 | Modelo de datos / BD      | 1440x900         | -                   |
+| F-10 | Casos de uso              | 1440x900         | -                   |
+| F-11 | Riesgos (lista)           | 1440x900         | -                   |
+| F-12 | Riesgos (detalle)         | 1440x900         | -                   |
+| F-13 | Chat - respuesta          | 1440x900         | F-02                |
+| F-14 | Chat - modo heuristico    | 1440x900         | F-02                |
+| F-15 | Generador - preview       | 1440x900         | F-03                |
+| F-16 | Deuda tecnica             | 1440x900         | -                   |
+| F-17 | Historial                 | 1440x900         | -                   |
+| F-18 | Busqueda global (overlay) | 1440x900         | -                   |
++------+---------------------------+------------------+---------------------+
+
+5.4 COMPONENTES Y VARIANTES
+  Todo componente se crea con Auto Layout y variables (no estilos sueltos).
+  Propiedades: State (default/hover/focus/active/disabled/loading/error),
+  Size (sm/md/lg), Tone (neutral/primary/danger), Icon (none/left/right).
+
+5.5 PROTOTIPO NAVEGABLE
+  Conexiones principales:
+    F-02 -> F-03 (Subir) -> F-04 (Analizar) -> F-06 (listo)
+    F-04 -> F-05 (si error) -> F-04 (reintentar)
+    F-06 -> F-07 / F-11 / F-15
+    F-13 -> F-15 (convertir respuesta en documento)
+    F-18 -> F-06 / F-11 (resultado de busqueda)
+  Interacciones: Smart Animate 150-200 ms, easing ease-out; respetar
+  "Reduce motion" mostrando cambio directo.
+  Hotspots con nombre de capa "-> destino" para handoff.
+
+5.6 ANOTACIONES DE ACCESIBILIDAD Y HANDOFF
+  - Cada frame lleva una nota con: orden de tabulacion, rol ARIA y atajo.
+  - Contraste anotado por par texto/fondo (ver 6.2).
+  - Estados de foco dibujados, no supuestos.
+  - Medidas en la esquina: spacing 4/8/12/16/24/32, radios 8/12/16.
+  - Export: iconos SVG, imagenes 1x/2x, tokens en JSON (anexo C).
+  - Dev Mode: nombres = tokens (`color/surface/card`, `space/4`).
+
+5.7 CRITERIOS DE ACEPTACION DEL PROTOTIPO
+  [ ] Los 18 frames existen y usan solo componentes del sistema.
+  [ ] Los 3 flujos se recorren sin callejones sin salida.
+  [ ] Todos los estados (vacio, carga, error, exito) estan dibujados.
+  [ ] Contraste AA verificado en cada par texto/fondo.
+  [ ] Version movil (390x844) de F-02, F-06, F-11 y F-13.
+  [ ] Handoff: tokens exportados y nombres coinciden con el codigo.
+
+5.8 ESTADO DEL ENTREGABLE
+  El archivo Figma es un artefacto de diseno que se produce en el sprint 1.
+  Esta seccion es la especificacion completa para construirlo; no se genera
+  un .fig desde este documento. Enlace [P]: figma.com/file/<id> (se completa
+  al publicar).
+
+
+==============================================================================
+ 6. DESIGN SYSTEM
+==============================================================================
+
+6.1 PRINCIPIOS VISUALES
+  Identidad "cyber/terminal": fondo casi negro verde, acento neon, mono para
+  datos y codigo. Se conserva porque ya esta implementada y es reconocible.
+  Regla DS-1: el neon es acento, no fondo de lectura.
+  Regla DS-2: el color nunca es el unico portador de significado (anadir
+  icono o texto: "Alta", "Media", "Baja").
+  Regla DS-3: datos y codigo en mono; interfaz en sans.
+  Regla DS-4: densidad alta pero con aire: 8px de base, 24px entre bloques.
+
+6.2 COLOR (tokens reales de src/index.css) [HECHO]
++---------------------------+------------+---------------------------+--------+
+| Token                     | Valor      | Uso                       | Ratio  |
++---------------------------+------------+---------------------------+--------+
+| --bg-primary              | #060807    | fondo de app              | -      |
+| --bg-secondary            | #0b0f0d    | fondo de panel            | -      |
+| --bg-card                 | #0f1612    | tarjetas                  | -      |
+| --bg-card-hover           | #151f19    | hover de tarjeta          | -      |
+| --border-subtle           | #1a2720    | bordes                    | -      |
+| --neon-green              | #00ff87    | acento, CTA, activo       | 14.97  |
+| --neon-mint               | #4edea3    | gradientes, secundario    | 10.9   |
+| --signal-red              | #ef4444    | error, riesgo alto        | 5.34   |
+| --signal-amber            | #f59e0b    | advertencia, riesgo medio | 9.35   |
+| --signal-blue             | #38bdf8    | informacion, enlaces      | 9.38   |
+| texto principal           | #e2e8f0    | body                      | 16.29  |
+| texto secundario          | #94a3b8    | labels, ayudas            | 7.72   |
+| texto terciario           | #64748b    | iconos inactivos          | 4.16   |
+| texto de grupo            | #475569    | etiquetas 10px            | 2.61   |
++---------------------------+------------+---------------------------+--------+
+
+  Contrastes medidos con la formula WCAG 2.x sobre el fondo correspondiente.
+  Aciertos: texto principal, neon y CTA cumplen AAA.
+  Fallo real: #475569 sobre #070b09 = 2.61:1 en etiquetas de 10px.
+  Correccion: subir a #7c8ba1 (4.9:1) o a #94a3b8 (7.7:1) y pasar a 11px.
+  Fallo potencial: #64748b (4.16:1) no sirve para texto < 18px; solo iconos
+  (que requieren 3:1) o texto grande.
+
+6.3 TIPOGRAFIA
+  Familias: Geist (UI), JetBrains Mono (datos/codigo). Plus Jakarta Sans
+  queda como fallback. [HECHO] se cargan desde Google Fonts en index.html.
+  Problema DX/privacidad: dependencia externa bloqueante. [P] autoalojar en
+  /public/fonts con font-display: swap y subset latin.
+
+  Escala (corrige los 9-10px actuales):
++--------+--------+---------+----------------+---------------------------+
+| Token  | px/rem | Peso    | Uso            | Nota                      |
++--------+--------+---------+----------------+---------------------------+
+| text-xs| 12/0.75| 500     | metadatos      | minimo permitido          |
+| text-sm| 14/0.875| 400    | body secundario| lectura comoda            |
+| text-md| 16/1    | 400     | body           | base                      |
+| text-lg| 18/1.125| 500    | subtitulos     |                           |
+| text-xl| 20/1.25 | 600     | titulo de vista|                           |
+| text-2xl|24/1.5  | 650     | KPI            |                           |
+| text-3xl|30/1.75 | 700     | hero           | solo landing              |
+| mono-sm| 12/1.5  | 400     | codigo, IDs    | JetBrains Mono            |
+| mono-md| 13/1.5  | 500     | metricas       | JetBrains Mono            |
++--------+--------+---------+----------------+---------------------------+
+  Reglas: line-height 1.5 en body, 1.2 en titulos; max 75 caracteres por
+  linea; no usar mayusculas en frases largas (solo etiquetas cortas).
+
+6.4 ESPACIADO, RADIOS Y ELEVACION
+  Espaciado: base 4. Escala 4, 8, 12, 16, 24, 32, 48, 64.
+  Radios: 8 (inputs), 12 (cards), 16 (modales), 999 (pills).
+  Elevacion: 0 (flat), 1 borde sutil, 2 glow-mint, 3 modal con sombra.
+  Rejilla: 12 columnas, gutter 24, margen 24; contenido max 1440.
+
+6.5 MOVIMIENTO (preservar lo existente)
+  [HECHO] animaciones actuales que NO se eliminan:
+    - .animate-data-stream (stroke-dashoffset, 1.5s linear infinite)
+    - animate-pulse en indicadores de estado
+    - transiciones de 150 ms en hover de navegacion y tarjetas
+    - glow-mint / glow-mint-lg en foco y CTA
+  Reglas nuevas:
+    M1. Duracion 120-200 ms para microinteracciones; 300 ms para paneles.
+    M2. Easing ease-out al entrar, ease-in al salir.
+    M3. Nada parpadea mas de 3 veces por segundo (WCAG 2.3.1).
+    M4. @media (prefers-reduced-motion: reduce) desactiva data-stream, pulse
+        y transiciones no esenciales.
+    M5. El movimiento comunica estado (cargando, exito), no decora.
+
+6.6 COMPONENTES
++------+---------------------+----------------------------------+-------------------+
+| ID   | Componente          | Variantes / estados              | Accesibilidad      |
++------+---------------------+----------------------------------+-------------------+
+| C-01 | Button              | primary/secondary/ghost/danger;  | <button>, focus    |
+|      |                     | sm/md/lg; loading/disabled       | visible, aria-busy |
+| C-02 | IconButton          | ghost/solid; tooltip             | aria-label         |
+| C-03 | Input / Textarea    | default/focus/error/disabled     | <label> asociado   |
+| C-04 | Select              | default/open/error               | teclado nativo     |
+| C-05 | Checkbox / Toggle   | on/off/indeterminate             | <input> real       |
+| C-06 | Card                | flat/hover/selected              | -                  |
+| C-07 | KPI / Metric        | positive/negative/neutral        | texto + icono      |
+| C-08 | SectionHeader       | con accion / sin accion          | h2 + id            |
+| C-09 | Table               | compact/comfortable; sortable    | <table>, scope     |
+| C-10 | Badge / Chip        | 5 tonos; con icono               | texto, no solo color|
+| C-11 | Tabs                | underline/pill                   | role=tablist       |
+| C-12 | ChatBubble          | user/assistant/error; streaming  | aria-live=polite   |
+| C-13 | Modal               | sm/md/lg; confirm                | focus trap + Esc   |
+| C-14 | Drawer              | left/right                       | focus trap         |
+| C-15 | Toast               | info/success/error; accion       | role=status        |
+| C-16 | ProgressStepper     | 5 fases; error/cancel            | aria-current=step  |
+| C-17 | EmptyState          | icono + texto + CTA              | -                  |
+| C-18 | Skeleton            | linea/bloque/card                | aria-hidden        |
+| C-19 | Breadcrumb          | 2-4 niveles                      | nav aria-label     |
+| C-20 | SidebarNav          | expanded/collapsed; active       | aria-current=page  |
++------+---------------------+----------------------------------+-------------------+
+
+  Reglas de composicion: un solo CTA primario por vista; acciones
+  secundarias como ghost; nunca dos modales abiertos; el foco vuelve al
+  disparador al cerrar.
+
+6.7 PATRONES DE DATOS
+  - Tablas: cabecera sticky, orden por columna, fila clicable con Enter,
+    paginacion o scroll virtual > 50 filas.
+  - Metricas: valor grande en mono, etiqueta en sans, delta con flecha y
+    texto ("+12%" no solo color).
+  - Riesgos: severidad como badge con icono + texto; nunca solo rojo.
+  - Grafo (C4): zoom, pan, "centrar" y lista alternativa accesible.
+  - Codigo: mono 13px, max 100 columnas, copiar con confirmacion.
+
+6.8 ACCESIBILIDAD WCAG 2.2 AA
+  Estado actual [HECHO]: 0 aria-*, 0 role, 0 alt, 0 tabIndex, 110 onClick.
+  Plan de cumplimiento (checklist completo en anexo A):
++-----+------------------------------------------+-------------------------------+
+| #   | Criterio                                 | Accion en CodeExplain         |
++-----+------------------------------------------+-------------------------------+
+| 1.1 | Contenido no textual                     | alt en logos/graficos; aria-  |
+|     |                                          | label en iconos               |
+| 1.3 | Adaptable                                | tablas con scope; orden DOM   |
+| 1.4 | Distinguible                             | corregir 2.61:1; foco 3:1     |
+| 2.1 | Accesible por teclado                    | reemplazar div onClick por   |
+|     |                                          | button; tabIndex en grafo     |
+| 2.4 | Navegable                                | skip link, foco visible,      |
+|     |                                          | orden logico, titulos h1-h3   |
+| 3.1 | Legible                                  | lang="es"; glosario           |
+| 3.3 | Asistencia en errores                    | mensajes especificos + ayuda  |
+| 4.1 | Compatible                               | roles, estados, nombres       |
++-----+------------------------------------------+-------------------------------+
+
+  Requisitos no negociables:
+  A1. Todo control interactivo es <button>, <a> o <input> nativo.
+  A2. Foco visible con outline 2px #00ff87 + offset 2px en todos los estados.
+  A3. Modal y drawer atrapan el foco y lo devuelven al cerrar.
+  A4. Iconos decorativos aria-hidden; iconos con accion aria-label.
+  A5. Contraste minimo 4.5:1 en texto y 3:1 en componentes y foco.
+  A6. Respeto de prefers-reduced-motion.
+  A7. Zoom 200% sin perdida de contenido.
+  A8. Mensajes de estado con role="status" / aria-live.
+
+6.9 TEMA
+  v1 solo dark (identidad del producto). El sistema se define con variables
+  CSS para permitir un tema claro en v2 sin reescribir componentes. No se
+  promete tema claro en v1.
+
+
+==============================================================================
+ 7. PRUEBAS DE USABILIDAD
+==============================================================================
+
+7.1 DISENO DEL TEST
+  Participantes: 5 (Nielsen), reclutados fuera del equipo.
+  Perfil: 2 desarrolladores junior, 2 tech leads, 1 docente/consultor.
+  Modalidad: remota moderada, 45 min, think-aloud.
+  Material: build de staging con datos demo etiquetados como demo.
+  Roles: moderador (no ayuda), observador (registra), facilitador tecnico.
+  Consentimiento y grabacion opcional; datos anonimizados.
+
+7.2 TAREAS
++-----+------------------------------------------------------------+------------------+
+| ID  | Tarea                                                      | Exito si...      |
++-----+------------------------------------------------------------+------------------+
+| T1  | Subir un ZIP y llegar a la vision general                  | <= 3 min, sin    |
+|     |                                                            | ayuda            |
+| T2  | Encontrar los 2 riesgos de severidad alta y su evidencia    | ambos en <= 2 min|
+| T3  | Preguntar "que hace el modulo payments" en nivel basico     | respuesta con    |
+|     |                                                            | cita en <= 2 min |
+| T4  | Generar un README y descargarlo                            | archivo valido   |
+|     |                                                            | en <= 3 min      |
+| T5  | Volver al analisis del dia anterior                        | lo logra o       |
+|     |                                                            | explica por que  |
++-----+------------------------------------------------------------+------------------+
+
+7.3 METRICAS Y UMBRALES
++---------------------------+----------------------------------+-------------------+
+| Metrica                   | Definicion                       | Umbral            |
++---------------------------+----------------------------------+-------------------+
+| Tasa de exito             | tareas completadas / total       | >= 80% (20/25)    |
+| Tiempo por tarea          | mediana en segundos              | T1<=180, T2<=120, |
+|                           |                                  | T3<=120, T4<=180  |
+| Errores                   | acciones que requieren deshacer  | <= 1 por tarea    |
+| Errores criticos          | bloquean la tarea                | 0                 |
+| Ayudas del moderador      | intervenciones                   | <= 1 por sesion   |
+| SEQ (Single Ease Question)| 1-7 por tarea                    | >= 5.5            |
+| SUS                       | 10 items, 0-100                  | >= 75             |
++---------------------------+----------------------------------+-------------------+
+
+7.4 PLANTILLA DE REGISTRO (por participante y tarea)
+  P# | T# | inicio | fin | exito (S/N) | errores | ayuda | SEQ | nota
+  Ademas: 3 citas textuales por sesion y 1 momento "aha".
+
+7.5 EVALUACION HEURISTICA EJECUTADA [HECHO]
+  Metodo: inspeccion del codigo y de los flujos reales (11/11/2026).
+  Escala de severidad: 4 bloqueante, 3 alta, 2 media, 1 baja.
++-----+------------------------------------------------------------+-----+------------------+
+| ID  | Hallazgo                                                   | Sev | Evidencia        |
++-----+------------------------------------------------------------+-----+------------------+
+| H-01| Sin navegacion por teclado: 0 tabIndex y 110 onClick en     | 4   | src/**/*.tsx     |
+|     | contenedores no nativos; el foco no es visible.             |     |                  |
+| H-02| Idioma del documento en "en" con UI en espanol.             | 3   | index.html:2     |
+| H-03| Sin textos alternativos ni nombres accesibles.              | 3   | 0 alt, 0 aria    |
+| H-04| Etiquetas de 9-10px con 2.61:1 de contraste.                | 3   | Sidebar.tsx:120  |
+| H-05| Datos ficticios mostrados como reales (cuota 68%, V2.4).    | 4   | Sidebar.tsx:157  |
+| H-06| El analisis es una simulacion con setInterval.              | 4   | UploadModal.tsx  |
+| H-07| Sin estado de error recuperable en la ingesta.              | 3   | UploadModal.tsx  |
+| H-08| Modal sin foco atrapado ni cierre con Esc.                  | 3   | UploadModal.tsx  |
+| H-09| Sidebar sin aria-current ni indicacion para lector.         | 2   | Sidebar.tsx:57   |
+| H-10| Fuentes de Google bloqueantes y de terceros.                | 2   | index.html:12-14 |
+| H-11| Sin persistencia: recargar pierde el analisis.              | 3   | App.tsx          |
+| H-12| README de AI Studio, en ingles y con ruta .env.local        | 2   | README.md        |
+|     | inexistente.                                                |     |                  |
++-----+------------------------------------------------------------+-----+------------------+
+
+  Conteo: 3 bloqueantes, 6 altas, 3 medias. Coincide con los hallazgos de
+  la seccion 1.2 y con los pain points de F1.
+
+7.6 PLAN DE ITERACION
+  Ronda 1 (semana 1): corregir H-01..H-05 (accesibilidad y confianza).
+    - Reemplazar div/span clicables por button; foco visible; lang="es".
+    - Tokens de texto corregidos; retirar datos hardcodeados o etiquetarlos.
+  Ronda 2 (semana 2): corregir H-06..H-12 y ejecutar test con 5 usuarios.
+    - Ingesta real, estados de error, modal accesible, persistencia local.
+  Ronda 3: re-test con 3 usuarios nuevos sobre las tareas que fallaron.
+  Regla: una tarea con exito < 60% se vuelve a disenar antes de seguir.
+
+7.7 RESULTADOS DEL TEST CON 5 USUARIOS
+  Estado: PENDIENTE. No se ejecuto aun; no se inventan resultados.
+  Tabla a completar (misma estructura que 7.3):
+    T1 exito __/5  tiempo mediana ___ s  errores __  SEQ __
+    T2 exito __/5  tiempo mediana ___ s  errores __  SEQ __
+    T3 exito __/5  tiempo mediana ___ s  errores __  SEQ __
+    T4 exito __/5  tiempo mediana ___ s  errores __  SEQ __
+    T5 exito __/5  tiempo mediana ___ s  errores __  SEQ __
+    SUS ___/100
+  Criterio de cierre: umbrales de 7.3 cumplidos o backlog priorizado.
+
+
+==============================================================================
+ 8. GUIA DX (EXPERIENCIA DEL DESARROLLADOR)
+==============================================================================
+
+8.1 ESTADO ACTUAL Y BRECHAS [HECHO]
++---------------------------+---------------------------+---------------------------+
+| Area                      | Hoy                       | Brecha                    |
++---------------------------+---------------------------+---------------------------+
+| Setup                     | npm install + .env manual | Sin Docker; README roto   |
+| Scripts                   | dev/build/preview/clean   | start y clean fallan en   |
+|                           | /lint                     | Windows/Node 20           |
+| Lint                      | tsc --noEmit              | Sin ESLint ni Prettier    |
+| Tests                     | ninguno                   | Sin red de seguridad      |
+| CI/CD                     | ninguno                   | Sin pipeline ni preview   |
+| API docs                  | ninguna                   | Sin OpenAPI ni SDK        |
+| Tipos de API              | manuales                  | Sin generacion            |
+| Logs                      | console.log               | Sin estructura ni niveles |
+| Dependencias              | manual                    | Sin Dependabot           |
+| Contribucion              | no existe                 | Sin guia ni plantilla     |
++---------------------------+---------------------------+---------------------------+
+
+8.2 SETUP EN UN COMANDO
+  Objetivo: `docker compose up` y la app responde en http://localhost:3100
+  con datos demo, sin instalar Node ni configurar nada.
+
+  Dockerfile [P]
+  ----------------------------------------------------------------
+  FROM node:22-alpine AS deps
+  WORKDIR /app
+  COPY package*.json ./
+  RUN npm ci
+
+  FROM node:22-alpine AS build
+  WORKDIR /app
+  COPY --from=deps /app/node_modules ./node_modules
+  COPY . .
+  RUN npm run build && npx esbuild server.ts --bundle \
+      --platform=node --format=esm --outfile=dist/server.js
+
+  FROM node:22-alpine AS runtime
+  WORKDIR /app
+  ENV NODE_ENV=production
+  COPY package*.json ./
+  RUN npm ci --omit=dev
+  COPY --from=build /app/dist ./dist
+  EXPOSE 3100
+  HEALTHCHECK CMD wget -qO- http://localhost:3100/api/health || exit 1
+  CMD ["node","dist/server.js"]
+  ----------------------------------------------------------------
+
+  docker-compose.yml [P]
+  ----------------------------------------------------------------
+  services:
+    app:
+      build: .
+      ports: ["3100:3100"]
+      env_file: [.env]
+      environment:
+        NODE_ENV: production
+      healthcheck:
+        test: ["CMD","wget","-qO-","http://localhost:3100/api/health"]
+        interval: 30s
+        timeout: 3s
+        retries: 3
+  ----------------------------------------------------------------
+
+  Scripts corregidos [P]
+    "dev"      : "tsx watch server.ts"
+    "build"    : "vite build && esbuild server.ts --bundle --platform=node
+                  --format=esm --outfile=dist/server.js"
+    "start"    : "node dist/server.js"
+    "clean"    : "rimraf dist coverage"
+    "typecheck": "tsc --noEmit"
+    "lint"     : "eslint . && prettier --check ."
+    "format"   : "prettier --write ."
+    "test"     : "vitest run"
+    "test:watch": "vitest"
+    "doctor"   : "node scripts/doctor.mjs"
+  `doctor` verifica: Node >= 20, .env con GEMINI_API_KEY (o aviso de modo
+  heuristico), puerto libre, dist presente y fuentes locales.
+
+  Makefile / npm run setup
+    setup: copia .env.example a .env si falta, instala, compila y arranca.
+
+8.3 README EFECTIVO (reemplaza el actual)
+  Estructura obligatoria (max 1 pantalla, luego enlaces):
+  1. Que es y para quien (2 lineas + captura).
+  2. Demo en 1 comando: `docker compose up` y URL.
+  3. Requisitos: Docker o Node 20+.
+  4. Variables de entorno: tabla con nombre, obligatorio, default y efecto.
+  5. Scripts: tabla comando -> que hace.
+  6. Arquitectura en 5 lineas + enlace a F3/F4.
+  7. API: enlace a /docs (Swagger).
+  8. Troubleshooting: 5 errores comunes y su solucion.
+  9. Contribuir: enlace a CONTRIBUTING.
+  10. Licencia.
+  Regla: cero referencias a AI Studio, rutas inexistentes o texto en ingles.
+  Estado: el README actual (684 B) se reemplaza completo.
+
+8.4 CONTRIBUCION
+  CONTRIBUTING.md: entorno, ramas, commits, PR, pruebas y estilo.
+  Ramas: main protegida; feat/<tema>, fix/<tema>, docs/<tema>.
+  Commits: Conventional Commits (feat, fix, docs, refactor, test, chore).
+  PR: plantilla con que/cambio, como probar, capturas, checklist y riesgo.
+  CODEOWNERS: /src/views @frontend, /server.ts @backend, /docs @docs.
+  Revision: 1 aprobacion + CI verde + sin conflictos. Squash merge.
+  Versionado: SemVer + release-please con changelog automatico.
+
+8.5 DOCUMENTACION DE API + SDK
+  Fuente de verdad: openapi/codeexplain.yaml (OpenAPI 3.1).
+  Publicacion: Swagger UI en /docs (solo en dev/staging).
+  Generacion: openapi-typescript -> src/api/schema.d.ts; cliente openapi-fetch.
+  SDK: paquete @codeexplain/sdk con tipos generados y autocompletado.
+  Contrato actual [HECHO]: 3 endpoints POST (/api/gemini/chat, /explain,
+  /document) y SPA fallback. Pendientes: /api/analyze y /api/analyze-url.
+  Regla DX-1: un endpoint no se considera terminado sin entrada en el YAML.
+  Regla DX-2: el cliente se regenera en CI y falla si el YAML cambio sin
+  regenerar los tipos.
+
+  Ejemplo de uso con autocompletado:
+    import { createClient } from "@codeexplain/sdk";
+    const api = createClient({ baseUrl: "http://localhost:3100" });
+    const res = await api.POST("/api/gemini/chat", {
+      body: { message: "que hace payments", level: "basico",
+              context: { view: "vision-general" } }
+    });
+    // res.data.reply  <- tipado, con autocompletado en el editor
+
+  Extracto del YAML: ver anexo D.
+
+8.6 CI/CD
+  Pipeline de PR (.github/workflows/ci.yml) [P]:
+    jobs:
+      quality: checkout -> setup-node 22 (cache npm) -> npm ci ->
+               npm run typecheck -> npm run lint -> npm test -- --run ->
+               npm run build -> subir artefacto
+      e2e (opcional): levantar contenedor y correr Playwright en 3 flujos
+      preview: construir imagen y publicar preview por PR
+  Optimizaciones: cache de npm, cache de Vite, jobs en paralelo, matriz
+  Node 20/22 solo en main, timeout 10 min.
+  Preview environments: como C-TEC-01 exige un solo equipo y C-BIZ-01 coste
+  cero, el preview corre en el mismo servidor Windows con un puerto por PR
+  (3200 + numero de PR % 500) y un tunel; se destruye al cerrar el PR.
+  Alternativa cloud si se aprueba: Render/Fly con free tier.
+  Proteccion de main: CI obligatoria, 1 review, rama actualizada, sin
+  force-push. Releases: tag + changelog + imagen en ghcr.io.
+  Objetivo: feedback < 10 min (p95), pipeline < 5 min.
+
+8.7 REDUCCION DE CARGA COGNITIVA
+  - ESLint flat config con typescript-eslint, react-hooks y jsx-a11y.
+  - Prettier unico (printWidth 100, singleQuote, trailingComma all).
+  - husky + lint-staged: formato y lint solo en archivos cambiados.
+  - EditorConfig y .nvmrc (22) para paridad de entorno.
+  - Dependabot semanal agrupado (prod/dev), auto-merge de parches con CI.
+  - Logs con pino: nivel, requestId, ruta, duracion, resultado; en dev
+    pino-pretty; nunca loguear la API key ni el contenido del codigo.
+  - Errores: ErrorBoundary por vista + toast con accion "reintentar".
+  - Convenciones: nombres de archivo y de componente iguales; un componente
+    por archivo; imports absolutos con alias @/.
+  - Documentacion viva: ADR en /docs/adr, decisiones en el PR.
+  - Onboarding: `npm run doctor` + tour de 10 min en el README.
+
+8.8 METRICAS DX
++---------------------------+----------------------------------+-------------------+
+| Metrica                   | Como se mide                     | Objetivo          |
++---------------------------+----------------------------------+-------------------+
+| Tiempo de setup           | cronometrado en onboarding       | <= 5 min          |
+| Feedback de CI            | duracion del workflow            | <= 5 min p95      |
+| Cobertura                 | vitest --coverage                | >= 60%            |
+| Errores de tipo en main   | tsc en CI                        | 0                 |
+| Dependencias vulnerables  | npm audit                        | 0 high/critical   |
+| Lead time                 | commit -> deploy                 | <= 1 dia          |
+| Frecuencia de despliegue  | deploys / semana                 | >= 2              |
+| MTTR                      | tiempo de recuperacion           | <= 1 h            |
++---------------------------+----------------------------------+-------------------+
+
+8.9 CHECKLIST DE ACEPTACION DX
+  [ ] docker compose up levanta la app sin pasos manuales.
+  [ ] README reemplazado y probado por alguien externo al equipo.
+  [ ] CI verde en < 5 min con typecheck, lint, test y build.
+  [ ] OpenAPI publicado y SDK generado con tipos.
+  [ ] Preview por PR funcionando y destruido al cerrar.
+  [ ] Dependabot y lint-staged activos.
+  [ ] Logs estructurados con requestId.
+  [ ] CONTRIBUTING + plantilla de PR + CODEOWNERS.
+
+
+==============================================================================
+ 9. PLAN DE IMPLEMENTACION
+==============================================================================
+
+9.1 SPRINTS
++------+-----------------------------------------------+----------+-------------+
+| #    | Entregable                                    | Duracion | Depende de  |
++------+-----------------------------------------------+----------+-------------+
+| S1   | Design System en codigo + Figma + H-01..H-05  | 5 dias   | F5          |
+| S2   | Ingesta real + estados + H-06..H-11           | 5 dias   | S1, API     |
+| S3   | Test con 5 usuarios + iteracion + H-12        | 5 dias   | S2          |
+| S4   | DX: Docker, CI, OpenAPI, SDK, README          | 5 dias   | S1          |
+| S5   | Preview por PR + Dependabot + logs            | 3 dias   | S4          |
++------+-----------------------------------------------+----------+-------------+
+
+9.2 PRIORIZACION MoSCoW
+  Must  : accesibilidad base (A1-A5), tokens corregidos, setup Docker,
+          README, CI con typecheck/lint/build, OpenAPI de endpoints actuales.
+  Should: test con 5 usuarios, preview por PR, SDK generado, Dependabot,
+          persistencia local, busqueda global.
+  Could : Figma completo de 18 frames, tema claro, e2e Playwright.
+  Won't : CMS, app movil nativa, multiusuario en v1.
+
+9.3 ESFUERZO ESTIMADO
+  UX/DS: 10 dias. Pruebas: 5 dias. DX: 8 dias. Total ~23 dias-persona,
+  repartidos en 5 sprints de una semana con 1-2 personas.
+
+
+==============================================================================
+ 10. TRAZABILIDAD CON FASES 1-5
+==============================================================================
+
++----------------+--------------------------------------+---------------------------+
+| Fase           | Elemento                             | Como lo cubre F6          |
++----------------+--------------------------------------+---------------------------+
+| F1             | 10 pain points                       | Journey 2.4 + H-01..H-12  |
+| F1             | Encuesta y focus group               | Personas 2.2 y empatia 2.3|
+| F2             | 15 modulos, 12 vistas                | Sitemap 3.1 y wireframes  |
+| F2             | Modulo M1 navegacion                 | Shell W-1 y DS C-20       |
+| F3             | 85 requerimientos                    | Tareas T1-T5 y criterios  |
+| F3             | RNF usabilidad y rendimiento         | Metricas 1.4 y 7.3        |
+| F4             | ASR de accesibilidad y privacidad    | 6.8 y 8.5                 |
+| F4             | C-TEC-01 y C-BIZ-01                  | Preview local y Docker    |
+| F5             | Taxonomia y KUs                      | Citas en chat y documentos|
+| F5             | Grafo de conocimiento                | Vista C4 accesible 6.7    |
++----------------+--------------------------------------+---------------------------+
+
+
+==============================================================================
+ 11. RIESGOS
+==============================================================================
+
++-----+------------------------------------------+--------+---------------------------+
+| #   | Riesgo                                   | Prob.  | Mitigacion                |
++-----+------------------------------------------+--------+---------------------------+
+| R1  | El rediseno rompe las animaciones        | Media  | Inventario 6.5 + regresion|
+|     | existentes                               |        | visual en CI              |
+| R2  | Accesibilidad se deja para el final      | Alta   | A1-A8 en el Definition of |
+|     |                                          |        | Done de cada PR           |
+| R3  | El test con 5 usuarios no se ejecuta     | Media  | Reservar agenda en S3 y   |
+|     |                                          |        | usar la plantilla 7.4     |
+| R4  | Docker no corre en el equipo Windows     | Media  | WSL2 documentado + ruta   |
+|     |                                          |        | ASCII (ya usada)          |
+| R5  | OpenAPI se desactualiza                  | Alta   | Regla DX-2 y check en CI  |
+| R6  | Preview por PR expone datos              | Media  | Solo datos demo + auth    |
+|     |                                          |        | basica + red local        |
+| R7  | Figma y codigo divergen                  | Media  | Tokens en JSON compartidos|
++-----+------------------------------------------+--------+---------------------------+
+
+
+==============================================================================
+ 12. VALIDACION
+==============================================================================
+
+12.1 CHECKLIST
+  [ ] Las 3 personas se validaron con al menos 5 usuarios reales.
+  [ ] El journey cubre las 12 vistas y los 3 flujos.
+  [ ] Los 18 frames del prototipo existen y usan el DS.
+  [ ] Contraste AA verificado en todos los pares.
+  [ ] Navegacion completa por teclado.
+  [ ] Test con 5 usuarios ejecutado y resultados en 7.7.
+  [ ] Setup en un comando probado en una maquina limpia.
+  [ ] CI < 5 min y OpenAPI publicado.
+  [ ] Preview por PR funcionando.
+
+12.2 DECISIONES PENDIENTES
++------+--------------------------------------------------+-----------+-----------+
+| ID   | Decision                                         | Dueno     | Estado    |
++------+--------------------------------------------------+-----------+-----------+
+| UD-01| Adoptar el DS y corregir tokens de texto         | Wilder    | Pendiente |
+| UD-02| Persistencia local (localStorage) en v1          | Wilder    | Pendiente |
+| UD-03| Etiquetar datos demo o eliminarlos               | Wilder    | Pendiente |
+| UD-04| Autoalojar fuentes (privacidad/offline)          | Dev       | Pendiente |
+| UD-05| Docker + WSL2 como entorno oficial               | Dev       | Pendiente |
+| UD-06| Preview por PR local vs cloud                    | Wilder    | Pendiente |
+| UD-07| Alcance del Figma: 18 frames o solo 6 clave      | Wilder    | Pendiente |
+| UD-08| Ejecutar test con 5 usuarios antes de S2          | Wilder    | Pendiente |
++------+--------------------------------------------------+-----------+-----------+
+
+12.3 CRITERIOS DE SALIDA
+  [ ] UD-01..UD-08 cerradas.
+  [ ] Design System implementado y documentado en Storybook [P].
+  [ ] Accesibilidad AA verificada con axe + revision manual.
+  [ ] Guia DX publicada y probada por un dev externo.
+
+
+==============================================================================
+ 13. ANEXOS
+==============================================================================
+
+ANEXO A. CHECKLIST WCAG 2.2 AA (resumen operativo)
+  Perceptible
+    [ ] 1.1.1 alt en imagenes con significado; decorativas con alt=""
+    [ ] 1.3.1 estructura con h1-h3, listas y tablas con scope
+    [ ] 1.4.3 contraste 4.5:1 texto / 3:1 texto grande
+    [ ] 1.4.11 contraste 3:1 en bordes de controles y foco
+    [ ] 1.4.12 espaciado de texto sin perdida al 200%
+  Operable
+    [ ] 2.1.1 todo con teclado
+    [ ] 2.1.2 sin trampas de foco
+    [ ] 2.3.1 sin parpadeos > 3/s
+    [ ] 2.4.1 skip link
+    [ ] 2.4.3 orden de foco logico
+    [ ] 2.4.7 foco visible
+    [ ] 2.5.8 objetivos tactiles >= 24x24
+  Comprensible
+    [ ] 3.1.1 lang="es"
+    [ ] 3.2.1 sin cambios de contexto inesperados
+    [ ] 3.3.1 errores identificados y descritos
+    [ ] 3.3.2 etiquetas y ayudas
+  Robusto
+    [ ] 4.1.2 nombre, rol y valor en todos los controles
+    [ ] 4.1.3 mensajes de estado anunciados
+
+ANEXO B. GUION DE TEST (5 usuarios, 45 min)
+  0-5   Bienvenida, consentimiento, "no hay respuestas incorrectas".
+  5-10  Preguntas de contexto (rol, experiencia, herramientas).
+  10-35 Tareas T1-T5 en orden, think-aloud, sin ayuda.
+  35-40 SUS + SEQ por tarea.
+  40-45 Cierre: que fue lo mejor, lo peor y una mejora.
+  Regla: el moderador no responde "donde esta X"; solo "que esperarias
+  encontrar y donde lo buscarias".
+
+ANEXO C. TOKENS EN JSON (extracto)
+  {
+    "color": {
+      "bg":   { "primary": "#060807", "secondary": "#0b0f0d", "card": "#0f1612" },
+      "text": { "primary": "#e2e8f0", "secondary": "#94a3b8", "muted": "#7c8ba1" },
+      "accent": { "neon": "#00ff87", "mint": "#4edea3" },
+      "signal": { "danger": "#ef4444", "warning": "#f59e0b", "info": "#38bdf8" }
+    },
+    "space": { "1": 4, "2": 8, "3": 12, "4": 16, "6": 24, "8": 32 },
+    "radius": { "sm": 8, "md": 12, "lg": 16, "pill": 999 },
+    "font": { "sans": "Geist", "mono": "JetBrains Mono" },
+    "motion": { "fast": 120, "base": 180, "slow": 300 }
+  }
+
+ANEXO D. OPENAPI 3.1 (extracto)
+  openapi: 3.1.0
+  info:
+    title: CodeExplain API
+    version: 1.0.0
+  servers:
+    - url: http://localhost:3100
+  paths:
+    /api/gemini/chat:
+      post:
+        summary: Responde una pregunta sobre el proyecto
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message: { type: string }
+                  level: { type: string, enum: [basico, intermedio, avanzado] }
+                  context: { type: object }
+        responses:
+          "200":
+            description: Respuesta generada
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    reply: { type: string }
+                    model: { type: string }
+    /api/gemini/explain:
+      post:
+        summary: Explica un fragmento de codigo
+        responses: { "200": { description: OK } }
+    /api/gemini/document:
+      post:
+        summary: Genera un documento a partir del analisis
+        responses: { "200": { description: OK } }
+    /api/analyze:
+      post:
+        summary: Analiza un digest de proyecto (pendiente)
+        responses: { "202": { description: Aceptado } }
+    /api/analyze-url:
+      post:
+        summary: Analiza un repositorio por URL (pendiente)
+        responses: { "202": { description: Aceptado } }
+
+ANEXO E. ARCHIVOS A CREAR
+  Dockerfile
+  docker-compose.yml
+  .dockerignore
+  .nvmrc
+  .editorconfig
+  eslint.config.js
+  .prettierrc
+  .github/workflows/ci.yml
+  .github/dependabot.yml
+  .github/pull_request_template.md
+  CONTRIBUTING.md
+  CODEOWNERS
+  openapi/codeexplain.yaml
+  src/api/schema.d.ts        (generado)
+  src/api/client.ts
+  scripts/doctor.mjs
+  docs/adr/                  (ADRs de F4)
+  src/components/ui/         (C-01..C-20)
+
+ANEXO F. SIGUIENTE PASO
+  1. Cerrar UD-01..UD-08.
+  2. Implementar el Design System en src/components/ui con los tokens 6.2.
+  3. Corregir H-01..H-05 y medir de nuevo contraste y teclado.
+  4. Montar Docker + CI + OpenAPI (S4) y probar el setup en maquina limpia.
+  5. Ejecutar el test con 5 usuarios y completar 7.7.
+
+==============================================================================
+ FIN DEL DOCUMENTO - UX Research & Design Specification + Guia DX (Fase 6)
+==============================================================================

@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>
+@layer base{html,body{margin:0;padding:0;background-color:#060807;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}
+::-webkit-scrollbar{display:none;}
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.05); }
+}
+@keyframes radar-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.18); opacity: 1; filter: drop-shadow(0 0 6px #00FF87); }
+}
+.animate-radar-dot { animation: radar-pulse 3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface-container-lowest": "#060807",
+        "surface-container-low": "#0b0f0d",
+        "surface-container": "#0f1612",
+        "surface-container-high": "#151f1a",
+        "surface-container-highest": "#1c2b23",
+        "surface": "#060807",
+        "surface-bright": "#22352b",
+        "background": "#060807",
+        "primary": "#00FF87",
+        "primary-container": "#00a572",
+        "primary-fixed": "#60ff98",
+        "primary-fixed-dim": "#00e478",
+        "secondary": "#4edea3",
+        "secondary-container": "#0d3524",
+        "tertiary": "#6ffbbe",
+        "on-surface": "#e2e8e4",
+        "on-surface-variant": "#8ca394",
+        "outline": "#4b6353",
+        "outline-variant": "#22352a",
+        "error": "#ef4444",
+        "error-container": "#451214",
+        "on-error": "#ffffff"
+      },
+      borderRadius: {
+        "DEFAULT": "0.25rem",
+        "lg": "0.5rem",
+        "xl": "0.75rem",
+        "2xl": "1rem",
+        "full": "9999px"
+      },
+      spacing: {
+        "gutter-md": "1.25rem",
+        "margin-lg": "1.5rem",
+        "space-xs": "0.25rem",
+        "space-sm": "0.5rem",
+        "space-md": "0.75rem",
+        "space-lg": "1.25rem",
+        "space-xl": "1.75rem"
+      },
+      fontFamily: {
+        "stat-display": ["JetBrains Mono"],
+        "label-sm": ["JetBrains Mono"],
+        "body-sm": ["Geist"],
+        "body-lg": ["Geist"],
+        "code-body": ["JetBrains Mono"],
+        "headline-lg": ["Geist"],
+        "body-md": ["Geist"],
+        "headline-sm": ["Geist"],
+        "headline-md": ["Geist"],
+        "label-md": ["JetBrains Mono"],
+        "headline-xl": ["Geist"]
+      },
+      fontSize: {
+        "stat-display": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+        "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "500" }],
+        "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+        "body-lg": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+        "code-body": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+        "body-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+        "headline-sm": ["15px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+        "headline-md": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.015em", "fontWeight": "500" }],
+        "label-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "500" }],
+        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.025em", "fontWeight": "600" }]
+      }
+    }
+  }
+};</script></head><body class="bg-[#060807] font-body-md text-[#e2e8e4] antialiased selection:bg-[#00FF87]/20 selection:text-[#00FF87]"><aside class="fixed left-0 top-0 h-full w-72 bg-[#080d0a] z-50 flex flex-col border-r border-[#00FF87]/10 shadow-[4px_0_24px_rgba(0,0,0,0.8)]"><div class="h-16 px-margin-lg flex items-center justify-between border-b border-[#00FF87]/10 bg-[#060a08]"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-lg bg-[#00FF87]/10 border border-[#00FF87]/30 flex items-center justify-center text-[#00FF87] shadow-[0_0_12px_rgba(0,255,135,0.25)]"><span class="material-symbols-outlined text-[20px]">terminal</span></div><div class="flex flex-col"><div class="flex items-center gap-1.5"><span class="font-headline-sm text-headline-sm font-bold tracking-tight text-white">CODE<span class="text-[#00FF87]">EXPLAIN</span></span></div><span class="font-label-sm text-[9px] text-[#00FF87] tracking-widest uppercase flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-[#00FF87] animate-ping"></span> AI Core v2.4</span></div></div><button class="p-1 rounded-md text-[#8ca394] hover:text-[#00FF87] hover:bg-[#151f1a] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button></div><div class="flex-1 overflow-y-auto px-space-md py-space-sm"><nav class="flex flex-col gap-space-xs"><div class="px-space-sm pt-space-md pb-space-xs font-label-sm text-label-sm text-[#4b6353] uppercase tracking-wider font-semibold">EXPLORAR</div><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-[#8ca394] hover:bg-[#151f1a] hover:text-[#00FF87] transition-all" data-path="proyectos" href="#"><span class="material-symbols-outlined text-[18px]">folder_special</span><span class="font-body-md text-body-md">Proyectos</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-[#8ca394] hover:bg-[#151f1a] hover:text-[#00FF87] transition-all" data-path="repositorios-analizados" href="#"><span class="material-symbols-outlined text-[18px]">deployed_code</span><span class="font-body-md text-body-md">Repositorios Analizados</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-[#8ca394] hover:bg-[#151f1a] hover:text-[#00FF87] transition-all" data-path="historial-consultas" href="#"><span class="material-symbols-outlined text-[18px]">history</span><span class="font-body-md text-body-md">Historial de Consultas</span></a><div class="px-space-sm pt-space-lg pb-space-xs font-label-sm text-label-sm text-[#4b6353] uppercase tracking-wider font-semibold">ANÁLISIS DE SISTEMAS</div><a class="flex items-center justify-between px-space-md py-space-xs rounded-lg bg-[#00FF87]/10 text-[#00FF87] border border-[#00FF87]/30 shadow-[0_0_15px_rgba(0,255,135,0.12)] font-medium" data-path="vision-general" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px] text-[#00FF87]">dashboard</span><span class="font-body-md text-body-md font-medium">Visión General</span></div><span class="w-1.5 h-1.5 rounded-full bg-[#00FF87] shadow-[0_0_6px_#00FF87]"></span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-[#8ca394] hover:bg-[#151f1a] hover:text-[#00FF87] transition-all" data-path="arquitectura-modulos" href="#"><span class="material-symbols-outlined text-[18px]">schema</span><span class="font-body-md text-body-md">Arquitectura &amp; Módulos</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-[#8ca394] hover:bg-[#151f1a] hover:text-[#00FF87] transition-all" data-path="diagramas-c4-uml" href="#"><span class="material-symbols-outlined text-[18px]">account_tree</span><span class="font-body-md text-body-md">Diagramas C4 &amp; UML</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-[#8ca394] hover:bg-[#151f1a] hover:text-[#00FF87] transition-all" data-path="modelo-datos-bd" href="#"><span class="material-symbols-outlined text-[18px]">database</span><span class="font-body-md text-body-md">Modelo de Datos / BD</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-[#8ca394] hover:bg-[#151f1a] hover:text-[#00FF87] transition-all" data-path="casos-de-uso-requerimientos" href="#"><span class="material-symbols-outlined text-[18px]">checklist</span><span class="font-body-md text-body-md">Casos de Uso &amp; Requerimientos</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-[#8ca394] hover:bg-[#151f1a] hover:text-[#00FF87] transition-all" data-path="riesgos-validacion" href="#"><span class="material-symbols-outlined text-[18px]">shield_with_heart</span><span class="font-body-md text-body-md">Riesgos &amp; Validación</span></a><div class="px-space-sm pt-space-lg pb-space-xs font-label-sm text-label-sm text-[#4b6353] uppercase tracking-wider font-semibold">HERRAMIENTAS IA</div><a class="flex items-center justify-between px-space-md py-space-xs rounded-lg text-[#8ca394] hover:bg-[#151f1a] hover:text-[#00FF87] transition-all" data-path="chat-asistente-ia" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">smart_toy</span><span class="font-body-md text-body-md">Chat con Asistente IA</span></div><span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-[#00FF87]/20 text-[#00FF87] font-semibold">Gemini</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-[#8ca394] hover:bg-[#151f1a] hover:text-[#00FF87] transition-all" data-path="generador-documentacion" href="#"><span class="material-symbols-outlined text-[18px]">auto_stories</span><span class="font-body-md text-body-md">Generador de Documentación</span></a><a class="flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-[#8ca394] hover:bg-[#151f1a] hover:text-[#00FF87] transition-all" data-path="auditor-deuda-tecnica" href="#"><span class="material-symbols-outlined text-[18px]">troubleshoot</span><span class="font-body-md text-body-md">Auditor de Deuda Técnica</span></a></nav></div><div class="p-space-md bg-[#080d0a] border-t border-[#00FF87]/10"><div class="p-space-sm rounded-xl bg-[#0f1612] border border-[#00FF87]/15 flex flex-col gap-space-xs shadow-inner"><div class="flex items-center justify-between font-label-sm text-label-sm"><span class="text-[#8ca394]">Cuota de Tokens</span><span class="text-[#00FF87] font-mono font-semibold">68%</span></div><div class="w-full h-1.5 rounded-full bg-[#151f1a] overflow-hidden"><div class="h-full bg-gradient-to-r from-[#00a572] to-[#00FF87] rounded-full shadow-[0_0_8px_rgba(0,255,135,0.4)]" style="width: 68%"></div></div><span class="font-label-sm text-[10px] text-[#4b6353]">682,410 / 1,000,000 tokens</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-[#060807]/90 backdrop-blur-xl z-40 flex items-center justify-between px-margin-lg border-b border-[#00FF87]/10 shadow-[0_4px_20px_rgba(0,0,0,0.6)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm bg-[#0d1410] border border-[#00FF87]/20 px-space-md py-1.5 rounded-xl shadow-inner"><span class="material-symbols-outlined text-[16px] text-[#00FF87]">device_hub</span><span class="font-code-body text-code-body text-white font-medium">ecommerce-microservices-v2</span><span class="font-label-sm text-label-sm text-[#4b6353]">[Python / React]</span><span class="material-symbols-outlined text-[16px] text-[#8ca394] cursor-pointer hover:text-[#00FF87]">arrow_drop_down</span></div><div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#00FF87]/10 border border-[#00FF87]/25"><span class="w-2 h-2 rounded-full bg-[#00FF87] animate-ping"></span><span class="font-label-sm text-label-sm text-[#00FF87] font-semibold">Sistema En Línea • Motor Activo</span></div></div><div class="flex items-center gap-space-md"><button class="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#00FF87] to-[#00d070] text-[#060807] font-headline-sm text-headline-sm font-bold rounded-xl shadow-[0_0_18px_rgba(0,255,135,0.35)] hover:shadow-[0_0_26px_rgba(0,255,135,0.55)] transition-all active:scale-95" type="button"><span class="material-symbols-outlined text-[18px]">cloud_upload</span><span>Subir Repo Git</span></button><div class="flex items-center gap-space-xs bg-[#0d1410] border border-[#00FF87]/15 px-space-md py-1.5 rounded-xl"><span class="material-symbols-outlined text-[16px] text-[#00FF87]">bolt</span><span class="font-label-sm text-label-sm text-[#8ca394] font-mono">42.8k ctx</span></div><div class="w-9 h-9 rounded-full bg-[#00FF87]/20 border border-[#00FF87]/40 flex items-center justify-center text-[#00FF87] shadow-[0_0_12px_rgba(0,255,135,0.2)]"><span class="material-symbols-outlined text-[20px]">person</span></div></div></header><main class="relative pt-16 bg-[#060807] min-h-screen w-full px-gutter-md"><div class="flex flex-col w-full gap-space-lg pb-space-xl">
+<!-- Active Sidebar Nav State Sync (Script updates parent layout state without DOM destruction) -->
+<script>
+    (function syncSidebar() {
+      const links = document.querySelectorAll('aside nav a');
+      links.forEach(link => {
+        if (link.getAttribute('data-path') === 'modelo-datos-bd') {
+          link.className = 'flex items-center justify-between px-space-md py-space-xs rounded-lg bg-[#00FF87]/10 text-[#00FF87] border border-[#00FF87]/30 shadow-[0_0_15px_rgba(0,255,135,0.12)] font-medium';
+          if (!link.querySelector('.bg-\\[\\#00FF87\\]')) {
+            const dot = document.createElement('span');
+            dot.className = 'w-1.5 h-1.5 rounded-full bg-[#00FF87] shadow-[0_0_6px_#00FF87]';
+            link.appendChild(dot);
+          }
+        } else if (link.getAttribute('data-path') === 'vision-general') {
+          link.className = 'flex items-center gap-space-md px-space-md py-space-xs rounded-lg text-[#8ca394] hover:bg-[#151f1a] hover:text-[#00FF87] transition-all';
+          const dot = link.querySelector('.w-1\\.5.h-1\\.5');
+          if (dot) dot.remove();
+        }
+      });
+    })();
+  </script>
+<!-- Top Hero & Telemetry Bar -->
+<div class="flex flex-col gap-space-md bg-surface-container-lowest p-space-lg rounded-xl shadow-xl">
+<div class="flex flex-wrap items-center justify-between gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-sm">
+<div class="w-2.5 h-2.5 rounded-full bg-primary-container shadow-[0_0_8px_#00FF87]"></div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Motor Relacional PostgreSQL 16.2</span>
+<span class="font-label-sm text-label-sm text-outline px-2 py-0.5 rounded-full bg-surface-container-high">Schema: public</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-primary tracking-tight font-bold">
+          Modelo de Datos &amp; Diccionario Relacional
+        </h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
+          Topología inferida por AST estático y reverse engineering de migraciones SQL. Inspección semántica de integridad referencial, normalización e indexación computada.
+        </p>
+</div>
+<!-- Action buttons -->
+<div class="flex items-center gap-space-sm">
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-surface-container-high text-on-surface hover:text-primary hover:bg-surface-bright transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">download_for_offline</span>
+<span class="font-label-md text-label-md">Exportar DDL (SQL)</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-primary-container text-on-secondary font-label-md text-label-md font-bold hover:shadow-[0_0_20px_rgba(0,255,135,0.4)] transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">auto_fix_high</span>
+<span>Analizar Migración AI</span>
+</button>
+</div>
+</div>
+<!-- Telemetry Metric Pills Matrix -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-space-md pt-space-xs">
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container shadow-md">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase">Tablas Detectadas</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">table_chart</span>
+</div>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="font-data-metric text-data-metric text-primary">34</span>
+<span class="font-label-sm text-label-sm text-secondary font-mono">+2 vs v2.3</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">9 esquemas de particionado</span>
+</div>
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container shadow-md">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase">Foreign Keys (FK)</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">hub</span>
+</div>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="font-data-metric text-data-metric text-primary">82</span>
+<span class="font-label-sm text-label-sm text-secondary font-mono">100% integradas</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">0 relaciones huérfanas</span>
+</div>
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container shadow-md">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase">Índices Críticos</span>
+<span class="material-symbols-outlined text-[16px] text-primary-fixed-dim">speed</span>
+</div>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="font-data-metric text-data-metric text-primary">14</span>
+<span class="font-label-sm text-label-sm text-secondary font-mono">B-Tree + GIN</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">1 cuello de botella resuelto</span>
+</div>
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container shadow-md">
+<div class="flex items-center justify-between text-outline">
+<span class="font-label-sm text-label-sm uppercase">Normalización</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">verified</span>
+</div>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="font-data-metric text-data-metric text-primary">3NF</span>
+<span class="font-label-sm text-label-sm text-secondary font-mono">0 anomalías</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">Boyce-Codd compliant</span>
+</div>
+</div>
+<!-- Domain Pill Rail Switches -->
+<div class="flex items-center justify-between pt-space-xs">
+<div class="inline-flex p-1 rounded-xl bg-surface-container-high shadow-inner gap-1 overflow-x-auto">
+<button class="px-space-md py-1 rounded-lg bg-primary-container text-on-secondary font-label-md text-label-md font-semibold shadow-sm transition-all">
+          Todos los Dominios (34)
+        </button>
+<button class="px-space-md py-1 rounded-lg text-outline hover:text-primary font-label-md text-label-md transition-all">
+          Pagos &amp; Facturación (8)
+        </button>
+<button class="px-space-md py-1 rounded-lg text-outline hover:text-primary font-label-md text-label-md transition-all">
+          Usuarios &amp; Roles (6)
+        </button>
+<button class="px-space-md py-1 rounded-lg text-outline hover:text-primary font-label-md text-label-md transition-all">
+          Catálogo &amp; Stock (12)
+        </button>
+<button class="px-space-md py-1 rounded-lg text-outline hover:text-primary font-label-md text-label-md transition-all">
+          Auditoría &amp; Logs (8)
+        </button>
+</div>
+<div class="flex items-center gap-space-xs text-outline font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">touch_app</span>
+<span>Arrastra entidades o haz clic para inspeccionar campos</span>
+</div>
+</div>
+</div>
+<!-- ERD Interactive Canvas Area -->
+<div class="relative w-full rounded-2xl bg-surface-container-lowest p-space-lg shadow-xl overflow-hidden min-h-[580px] flex flex-col justify-between">
+<!-- Grid visual backdrop -->
+<div class="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(#00FF87_1px,transparent_1px)] [background-size:24px_24px]"></div>
+<!-- Canvas Controls Overlay -->
+<div class="relative z-10 flex items-center justify-between pb-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-md text-label-md text-primary font-bold tracking-widest uppercase flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+          GRAFO RELACIONAL EN VIVO • CLUSTER PRIMARIO
+        </span>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container-high text-secondary">
+          Modo: Auto-Layout Cardinal
+        </span>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container-high p-1 rounded-xl shadow-md">
+<button class="w-7 h-7 flex items-center justify-center rounded text-on-surface-variant hover:text-primary hover:bg-surface-bright transition-all" title="Zoom in">
+<span class="material-symbols-outlined text-[18px]">zoom_in</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded text-on-surface-variant hover:text-primary hover:bg-surface-bright transition-all" title="Zoom out">
+<span class="material-symbols-outlined text-[18px]">zoom_out</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded text-on-surface-variant hover:text-primary hover:bg-surface-bright transition-all" title="Reset View">
+<span class="material-symbols-outlined text-[18px]">filter_center_focus</span>
+</button>
+<span class="w-px h-4 bg-outline-variant"></span>
+<button class="px-2 py-0.5 rounded text-secondary font-label-sm text-label-sm hover:bg-surface-bright">100%</button>
+</div>
+</div>
+<!-- Entity Relationship Diagram Simulation Container -->
+<div class="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-lg items-start my-auto">
+<!-- Table 1: USERS -->
+<div class="flex flex-col rounded-xl bg-surface-container shadow-xl overflow-hidden group hover:shadow-[0_0_24px_rgba(0,255,135,0.18)] transition-all">
+<!-- Table Header -->
+<div class="flex items-center justify-between px-space-md py-space-sm bg-surface-container-high">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary-container">badge</span>
+<span class="font-label-md text-label-md text-primary font-bold">users</span>
+</div>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono">1.2M rows</span>
+</div>
+<!-- Fields List -->
+<div class="flex flex-col p-space-sm gap-1 bg-surface-container font-code-body text-body-sm">
+<div class="flex items-center justify-between px-2 py-1 rounded bg-surface-container-low">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-[9px] px-1 rounded bg-primary-container text-on-secondary font-bold">PK</span>
+<span class="text-primary font-semibold">id</span>
+</div>
+<span class="text-outline font-mono">uuid</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-[9px] px-1 rounded bg-surface-container-high text-secondary font-bold">UQ</span>
+<span class="text-on-surface">email</span>
+</div>
+<span class="text-outline font-mono">varchar(255)</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="w-3"></span>
+<span class="text-on-surface">password_hash</span>
+</div>
+<span class="text-outline font-mono">text</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="w-3"></span>
+<span class="text-on-surface">role</span>
+</div>
+<span class="text-secondary font-mono">user_role_enum</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="w-3"></span>
+<span class="text-on-surface">created_at</span>
+</div>
+<span class="text-outline font-mono">timestamptz</span>
+</div>
+</div>
+<!-- Card connector hook badge -->
+<div class="px-space-md py-1 bg-surface-container-low flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>Relaciones activas: 3</span>
+<span class="text-secondary font-mono">1 : N → orders</span>
+</div>
+</div>
+<!-- Table 2: ORDERS (Central Hub) -->
+<div class="flex flex-col rounded-xl bg-surface-container shadow-2xl overflow-hidden group hover:shadow-[0_0_30px_rgba(0,255,135,0.25)] transition-all">
+<div class="flex items-center justify-between px-space-md py-space-sm bg-surface-container-high">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary-container">shopping_cart_checkout</span>
+<span class="font-label-md text-label-md text-primary font-bold">orders</span>
+</div>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-surface-container text-primary-container font-mono">CORE TABLE</span>
+</div>
+<div class="flex flex-col p-space-sm gap-1 bg-surface-container font-code-body text-body-sm">
+<div class="flex items-center justify-between px-2 py-1 rounded bg-surface-container-low">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-[9px] px-1 rounded bg-primary-container text-on-secondary font-bold">PK</span>
+<span class="text-primary font-semibold">id</span>
+</div>
+<span class="text-outline font-mono">uuid</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-[9px] px-1 rounded bg-surface-bright text-secondary font-bold">FK</span>
+<span class="text-secondary font-semibold">user_id</span>
+</div>
+<span class="text-outline font-mono">→ users.id</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-[9px] px-1 rounded bg-surface-container-high text-secondary font-bold">IDX</span>
+<span class="text-on-surface">status</span>
+</div>
+<span class="text-secondary font-mono">order_status</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="w-3"></span>
+<span class="text-on-surface">amount_cents</span>
+</div>
+<span class="text-outline font-mono">numeric(12,2)</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-[9px] px-1 rounded bg-surface-container-high text-secondary font-bold">UQ</span>
+<span class="text-on-surface">idempotency_key</span>
+</div>
+<span class="text-outline font-mono">varchar(64)</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="w-3"></span>
+<span class="text-on-surface">currency</span>
+</div>
+<span class="text-outline font-mono">varchar(3)</span>
+</div>
+</div>
+<div class="px-space-md py-1 bg-surface-container-low flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>Partición: Range (fecha)</span>
+<span class="text-primary-container font-mono">1 : N | 1 : 1</span>
+</div>
+</div>
+<!-- Table 3: ORDER_ITEMS -->
+<div class="flex flex-col rounded-xl bg-surface-container shadow-xl overflow-hidden group hover:shadow-[0_0_24px_rgba(0,255,135,0.18)] transition-all">
+<div class="flex items-center justify-between px-space-md py-space-sm bg-surface-container-high">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary-container">list_alt</span>
+<span class="font-label-md text-label-md text-primary font-bold">order_items</span>
+</div>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono">N:M Item</span>
+</div>
+<div class="flex flex-col p-space-sm gap-1 bg-surface-container font-code-body text-body-sm">
+<div class="flex items-center justify-between px-2 py-1 rounded bg-surface-container-low">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-[9px] px-1 rounded bg-primary-container text-on-secondary font-bold">PK</span>
+<span class="text-primary font-semibold">id</span>
+</div>
+<span class="text-outline font-mono">bigserial</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-[9px] px-1 rounded bg-surface-bright text-secondary font-bold">FK</span>
+<span class="text-secondary font-semibold">order_id</span>
+</div>
+<span class="text-outline font-mono">→ orders.id</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-[9px] px-1 rounded bg-surface-bright text-secondary font-bold">FK</span>
+<span class="text-secondary font-semibold">product_id</span>
+</div>
+<span class="text-outline font-mono">→ products.id</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="w-3"></span>
+<span class="text-on-surface">quantity</span>
+</div>
+<span class="text-outline font-mono">integer</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="w-3"></span>
+<span class="text-on-surface">unit_price</span>
+</div>
+<span class="text-outline font-mono">decimal(10,2)</span>
+</div>
+</div>
+<div class="px-space-md py-1 bg-surface-container-low flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>Cascade: DELETE restrict</span>
+<span class="text-secondary font-mono">N : 1</span>
+</div>
+</div>
+<!-- Table 4: PAYMENTS_LEDGER -->
+<div class="flex flex-col rounded-xl bg-surface-container shadow-xl overflow-hidden group hover:shadow-[0_0_24px_rgba(0,255,135,0.18)] transition-all">
+<div class="flex items-center justify-between px-space-md py-space-sm bg-surface-container-high">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary-container">account_balance_wallet</span>
+<span class="font-label-md text-label-md text-primary font-bold">payments_ledger</span>
+</div>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono">Append-only</span>
+</div>
+<div class="flex flex-col p-space-sm gap-1 bg-surface-container font-code-body text-body-sm">
+<div class="flex items-center justify-between px-2 py-1 rounded bg-surface-container-low">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-[9px] px-1 rounded bg-primary-container text-on-secondary font-bold">PK</span>
+<span class="text-primary font-semibold">id</span>
+</div>
+<span class="text-outline font-mono">uuid</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-[9px] px-1 rounded bg-surface-bright text-secondary font-bold">FK</span>
+<span class="text-secondary font-semibold">order_id</span>
+</div>
+<span class="text-outline font-mono">→ orders.id</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="w-3"></span>
+<span class="text-on-surface">provider</span>
+</div>
+<span class="text-outline font-mono">varchar(50)</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="font-label-sm text-[9px] px-1 rounded bg-surface-container-high text-secondary font-bold">GIN</span>
+<span class="text-on-surface">payload</span>
+</div>
+<span class="text-secondary font-mono">jsonb</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-1.5">
+<span class="w-3"></span>
+<span class="text-on-surface">state</span>
+</div>
+<span class="text-secondary font-mono">payment_state</span>
+</div>
+</div>
+<div class="px-space-md py-1 bg-surface-container-low flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>Inmutable: Trigger Check</span>
+<span class="text-secondary font-mono">1 : 1</span>
+</div>
+</div>
+</div>
+<!-- Relationship Cardinality SVG Connectors Display Overlay -->
+<div class="relative z-10 mt-space-md flex flex-wrap items-center justify-between gap-space-md p-space-md rounded-xl bg-surface-container-high/60 backdrop-blur-md">
+<div class="flex items-center gap-space-lg">
+<div class="flex items-center gap-2">
+<span class="w-3 h-0.5 bg-primary-container"></span>
+<span class="font-label-sm text-label-sm text-on-surface">Relación Fuerte (1:N)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-0.5 bg-secondary-container"></span>
+<span class="font-label-sm text-label-sm text-on-surface">Relación Débil (N:M bridge)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-sm text-label-sm text-on-surface">Restricción de Integridad FK ON DELETE CASCADE</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm text-secondary font-mono">4 de 34 Tablas renderizadas en viewport activo</span>
+<button class="px-space-sm py-1 rounded text-primary-container hover:bg-surface-bright font-label-sm text-label-sm font-semibold">
+          Expandir Todo el Grafo →
+        </button>
+</div>
+</div>
+</div>
+<!-- Split Panel: AI Index Recommendations & Code DDL Generator -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-lg">
+<!-- Left Column: AI Index Optimization & Bottlenecks -->
+<div class="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-lowest shadow-xl">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[20px]">troubleshoot</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary">Análisis de Índices &amp; Cuellos de Botella</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Diagnóstico de costo de ejecución estimado (pg_stat_statements)</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-primary-container/10 text-primary-container font-label-sm text-label-sm font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">bolt</span> -73% Latencia
+        </span>
+</div>
+<!-- Critical Alert / Recommendation Card -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container shadow-md gap-space-sm">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-primary-container text-on-secondary uppercase">
+              Alta Prioridad
+            </span>
+<span class="font-label-md text-label-md text-primary font-semibold">
+              Índice Compuesto Faltante en <code class="text-primary-container font-mono">orders</code>
+</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-mono">Seq Scan detectado</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface">
+          Se identificó un cuello de botella recurrente en endpoints de conciliación: la consulta por <code class="text-secondary font-mono">orders(user_id, status)</code> ejecuta barridos secuenciales sobre 1.2M de tuplas.
+        </p>
+<!-- Suggested Migration Code Snippet -->
+<div class="p-space-sm rounded-lg bg-surface-container-lowest font-code-body text-body-sm text-secondary shadow-inner flex items-center justify-between">
+<code>CREATE INDEX CONCURRENTLY idx_orders_user_status ON orders (user_id, status) WHERE status != 'cancelled';</code>
+<button class="text-outline hover:text-primary transition-colors p-1" onclick="navigator.clipboard.writeText(this.previousElementSibling.innerText)" title="Copiar SQL">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+</button>
+</div>
+<div class="grid grid-cols-3 gap-space-xs pt-1 font-label-sm text-label-sm">
+<div class="flex flex-col p-2 rounded bg-surface-container-high">
+<span class="text-outline">Costo Planificado:</span>
+<span class="text-error font-mono font-semibold">4,812.20 → 12.40</span>
+</div>
+<div class="flex flex-col p-2 rounded bg-surface-container-high">
+<span class="text-outline">Impacto CPU:</span>
+<span class="text-primary-container font-mono font-semibold">-81.4% I/O</span>
+</div>
+<div class="flex flex-col p-2 rounded bg-surface-container-high">
+<span class="text-outline">Tamaño Índice:</span>
+<span class="text-on-surface font-mono font-semibold">~14.2 MB</span>
+</div>
+</div>
+</div>
+<!-- Secondary Warning Item -->
+<div class="flex items-center justify-between p-space-md rounded-xl bg-surface-container shadow-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px] text-secondary">data_object</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-primary font-medium">GIN Index verificado en payments_ledger(payload)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Búsqueda rápida en JSONB estructurada con operador `jsonb_path_ops`</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-mono px-2 py-1 rounded bg-surface-container-high">ÓPTIMO</span>
+</div>
+</div>
+<!-- Right Column: DDL / ORM Schema Generator -->
+<div class="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-lowest shadow-xl">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">code_blocks</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary">Generador de Modelos &amp; ORM</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Código tipado sincrónico extraído del esquema actual</p>
+</div>
+</div>
+<!-- ORM Selector Tabs -->
+<div class="inline-flex p-1 rounded-xl bg-surface-container-high gap-1">
+<button class="px-2.5 py-1 rounded-lg bg-primary-container text-on-secondary font-label-sm text-label-sm font-semibold transition-all" id="tab-prisma">
+            Prisma
+          </button>
+<button class="px-2.5 py-1 rounded-lg text-outline hover:text-primary font-label-sm text-label-sm transition-all" id="tab-typeorm">
+            TypeORM
+          </button>
+<button class="px-2.5 py-1 rounded-lg text-outline hover:text-primary font-label-sm text-label-sm transition-all" id="tab-sql">
+            Raw DDL
+          </button>
+</div>
+</div>
+<!-- Code Box -->
+<div class="relative flex-1 p-space-md rounded-xl bg-surface-container font-code-body text-body-sm text-on-surface overflow-x-auto shadow-inner">
+<button class="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded bg-surface-container-high text-secondary hover:text-primary font-label-sm text-label-sm transition-colors shadow">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+<span>Copiar Modelo</span>
+</button>
+<pre class="text-on-surface leading-relaxed font-mono"><code><span class="text-outline">// schema.prisma autogenerado por CodeExplain v2.4</span>
+<span class="text-secondary">model</span> <span class="text-primary font-bold">Order</span> {
+  id              <span class="text-secondary font-mono">String</span>        <span class="text-outline">@id @default(uuid()) @db.Uuid</span>
+  userId          <span class="text-secondary font-mono">String</span>        <span class="text-outline">@map("user_id") @db.Uuid</span>
+  status          <span class="text-primary-container font-mono">OrderStatus</span>
+  amountCents     <span class="text-secondary font-mono">Decimal</span>       <span class="text-outline">@map("amount_cents") @db.Decimal(12, 2)</span>
+  idempotencyKey  <span class="text-secondary font-mono">String</span>        <span class="text-outline">@unique @map("idempotency_key")</span>
+  currency        <span class="text-secondary font-mono">String</span>        <span class="text-outline">@default("USD") @db.VarChar(3)</span>
+  createdAt       <span class="text-secondary font-mono">DateTime</span>      <span class="text-outline">@default(now()) @map("created_at")</span>
+
+  <span class="text-outline">// Relaciones tipadas</span>
+  user            <span class="text-primary font-bold">User</span>          <span class="text-outline">@relation(fields: [userId], references: [id])</span>
+  items           <span class="text-primary font-bold">OrderItem[]</span>
+  payments        <span class="text-primary font-bold">PaymentsLedger?</span>
+
+  <span class="text-outline">@@index([userId, status], name: "idx_orders_user_status")</span>
+  <span class="text-outline">@@map("orders")</span>
+}</code></pre>
+</div>
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm px-1">
+<span>Sincronizado con commit: <span class="text-primary font-mono">7b3f99a (HEAD)</span></span>
+<span class="text-primary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Validación de Tipos Exitosa
+        </span>
+</div>
+</div>
+</div>
+<!-- Bottom Section: Common Business Queries & Natural Language Explanation -->
+<div class="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-lowest shadow-xl">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[20px]">psychology</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary">Consultas Comunes &amp; Explicación Semántica por IA</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Pregunta en lenguaje natural para obtener la consulta SQL validada sobre este modelo relacional</p>
+</div>
+</div>
+<!-- Sample Prompts -->
+<div class="flex items-center gap-space-xs overflow-x-auto">
+<button class="px-space-sm py-1 rounded-full bg-surface-container-high text-primary hover:bg-surface-bright font-label-sm text-label-sm transition-all whitespace-nowrap">
+          ¿Cómo se calcula el total facturado mensual?
+        </button>
+<button class="px-space-sm py-1 rounded-full bg-surface-container text-outline hover:text-primary font-label-sm text-label-sm transition-all whitespace-nowrap">
+          Top 5 clientes con carritos abandonados
+        </button>
+<button class="px-space-sm py-1 rounded-full bg-surface-container text-outline hover:text-primary font-label-sm text-label-sm transition-all whitespace-nowrap">
+          Tasa de fallo por pasarela en payments_ledger
+        </button>
+</div>
+</div>
+<!-- Query Execution & Explanation Bento -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- Left: Generated SQL -->
+<div class="lg:col-span-7 flex flex-col p-space-md rounded-xl bg-surface-container shadow-md">
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-md text-label-md text-primary font-semibold">Query SQL Generada &amp; Optimizada</span>
+</div>
+<button class="flex items-center gap-1 text-secondary hover:text-primary font-label-sm text-label-sm transition-colors" onclick="navigator.clipboard.writeText(document.getElementById('sql-code-block').innerText)">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+<span>Copiar SQL</span>
+</button>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-lowest font-code-body text-body-sm text-on-surface overflow-x-auto">
+<pre class="font-mono leading-relaxed" id="sql-code-block"><span class="text-primary-container font-bold">SELECT</span>
+    DATE_TRUNC(<span class="text-secondary">'month'</span>, o.created_at) <span class="text-primary-container">AS</span> billing_month,
+    o.currency,
+    COUNT(DISTINCT o.id) <span class="text-primary-container">AS</span> total_successful_orders,
+    SUM(o.amount_cents) / 100.0 <span class="text-primary-container">AS</span> gross_revenue,
+    COALESCE(SUM(p.fee_cents) / 100.0, 0) <span class="text-primary-container">AS</span> gateway_fees
+<span class="text-primary-container font-bold">FROM</span>
+    orders o
+<span class="text-primary-container font-bold">INNER JOIN</span>
+    payments_ledger p <span class="text-primary-container font-bold">ON</span> p.order_id = o.id
+<span class="text-primary-container font-bold">WHERE</span>
+    o.status = <span class="text-secondary">'COMPLETED'</span>
+    <span class="text-primary-container font-bold">AND</span> p.state = <span class="text-secondary">'SETTLED'</span>
+    <span class="text-primary-container font-bold">AND</span> o.created_at &gt;= NOW() - INTERVAL <span class="text-secondary">'12 months'</span>
+<span class="text-primary-container font-bold">GROUP BY</span>
+    DATE_TRUNC(<span class="text-secondary">'month'</span>, o.created_at),
+    o.currency
+<span class="text-primary-container font-bold">ORDER BY</span>
+    billing_month <span class="text-primary-container font-bold">DESC</span>;</pre>
+</div>
+</div>
+<!-- Right: Line-by-Line Semantic Breakdown -->
+<div class="lg:col-span-5 flex flex-col justify-between p-space-md rounded-xl bg-surface-container shadow-md">
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">forum</span>
+<span class="font-label-md text-label-md text-primary font-semibold">Desglose Semántico (Línea por Línea)</span>
+</div>
+<div class="flex flex-col gap-space-xs font-body-sm text-body-sm">
+<div class="p-2 rounded bg-surface-container-high flex flex-col gap-0.5">
+<span class="font-label-sm text-[10px] text-primary-container font-mono">1. DATE_TRUNC('month', created_at)</span>
+<p class="text-on-surface-variant">Agrupa las ventas en bloques mensuales continuos respetando la zona horaria UTC del cluster.</p>
+</div>
+<div class="p-2 rounded bg-surface-container-high flex flex-col gap-0.5">
+<span class="font-label-sm text-[10px] text-secondary font-mono">2. INNER JOIN payments_ledger ON p.order_id = o.id</span>
+<p class="text-on-surface-variant">Garantiza consistencia contable: solo suma pedidos que tengan una transacción bancaria respaldada en el ledger inmutable.</p>
+</div>
+<div class="p-2 rounded bg-surface-container-high flex flex-col gap-0.5">
+<span class="font-label-sm text-[10px] text-secondary-fixed-dim font-mono">3. WHERE status = 'COMPLETED' AND state = 'SETTLED'</span>
+<p class="text-on-surface-variant">Aprovecha el índice parcial compuesto sin escanear reembolsos o pagos pendientes.</p>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-sm font-label-sm text-label-sm text-outline">
+<span>Tiempo de Ejecución Estimado: <strong class="text-secondary font-mono">18ms</strong></span>
+<button class="text-primary-container hover:underline flex items-center gap-1 font-semibold">
+<span>Ejecutar en Playground</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

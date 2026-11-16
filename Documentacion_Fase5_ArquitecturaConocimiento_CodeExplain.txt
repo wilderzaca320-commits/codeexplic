@@ -1,0 +1,1219 @@
+==============================================================================
+ DOCUMENTO DE ARQUITECTURA DEL CONOCIMIENTO - FASE 5 (TEMA 3)
+ Sistema   : CodeExplain - Analisis & Explicacion de Software con IA
+ Referencia: Arquitectura del Conocimiento solicitada para "Showare"
+             (aplicada a CodeExplain por la decision de alcance de la Fase 1)
+ Version   : 1.0
+ Fecha     : 11/11/2026
+ Entradas  : Fase 1 (necesidades), Fase 2 (15 modulos), Fase 3 (SRS),
+             Fase 4 (ARD: 18 ASR, 14 drivers, 15 constraints)
+ Salidas   : taxonomia, tesauro, metadatos, modelo de dominio, granularidad,
+             herramientas, busqueda/navegacion y mapa de conocimiento
+==============================================================================
+
+CONTROL DE VERSIONES
++------+------------+------------------------------------------+-----------+
+| Ver  | Fecha      | Cambio                                   | Autor     |
++------+------------+------------------------------------------+-----------+
+| 0.1  | 11/11/2026 | Taxonomia y tesauro iniciales            | Equipo CE |
+| 1.0  | 11/11/2026 | Documento completo + mapa de conocimiento| Equipo CE |
++------+------------+------------------------------------------+-----------+
+
+COMO LEER ESTE DOCUMENTO
+- K1 = conocimiento sobre el software ANALIZADO (el proyecto del usuario).
+- K2 = conocimiento sobre CodeExplain mismo (documentacion del producto).
+- KU = Knowledge Unit (unidad atomica de conocimiento).
+- Los codigos de taxonomia son estables y se usan en metadatos y busqueda:
+  K1.PRY.ARQ.MOD, K2.PRD.SRS, etc.
+- Todo se apoya en entidades reales de la app (ProjectWorkspace, MonitoredRepo,
+  QueryHistoryItem, DatabaseTable, UseCaseItem, RiskItem, ChatMessage).
+- [P] = propuesto, aun no implementado.
+
+
+==============================================================================
+ 1. PROPOSITO Y ALCANCE
+==============================================================================
+
+1.1 PROBLEMA QUE RESUELVE
+Hoy CodeExplain produce informacion valiosa pero dispersa:
+  - El analisis vive en el estado de React y se pierde al recargar.
+  - Cada vista muestra su propia copia de los datos (mock o calculada).
+  - El chat y la documentacion no citan la evidencia que los origina.
+  - No hay un vocabulario comun: "repo", "proyecto" y "workspace" se usan
+    como sinonimos; "riesgo", "hallazgo" y "deuda" se mezclan.
+  - La documentacion del producto (fases 1 a 4) esta en archivos sueltos sin
+    enlaces entre si.
+Resultado: el conocimiento no se encuentra, no se reutiliza y no se puede
+auditar. Esta fase define como organizarlo.
+
+1.2 ALCANCE
+  Dentro:
+  - Taxonomia y jerarquia de los dos dominios (K1 y K2).
+  - Tesauro y vocabulario controlado.
+  - Metadatos obligatorios y etiquetado.
+  - Modelo de dominio y flujos del conocimiento.
+  - Decision de granularidad (micro-contenido vs documento completo).
+  - Seleccion de herramientas y arquitectura de busqueda/navegacion.
+  - Mapa de conocimiento (grafo conceptual).
+  Fuera:
+  - Implementacion de la base de datos fisica (Fase 3, DER 4.5).
+  - Diseno visual detallado de las 12 vistas.
+  - Entrenamiento o fine-tuning de modelos.
+
+1.3 PRINCIPIOS (rigen todas las decisiones)
+  P1. Una entidad = un identificador estable. Nada se referencia por nombre.
+  P2. Evidencia antes que opinion: toda afirmacion (KU) apunta a una fuente.
+  P3. Micro-contenido atomico + composicion: se guarda pequeno, se muestra
+      compuesto.
+  P4. Vocabulario controlado: un concepto, un termino preferido, un codigo.
+  P5. Enlaces explicitos: toda relacion es una arista con tipo y direccion.
+  P6. Metadatos obligatorios: sin metadatos minimos, la unidad no se publica.
+  P7. Degradacion sin IA: el conocimiento estructurado funciona aunque el
+      motor heuristico reemplace a Gemini.
+
+1.4 RELACION CON LAS FASES ANTERIORES
+  Fase 1 -> necesidades que originan el conocimiento (que duele).
+  Fase 2 -> 15 modulos que producen/consumen conocimiento.
+  Fase 3 -> entidades del DER y 85 requerimientos (que se guarda).
+  Fase 4 -> ASR/ADR que restringen donde vive el conocimiento (cliente,
+            digest-only, sin BD en v1).
+  Fase 5 -> este documento: como se organiza, busca y reutiliza.
+
+
+==============================================================================
+ 2. TAXONOMIA / JERARQUIA
+==============================================================================
+
+2.1 VISION GENERAL DE DOMINIOS
+
+  CodeExplain Knowledge
+  |
+  +-- K1  Conocimiento del software analizado
+  |      (uno por proyecto; efimero salvo que se persista)
+  |
+  +-- K2  Conocimiento del producto CodeExplain
+         (documentacion interna y de usuario; permanente y versionada)
+
+2.2 ARBOL K1 - PROYECTO ANALIZADO (7 dimensiones)
+Profundidad maxima: 4 niveles. Un nodo tiene un solo padre.
+
+K1.PRY  Proyecto
+|
++-- K1.PRY.CTX  Contexto
+|   +-- CTX.VIS  Vision general (metricas, tag, actividad)
+|   +-- CTX.STK  Stack tecnologico (lenguajes, frameworks)
+|   +-- CTX.REP  Repositorios (rama, SLOC, ultimo commit)
+|   +-- CTX.ENT  Entradas detectadas (index, main, server, app)
+|
++-- K1.PRY.ARQ  Arquitectura
+|   +-- ARQ.MOD  Modulos y responsabilidades
+|   +-- ARQ.DEP  Dependencias entre modulos
+|   +-- ARQ.MET  Metricas (Ca, Ce, inestabilidad, acoplamiento)
+|   +-- ARQ.DIA  Diagramas C4 / UML
+|
++-- K1.PRY.DAT  Datos
+|   +-- DAT.TAB  Tablas (core, filas estimadas, particion)
+|   +-- DAT.COL  Columnas (tipo, PK, FK, unique)
+|   +-- DAT.REL  Relaciones y llaves foraneas
+|   +-- DAT.MIG  Migraciones / fuentes del esquema
+|
++-- K1.PRY.COM  Comportamiento
+|   +-- COM.CU   Casos de uso (actor, pre/post, complejidad)
+|   +-- COM.GHE  Escenarios Gherkin
+|   +-- COM.API  Endpoints y contratos
+|   +-- COM.FLU  Flujos de usuario
+|
++-- K1.PRY.CAL  Calidad
+|   +-- CAL.RIE  Riesgos STRIDE
+|   +-- CAL.CVE  Vulnerabilidades en dependencias
+|   +-- CAL.DEU  Deuda tecnica (horas, dependencias obsoletas)
+|   +-- CAL.SPO  Puntos unicos de falla (SPOF)
+|   +-- CAL.AST  Salud del AST / parseo
+|
++-- K1.PRY.DOC  Documentacion generada
+|   +-- DOC.REA  README
+|   +-- DOC.OAS  OpenAPI
+|   +-- DOC.C4   Diagrama C4 (PlantUML)
+|   +-- DOC.ADR  Architecture Decision Record
+|
++-- K1.PRY.CON  Conversacion
+    +-- CON.SES  Sesiones de chat
+    +-- CON.MSG  Mensajes (pregunta/respuesta, nivel, modelo)
+    +-- CON.QUE  Consultas del historial (categoria, tokens, favorito)
+    +-- CON.PRO  Prompts reutilizables por nivel
+
+2.3 ARBOL K2 - PRODUCTO CODEEXPLAIN
+K2.PRD  Producto
+|
++-- K2.PRD.VIS  Vision y alcance
+|   +-- VIS.F1   Fase 1 - Fuentes primarias
+|   +-- VIS.F2   Fase 2 - Inventario funcional
+|   +-- VIS.F3   Fase 3 - SRS
+|   +-- VIS.F4   Fase 4 - ARD (drivers y constraints)
+|   +-- VIS.F5   Fase 5 - Arquitectura del conocimiento (este documento)
+|
++-- K2.PRD.REQ  Requisitos
+|   +-- REQ.RF   RF-FE / RF-BE
+|   +-- REQ.RNF  RNF medibles
+|   +-- REQ.RN   Reglas de negocio
+|   +-- REQ.RE   Restricciones
+|
++-- K2.PRD.ARQ  Arquitectura tecnica
+|   +-- ARQ.ADR  Decisiones (ADR-01..ADR-13)
+|   +-- ARQ.ASR  Requerimientos significativos (ASR-01..ASR-18)
+|   +-- ARQ.ESC  Escenarios medibles (ESC-01..ESC-18)
+|
++-- K2.PRD.MAN  Manuales
+|   +-- MAN.USR  Manual de usuario (12 vistas)
+|   +-- MAN.INS  Instalacion y troubleshooting
+|   +-- MAN.API  Contratos de API
+|
++-- K2.PRD.OPS  Operacion
+    +-- OPS.ENT  Entorno (Node 20+, puerto 3100, ruta ASCII)
+    +-- OPS.SEG  Seguridad y secretos
+    +-- OPS.PRI  Privacidad y retencion
+
+2.4 REGLAS DE LA TAXONOMIA
+  T1. Profundidad maxima 4 (dominio -> dimension -> tipo -> instancia).
+  T2. Nombres en singular y sin sinonimos ("modulo", no "modulos/componentes").
+  T3. Un nodo pertenece a un unico padre; las relaciones cruzadas se modelan
+      como enlaces, no como pertenencia.
+  T4. Los codigos son estables: no cambian si cambia el nombre visible.
+  T5. Toda instancia hereda el contexto del padre (proyecto y dominio).
+  T6. Si un nodo no tiene instancias, se marca como "vacio" y no se muestra
+      en la navegacion (evita vistas huerfanas).
+
+2.5 CODIGOS DE TAXONOMIA (uso en metadatos y busqueda)
++----------------+------------------------------------+----------------------+
+| Codigo         | Nodo                               | Ejemplo de instancia |
++----------------+------------------------------------+----------------------+
+| K1.PRY.CTX.VIS | Vision general del proyecto        | OpenCommerce v2.4    |
+| K1.PRY.ARQ.MOD | Modulo                             | payments-service     |
+| K1.PRY.ARQ.DEP | Dependencia entre modulos          | payments -> redis    |
+| K1.PRY.DAT.TAB | Tabla de base de datos             | orders               |
+| K1.PRY.DAT.COL | Columna                            | orders.idempotency_key|
+| K1.PRY.COM.CU  | Caso de uso                        | CU-01 Checkout       |
+| K1.PRY.CAL.RIE | Riesgo                             | R-04 Webhook replay  |
+| K1.PRY.CAL.DEU | Item de deuda tecnica              | Stripe SDK v9        |
+| K1.PRY.DOC.REA | Documento README                   | README del proyecto  |
+| K1.PRY.CON.MSG | Mensaje de chat                    | msg-2026-11-11-001   |
+| K2.PRD.VIS.F3  | SRS de CodeExplain                 | Documentacion_Fase3  |
+| K2.PRD.ARQ.ADR | Decision arquitectonica            | ADR-01 digest-only   |
++----------------+------------------------------------+----------------------+
+
+
+==============================================================================
+ 3. TESAURO / VOCABULARIO CONTROLADO
+==============================================================================
+
+3.1 REGLAS DEL TESAURO
+  - Cada concepto tiene UN termino preferido (USE).
+  - Los sinonimos se registran como UF (used for) y no se usan en la UI ni en
+    los metadatos.
+  - Relaciones: BT (broader term / mas amplio), NT (narrower / mas especifico),
+    RT (related / relacionado).
+  - Cada termino tiene una nota de alcance (scope note) que aclara que SI y
+    que NO incluye.
+  - El tesauro se inyecta en los prompts de IA para que las respuestas usen
+    el mismo vocabulario que la interfaz.
+
+3.2 TERMINOS PREFERIDOS (nucleo)
++---------------------+------------------------------------------+---------------------------+---------------------------+
+| Termino preferido   | Definicion / nota de alcance             | Sinonimos prohibidos (UF) | Relaciones y ejemplo      |
++---------------------+------------------------------------------+---------------------------+---------------------------+
+| proyecto            | Unidad de analisis que agrupa un codigo  | repo, workspace, app,     | BT: conocimiento K1       |
+|                     | y sus artefactos. NO es el repositorio   | sistema                   | Ej: OpenCommerce Core     |
+|                     | Git en si.                               |                           |                           |
+| repositorio         | Fuente de codigo concreta (URL, rama,    | repo Git, origen          | BT: proyecto              |
+|                     | commits). Un proyecto puede tener varios.|                           | Ej: github.com/org/core   |
+| analisis            | Resultado de procesar un proyecto:       | escaneo, scan, review     | BT: proyecto              |
+|                     | metricas + hallazgos + resumen.          |                           | Ej: analisis ZIP 11/11    |
+| digest              | Inventario + muestra de texto que viaja  | resumen, payload, ZIP     | BT: analisis              |
+|                     | al servidor. NO contiene el codigo       |                           | Ej: 2 000 archivos        |
+|                     | completo ni binarios.                    |                           |                           |
+| modulo              | Unidad de codigo con responsabilidad     | componente, paquete,      | BT: arquitectura          |
+|                     | propia y limites definidos.              | servicio, carpeta         | NT: dependencia           |
+| dependencia         | Relacion dirigida de un modulo hacia     | import, require, link     | BT: arquitectura          |
+|                     | otro.                                    |                           | Ej: payments -> redis     |
+| acoplamiento        | Grado de interdependencia entre modulos  | coupling, union           | RT: inestabilidad         |
+|                     | (Ca, Ce, I).                             |                           | Ej: 34% (Elite A+)        |
+| tabla               | Estructura de datos persistente con       | entidad, modelo, coleccion| BT: datos                 |
+|                     | columnas y llaves.                       |                           | Ej: orders                |
+| columna             | Atributo de una tabla con tipo y llaves. | campo, atributo, propiedad| BT: tabla                 |
+| caso de uso         | Interaccion entre un actor y el sistema  | use case, funcionalidad,  | BT: comportamiento        |
+|                     | con pre/postcondicion.                   | feature, requerimiento    | Ej: CU-01 Checkout        |
+| escenario           | Secuencia Gherkin (Dado/Cuando/Entonces) | test, prueba, ejemplo     | BT: caso de uso           |
+|                     | asociada a un caso de uso.               |                           |                           |
+| riesgo              | Amenaza con probabilidad e impacto sobre | problema, bug, issue,     | BT: calidad               |
+|                     | el sistema (STRIDE).                     | hallazgo                  | NT: vulnerabilidad        |
+| vulnerabilidad      | Debilidad concreta explotable, asociada  | fallo, bug, CVE           | BT: riesgo                |
+|                     | a una dependencia o configuracion.       |                           | RT: CVE                   |
+| CVE                 | Identificador publico de una             | ticket, alerta            | RT: vulnerabilidad        |
+|                     | vulnerabilidad conocida.                 |                           | Ej: CVE-2024-XXXX         |
+| deuda tecnica       | Costo futuro de mantener una decision    | deuda, TODO, pendiente    | BT: calidad               |
+|                     | tecnica (horas estimadas).               |                           | Ej: 120 h                 |
+| SPOF                | Punto unico de falla del sistema.        | punto critico, single     | BT: calidad               |
+|                     |                                          | point                     |                           |
+| hallazgo            | Afirmacion verificable sobre el codigo   | insight, descubrimiento,  | BT: conocimiento          |
+|                     | respaldada por evidencia. Es el genero   | observacion               | NT: riesgo, deuda, patron |
+|                     | de riesgo, deuda y patron.               |                           |                           |
+| evidencia           | Fuente que respalda un hallazgo (archivo | prueba, source, referencia| RT: hallazgo              |
+|                     | + lineas, endpoint, commit o captura).   |                           | Ej: server.ts L59-L75     |
+| documento           | Composicion narrativa de conocimiento    | archivo, PDF, entregable  | BT: documentacion         |
+|                     | (README, OpenAPI, C4, ADR) con version.  |                           | NT: plantilla             |
+| plantilla           | Estructura reutilizable que se llena con | template, formato         | BT: documento             |
+|                     | conocimiento del proyecto.               |                           | Ej: README base           |
+| consulta            | Pregunta registrada en el historial con  | query, busqueda, prompt   | BT: conversacion          |
+|                     | categoria, tokens y resumen.             |                           |                           |
+| mensaje             | Un turno de la conversacion (usuario o   | chat, respuesta, texto    | BT: conversacion          |
+|                     | asistente) con nivel y modelo.           |                           |                           |
+| nivel               | Audiencia de la explicacion: basico,     | tipo, modo, perfil        | RT: mensaje, documento    |
+|                     | intermedio o avanzado.                   |                           |                           |
+| motor               | Componente que genera la respuesta:      | IA, backend, modelo       | NT: fallback              |
+|                     | Gemini o heuristico.                     |                           |                           |
+| fallback            | Motor heuristico local que responde si   | respaldo, offline, plan B | BT: motor                 |
+|                     | Gemini no esta disponible.               |                           |                           |
+| unidad de           | Afirmacion atomica verificable con       | nota, apunte, item        | BT: conocimiento          |
+| conocimiento (KU)   | metadatos y evidencia.                   |                           | Ej: KU-00042              |
+| etiqueta            | Palabra clave controlada para filtrar y  | tag, hashtag, categoria   | RT: metadatos             |
+|                     | agrupar conocimiento.                    |                           |                           |
+| fuente              | Origen del conocimiento (archivo, URL,   | input, origen             | RT: evidencia             |
+|                     | API o usuario) con fecha y hash.         |                           |                           |
++---------------------+------------------------------------------+---------------------------+---------------------------+
+
+3.3 EL CASO "USUARIO vs CLIENTE vs COMPRADOR"
+  En CodeExplain el dominio es analisis de software, NO comercio. Por eso:
+  +-------------+----------------------------------------------------------+
+  | Termino     | Uso correcto en CodeExplain                              |
+  +-------------+----------------------------------------------------------+
+  | usuario     | Persona que usa la app (desarrollador, estudiante,       |
+  |             | arquitecto, docente, dueno, administrador).              |
+  | cliente     | Organizacion duena de un proyecto analizado (empresa).   |
+  |             | Se usa solo en contexto comercial/regulatorio.           |
+  | comprador   | NO se usa en CodeExplain. Pertenece al dominio del       |
+  |             | software analizado (e-commerce), no al producto.         |
+  +-------------+----------------------------------------------------------+
+  Regla: en la UI y en los prompts se dice "usuario"; "cliente" solo aparece
+  en textos legales/comerciales; "comprador" se reserva para cuando el
+  proyecto analizado sea una tienda.
+
+3.4 TERMINOS AMBIGUOS Y SU REEMPLAZO
++---------------------------+---------------------------+-----------------------------+
+| Se escribe hoy            | Problema                  | Estandar                    |
++---------------------------+---------------------------+-----------------------------+
+| repo / workspace / app    | Tres nombres, un concepto | proyecto (o repositorio)    |
+| componente / modulo       | Mezcla nivel de codigo    | modulo                      |
+| bug / issue / problema     | Sin severidad ni evidencia| riesgo o vulnerabilidad     |
+| deuda / TODO / pendiente  | Sin horas ni impacto      | deuda tecnica               |
+| resumen / digest / ZIP    | Confunde que viaja        | digest (al servidor)        |
+| chat / consulta / prompt  | Tres artefactos distintos | mensaje / consulta / prompt |
+| documento / entregable    | Mezcla salida y proceso   | documento                   |
+| IA / modelo / motor       | Confunde proveedor y modo | motor (Gemini o fallback)   |
++---------------------------+---------------------------+-----------------------------+
+
+3.5 RELACIONES DEL TESAURO (extracto)
+  conocimiento
+    BT-> proyecto
+    NT-> hallazgo, documento, conversacion
+  hallazgo
+    NT-> riesgo, deuda tecnica, patron
+  riesgo
+    NT-> vulnerabilidad
+    RT-> CVE, severidad, mitigacion
+  arquitectura
+    NT-> modulo, dependencia, acoplamiento, diagrama
+  datos
+    NT-> tabla, columna, relacion, migracion
+  comportamiento
+    NT-> caso de uso, escenario, endpoint, flujo
+
+3.6 USO DEL TESAURO
+  - UI: labels, filtros y tooltips usan el termino preferido.
+  - Busqueda: los sinonimos se expanden a la consulta (repo -> proyecto).
+  - IA: el system prompt incluye el glosario y prohibe los sinonimos.
+  - Documentos: las plantillas usan los codigos y terminos del tesauro.
+  - Metadatos: el campo `tipo` solo acepta valores del vocabulario (3.2).
+
+
+==============================================================================
+ 4. METADATOS Y ETIQUETADO
+==============================================================================
+
+4.1 ESQUEMA COMUN (toda unidad de conocimiento)
++---------------------+------------------+-----------------------------------------+
+| Campo               | Tipo             | Regla                                   |
++---------------------+------------------+-----------------------------------------+
+| ku_id               | ULID             | Unico, estable, nunca se reutiliza.     |
+| tipo                | vocabulario      | proyecto, modulo, riesgo, documento...  |
+| dominio             | K1 | K2          | Define la taxonomia aplicable.          |
+| proyecto_id         | ULID | null      | Obligatorio en K1; null en K2.          |
+| codigo_taxonomia    | string           | Ej: K1.PRY.ARQ.MOD.                     |
+| titulo              | string(120)      | Sin sinonimos; en singular.             |
+| claim               | string(500)      | Una sola afirmacion verificable.        |
+| autor               | user | system | gemini | Quien lo crea.                          |
+| fecha_creacion      | ISO-8601         | Automatica.                             |
+| fecha_actualizacion | ISO-8601         | Automatica en cada cambio.              |
+| version             | semver           | 1.0.0; sube con cambio de contenido.    |
+| estado              | vocabulario      | borrador, validado, obsoleto.           |
+| nivel               | vocabulario      | basico, intermedio, avanzado, na.       |
+| fuente_id           | ULID | null      | Enlace a la evidencia.                  |
+| confianza           | vocabulario      | alta, media, baja.                      |
+| sensibilidad        | vocabulario      | publico, interno, restringido.          |
+| retencion           | vocabulario      | sesion, 30d, 90d, permanente.           |
+| idioma              | es | en          | Idioma del contenido.                   |
+| etiquetas           | string[]         | Minimo 3, del vocabulario controlado.   |
+| enlaces             | [{rel, destino}] | Aristas tipadas del grafo.              |
+| hash_contenido      | sha256           | Detecta duplicados y cambios.           |
+| modelo              | string | null      | gemini-2.5-flash | heuristic | null.  |
++---------------------+------------------+-----------------------------------------+
+
+4.2 VOCABULARIOS CONTROLADOS
+  tipo        : proyecto, repositorio, analisis, modulo, dependencia, tabla,
+                columna, caso_uso, escenario, riesgo, vulnerabilidad, deuda,
+                spof, documento, plantilla, consulta, mensaje, prompt, ku.
+  estado      : borrador, en_revision, validado, obsoleto.
+  nivel       : basico, intermedio, avanzado, na.
+  confianza   : alta (evidencia directa), media (inferencia IA),
+                baja (heuristico sin evidencia).
+  sensibilidad: publico, interno, restringido.
+  retencion   : sesion, 30d, 90d, permanente.
+  severidad   : alta, media, baja (solo riesgo/vulnerabilidad).
+  categoria   : arquitectura, datos, comportamiento, calidad, documentacion,
+                conversacion, operacion.
+
+4.3 METADATOS POR ARTEFACTO
++------------------+-----------------------------------------------------------+
+| Artefacto        | Metadatos especificos                                     |
++------------------+-----------------------------------------------------------+
+| Proyecto         | nombre, repo_identifier, tag, lenguajes, created_at,      |
+|                  | owner, estado, retencion                                  |
+| Repositorio      | nombre, rama, lenguaje, sloc, files_count, ast_status,    |
+|                  | last_commit_hash, author, synced_at                       |
+| Analisis         | kind (zip/url/snippet), digest_hash, total_files,         |
+|                  | code_files, sloc, ast_health, debt_hours, spof_count,     |
+|                  | model, confidence, created_at                             |
+| Modulo           | nombre, ca, ce, instability, files, loc, responsabilidad  |
+| Tabla            | nombre, is_core, rows_estimate, partition_strategy,       |
+|                  | source (migracion/introspeccion)                          |
+| Columna          | nombre, data_type, is_pk, is_fk, is_unique, fk_target     |
+| Caso de uso      | code, actor, precondition, postcondition, complexity,     |
+|                  | gherkin, evidence                                         |
+| Riesgo           | categoria STRIDE, severidad, estado, impacto, mitigacion, |
+|                  | target_endpoint, cve, pr_reference                        |
+| Deuda            | horas, categoria, dependencia, version_actual,            |
+|                  | version_objetivo, impacto                                 |
+| Documento        | doc_type, template_id, version, model, generated_at,      |
+|                  | checksum, estado, nivel                                   |
+| Consulta         | categoria, pregunta, resumen, tokens, favorito, created_at|
+| Mensaje          | session_id, sender, nivel, modelo, tokens, created_at     |
+| KU               | claim, evidencia, confianza, etiquetas, enlaces          |
++------------------+-----------------------------------------------------------+
+
+4.4 EJEMPLO DE KU (JSON)
+  {
+    "ku_id": "01J8Z3K4M5N6P7Q8R9S0T1U2V3",
+    "tipo": "riesgo",
+    "dominio": "K1",
+    "proyecto_id": "01J8Z3AAAAAAAAAAAAAAAAAAAA",
+    "codigo_taxonomia": "K1.PRY.CAL.RIE",
+    "titulo": "Replay de webhook de pago",
+    "claim": "El endpoint de webhook no valida la firma antes de procesar el evento.",
+    "autor": "gemini",
+    "fecha_creacion": "2026-11-11T18:20:00Z",
+    "fecha_actualizacion": "2026-11-11T18:20:00Z",
+    "version": "1.0.0",
+    "estado": "borrador",
+    "nivel": "avanzado",
+    "fuente_id": "01J8Z3BBBBBBBBBBBBBBBBBBBB",
+    "confianza": "media",
+    "sensibilidad": "interno",
+    "retencion": "30d",
+    "idioma": "es",
+    "etiquetas": ["seguridad", "pagos", "webhook"],
+    "enlaces": [
+      {"rel": "afecta", "destino": "01J8Z3CCCCCCCCCCCCCCCCCCCC"},
+      {"rel": "evidencia", "destino": "01J8Z3BBBBBBBBBBBBBBBBBBBB"}
+    ],
+    "hash_contenido": "9f2c...",
+    "modelo": "gemini-2.5-flash"
+  }
+
+4.5 REGLAS DE ETIQUETADO
+  E1. Minimo 3 etiquetas, maximo 8, tomadas del vocabulario controlado.
+  E2. Prohibido inventar etiquetas libres; si falta una, se propone y se
+      aprueba en el tesauro.
+  E3. La etiqueta de proyecto se hereda automaticamente (no se repite).
+  E4. `sensibilidad=restringido` obliga a `retencion=sesion`.
+  E5. Toda KU de K1 debe tener `fuente_id`; sin fuente no se valida.
+  E6. `confianza=baja` no puede pasar a `estado=validado` sin revision humana.
+
+4.6 CALIDAD DE METADATOS
+  - Completitud minima para publicar: 90% de campos obligatorios.
+  - Validacion en el alta: tipo, estado, nivel y etiquetas contra vocabulario.
+  - Deteccion de duplicados por hash_contenido + similitud de titulo.
+  - Reporte semanal de metadatos incompletos (ver seccion 11).
+
+
+==============================================================================
+ 5. MODELO DE DOMINIO
+==============================================================================
+
+5.1 ENTIDADES CLAVE
++------------------+------------------------------------------+---------------------------+
+| Entidad          | Atributos principales                    | Relaciones                |
++------------------+------------------------------------------+---------------------------+
+| Usuario          | id, email, rol, created_at               | 1:N Proyecto, 1:N Consulta|
+| Proyecto         | id, nombre, repo_identifier, tag, owner  | N:1 Usuario, 1:N Repositorio|
+| Repositorio      | id, proyecto_id, rama, lenguaje, sloc    | N:1 Proyecto, 1:N Analisis|
+| Analisis         | id, proyecto_id, kind, metricas, model   | N:1 Proyecto, 1:N Hallazgo|
+| Modulo           | id, proyecto_id, nombre, ca, ce, I       | N:1 Proyecto, N:M Modulo  |
+| TablaBD          | id, proyecto_id, nombre, is_core         | 1:N Columna               |
+| Columna          | id, tabla_id, nombre, tipo, llaves       | N:1 TablaBD               |
+| CasoDeUso        | id, proyecto_id, code, actor, gherkin    | 1:N Escenario             |
+| Riesgo           | id, proyecto_id, categoria, severidad    | N:1 Analisis, 1:N CVE     |
+| DeudaTecnica     | id, proyecto_id, horas, dependencia      | N:1 Proyecto              |
+| Documento        | id, proyecto_id, doc_type, version       | N:1 Plantilla, 1:N KU     |
+| Consulta         | id, usuario_id, proyecto_id, pregunta    | 1:N Mensaje               |
+| Mensaje          | id, sesion_id, sender, nivel, modelo     | N:1 Consulta/Sesion       |
+| KU               | id, tipo, claim, evidencia, confianza    | N:1 Fuente, N:M KU        |
+| Fuente/Evidencia | id, ruta/URL, hash, lineas, fecha        | 1:N KU                    |
+| Etiqueta         | id, nombre, categoria                    | N:M KU                    |
++------------------+------------------------------------------+---------------------------+
+
+5.2 DIAGRAMA CONCEPTUAL
+  +-----------+       +-------------+       +--------------+       +-----------+
+  | Usuario   |1     N| Proyecto    |1     N| Repositorio  |1     N| Analisis  |
+  +-----------+-------+-------------+-------+--------------+-------+-----------+
+                            |1                                          |1
+                            |                                           |N
+              +-------------+-------------+                   +---------+---------+
+              |             |             |                   |                   |
+              v             v             v                   v                   v
+        +-----------+ +-----------+ +-----------+       +-----------+       +-----------+
+        | Modulo    | | TablaBD   | | CasoDeUso |       | Hallazgo  |       | Documento |
+        +-----------+ +-----------+ +-----------+       +-----------+       +-----------+
+              |             |1            |1                  |                   |
+              |             |N            |N                  |                   |
+              |             v             v                   v                   v
+              |       +-----------+ +-----------+       +-----------+       +-----------+
+              |       | Columna   | | Escenario |       | Evidencia |       | Plantilla |
+              |       +-----------+ +-----------+       +-----------+       +-----------+
+              |                                             ^
+              |                                             |
+        +-----------+       +-------------+                 |
+        | Consulta  |1     N| Mensaje     |-----------------+
+        +-----------+-------+-------------+
+              |
+              v
+        +-----------+
+        | Etiqueta  | (N:M con KU)
+        +-----------+
+
+  Relaciones clave:
+  - Un Proyecto tiene N Repositorios y N Analisis.
+  - Un Analisis produce N Hallazgos (riesgo, deuda, patron).
+  - Todo Hallazgo apunta a una Evidencia (archivo + lineas o endpoint).
+  - Un Documento se compone de KUs y usa una Plantilla.
+  - Una Consulta agrupa Mensajes; ambos pueden citar KUs.
+  - Las Etiquetas clasifican cualquier KU (N:M).
+
+5.3 FLUJOS DEL CONOCIMIENTO
+  F1 Captura (ingesta)
+     Archivo/URL -> Repositorio -> Digest -> Analisis.
+     Se guarda: proyecto, repositorio, analisis, evidencia de entrada.
+  F2 Clasificacion (analisis)
+     Analisis -> Hallazgos (KU) -> Etiquetas -> Enlaces a evidencia.
+     Se aplica el tesauro y se asigna codigo de taxonomia.
+  F3 Consulta (uso)
+     Usuario -> Consulta -> Mensaje -> Respuesta (Gemini/fallback).
+     La respuesta cita KUs y evidencias cuando existen.
+  F4 Composicion (documentacion)
+     Plantilla + KUs del proyecto -> Documento -> Version -> Export.
+  F5 Reutilizacion
+     KU validada -> vista / documento / prompt / otro proyecto (solo patrones).
+  F6 Retiro
+     KU obsoleta -> estado=obsoleto -> se conserva por trazabilidad y se
+     excluye de busquedas y composiciones.
+
+5.4 REGLAS DE INTEGRIDAD
+  I1. Una KU pertenece a un solo proyecto (K1) o al producto (K2).
+  I2. Ninguna KU se publica sin evidencia (fuente_id).
+  I3. Un documento generado siempre referencia las KUs que lo componen.
+  I4. Un riesgo puede convertirse en deuda o en caso de uso, pero no se
+      duplica: se enlaza con `rel=deriva_de`.
+  I5. Borrar un proyecto marca sus KUs como obsoletas; no se borran en cascada
+      si son evidencia de un documento publicado.
+  I6. Los enlaces son dirigidos y tipados; el backlink se calcula, no se
+      almacena dos veces.
+
+5.5 TRIPLE ETIQUETA EPISTEMICA (hecho / inferencia / opinion)
+  Toda KU declara su naturaleza:
+  +-------------+----------------------------------------------+----------------+
+  | Naturaleza  | Significado                                  | Confianza      |
+  +-------------+----------------------------------------------+----------------+
+  | hecho       | Verificado en el codigo o la configuracion   | alta           |
+  | inferencia  | Deduccion de la IA o del analisis estatico   | media          |
+  | opinion     | Recomendacion o buena practica               | baja           |
+  +-------------+----------------------------------------------+----------------+
+  Regla: una `opinion` nunca se muestra como `hecho`; la UI usa iconos y
+  colores distintos, y los documentos separan "Hallazgos" de "Recomendaciones".
+
+
+==============================================================================
+ 6. GRANULARIDAD
+==============================================================================
+
+6.1 NIVELES DE GRANULARIDAD
++------+---------------------+------------------------------------------+---------------------------+
+| Nivel| Unidad              | Ejemplo                                  | Se almacena?              |
++------+---------------------+------------------------------------------+---------------------------+
+| L0   | Fuente / evidencia  | server.ts lineas 59-75                   | Si (hash + ruta)          |
+| L1   | KU atomica          | "payments depende de redis"              | Si (unidad base)          |
+| L2   | Ficha de entidad    | Ficha del modulo payments (N KUs)        | Si (vista materializada)  |
+| L3   | Vista de conocimiento| Vista Arquitectura, vista BD, chat       | Se compone al vuelo       |
+| L4   | Documento           | README, OpenAPI, C4, ADR                 | Si (versionado + checksum)|
++------+---------------------+------------------------------------------+---------------------------+
+
+6.2 DECISION DE GRANULARIDAD (KD-01)
+  Se almacena en L1 (KU atomica) y L2 (ficha), y se compone L3/L4 bajo demanda.
+  Motivos:
+  - Reutilizacion: una KU sirve para la vista, el chat y el documento.
+  - Busqueda: se indexa la afirmacion, no el documento completo.
+  - Consistencia: cambiar una KU actualiza todas las composiciones.
+  - Costo: no se duplica el mismo texto en 4 documentos.
+  - Trazabilidad: cada frase del README se puede rastrear a una evidencia.
+
+6.3 TRADE-OFFS
++---------------------------+---------------------+---------------------+---------------------+
+| Criterio                  | Documento completo  | Micro-contenido     | Hibrido (elegido)   |
++---------------------------+---------------------+---------------------+---------------------+
+| Facilidad de redaccion    | Alta                | Baja                | Media               |
+| Reutilizacion             | Baja                | Alta                | Alta                |
+| Busqueda                  | Baja (texto largo)  | Alta                | Alta                |
+| Consistencia al cambiar   | Baja (copias)       | Alta                | Alta                |
+| Costo de curacion         | Bajo                | Alto                | Medio               |
+| Trazabilidad a evidencia  | Baja                | Alta                | Alta                |
++---------------------------+---------------------+---------------------+---------------------+
+
+6.4 REGLAS DE ATOMICIDAD
+  A1. Una KU = una afirmacion verificable (no dos ideas unidas por "y").
+  A2. Titulo <= 120 caracteres; claim <= 500.
+  A3. Si una KU necesita mas de una evidencia, se parte en dos y se enlazan.
+  A4. La KU no repite el contexto del proyecto (se hereda por metadatos).
+  A5. Deduplicacion: mismo proyecto + mismo claim normalizado = una sola KU.
+  A6. Las KUs no se editan en los documentos: se editan en la fuente y la
+      composicion se regenera.
+
+6.5 COMPOSICION DE DOCUMENTOS
+  Plantilla README =
+    seccion "Vision"      <- KUs de K1.PRY.CTX.VIS
+    seccion "Stack"       <- KUs de K1.PRY.CTX.STK
+    seccion "Arquitectura"<- KUs de K1.PRY.ARQ.MOD + ARQ.DEP
+    seccion "Datos"       <- KUs de K1.PRY.DAT.TAB
+    seccion "Riesgos"     <- KUs de K1.PRY.CAL.RIE
+    seccion "Uso"         <- KUs de K2.PRD.MAN.INS (si aplica)
+  Regla: la plantilla define el orden y el tono; las KUs definen el contenido.
+  Si falta una seccion, se marca "sin informacion" en vez de inventar.
+
+6.6 EJEMPLO DE COMPOSICION
+  KU-00042: "El modulo payments depende de redis para idempotencia."
+  KU-00043: "El webhook no valida la firma antes de procesar."
+  KU-00044: "Se estiman 120 h de deuda en la integracion de pagos."
+  README (fragmento):
+    ## Arquitectura
+    El modulo payments depende de redis para idempotencia (KU-00042).
+    ## Riesgos
+    El webhook no valida la firma antes de procesar (KU-00043).
+    ## Deuda tecnica
+    Se estiman 120 h de deuda en la integracion de pagos (KU-00044).
+
+
+==============================================================================
+ 7. HERRAMIENTAS
+==============================================================================
+
+7.1 CRITERIOS DE SELECCION
+  C1. Offline / local (C-TEC-01: un solo equipo Windows, sin servicios).
+  C2. Costo (C-BIZ-01: free tier, 0 infraestructura extra).
+  C3. Bajo lock-in (los datos deben poder exportarse).
+  C4. Integracion con la app (JSON/HTTP, sin friccion).
+  C5. Curva de aprendizaje (equipo pequeno).
+  C6. Multiusuario (no requerido en v1, si en v2).
+
+7.2 MATRIZ DE EVALUACION (1 = malo, 5 = excelente)
++---------------------------+-----+-----+-----+-----+-----+-----+-------+
+| Herramienta               | C1  | C2  | C3  | C4  | C5  | C6  | Total |
++---------------------------+-----+-----+-----+-----+-----+-----+-------+
+| JSON + Markdown + Git     |  5  |  5  |  5  |  5  |  5  |  3  |  28   |
+| SQLite (metadatos K1)     |  5  |  5  |  5  |  5  |  4  |  2  |  26   |
+| Obsidian (PKM para K2)    |  5  |  4  |  4  |  3  |  4  |  2  |  22   |
+| Notion (K2 compartido)    |  1  |  3  |  2  |  4  |  4  |  5  |  19   |
+| Neo4j (grafo)             |  4  |  2  |  3  |  4  |  2  |  4  |  19   |
+| CMS/KMS corporativo       |  1  |  2  |  2  |  2  |  2  |  5  |  14   |
++---------------------------+-----+-----+-----+-----+-----+-----+-------+
+
+7.3 STACK RECOMENDADO
+  v1.0 (hoy, demo)
+    - K1: estado en memoria + JSON exportable (alineado con ADR-04).
+    - K2: Markdown + Git (los 5 documentos de fase ya viven asi).
+    - Grafo: tabla de aristas en JSON + render SVG en la app.
+    - Busqueda: indice en memoria sobre titulo, claim, etiquetas y codigo.
+  v1.1 (cuando se active ASR-06 / D-DATA-01)
+    - K1: SQLite con el DER de 13 tablas (SRS 4.5).
+    - K2: vault de Obsidian con frontmatter YAML y enlaces [[...]].
+    - Export: Markdown/JSON por proyecto.
+  v2.0 (multiusuario o varios proyectos)
+    - Postgres para K1 (ADR-11) y, solo si el grafo supera 5 000 nodos y
+      consultas de 3+ saltos, Neo4j/ArangoDB como proyeccion del grafo.
+    - Notion solo como vitrina para el stakeholder (no fuente de verdad).
+
+7.4 POR QUE NO NEO4J EN v1.0
+  - El grafo de un proyecto tiene cientos de nodos, no millones.
+  - Las consultas reales son de 1 a 2 saltos ("que depende de X", "que
+    evidencia respalda Y").
+  - Agregar un servicio y su operacion choca con C-TEC-01 y C-BIZ-01.
+  - La tabla de aristas + render SVG cubre el 100% de la demo.
+  - Cuando se justifique, se migra sin cambiar el modelo: las aristas ya
+    tienen origen, tipo y destino.
+
+7.5 REPRESENTACION DEL GRAFO (v1.0)
+  Tabla `edges` (JSON o SQLite):
+  +-------------+-------------+-------------+-----------+-----------+--------+
+  | origen      | relacion    | destino     | peso      | proyecto  | tipo   |
+  +-------------+-------------+-------------+-----------+-----------+--------+
+  | KU-00042    | evidencia   | SRC-server  | 1.0       | PRY-01    | dura   |
+  | KU-00043    | afecta      | MOD-paym    | 0.9       | PRY-01    | dura   |
+  | MOD-paym    | depende_de  | MOD-redis   | 0.8       | PRY-01    | dura   |
+  | CU-01       | usa         | MOD-paym    | 0.7       | PRY-01    | blanda |
+  | RIE-04      | deriva_de   | KU-00043    | 1.0       | PRY-01    | dura   |
+  +-------------+-------------+-------------+-----------+-----------+--------+
+  Tipos de arista: evidencia, depende_de, contiene, usa, afecta, deriva_de,
+  documenta, cita, contradice, reemplaza.
+  Arista dura = verificable; blanda = inferida por IA (se dibuja punteada).
+
+7.6 CONVENCION DEL VAULT (K2, Obsidian)
+  Carpetas:
+    00_Inbox/        notas sin clasificar (maximo 7 dias)
+    01_Fases/        F1..F5
+    02_Requisitos/   RF, RNF, RN, RE
+    03_Arquitectura/ ASR, ADR, ESC
+    04_Manual/       usuario, instalacion, API
+    05_Operacion/    entorno, seguridad, privacidad
+    99_Plantillas/   KU, documento, ADR, escenario
+  Nombre de archivo: `<codigo> - <titulo>.md`
+    Ej: `K2.PRD.VIS.F3 - SRS.md`
+  Frontmatter YAML: mismos campos de 4.1 (ku_id, tipo, dominio, estado...).
+  Enlaces: [[K2.PRD.ARQ.ADR.ADR-01]] dentro del texto; backlinks automaticos.
+  Regla: una nota = una KU o una ficha (L1/L2); los documentos largos se
+  componen con transclusion (![[...]]) o se exportan.
+
+
+==============================================================================
+ 8. BUSQUEDA Y NAVEGACION
+==============================================================================
+
+8.1 MAPA DEL SITIO (app)
+  Inicio
+  |
+  +-- Proyectos (selector global)
+  |   +-- Vision general        K1.PRY.CTX.VIS
+  |   +-- Arquitectura         K1.PRY.ARQ
+  |   +-- Diagramas C4/UML     K1.PRY.ARQ.DIA
+  |   +-- Modelo de datos      K1.PRY.DAT
+  |   +-- Casos de uso         K1.PRY.COM
+  |   +-- Riesgos              K1.PRY.CAL
+  |   +-- Deuda tecnica        K1.PRY.CAL.DEU
+  |   +-- Repositorios         K1.PRY.CTX.REP
+  |   +-- Documentacion        K1.PRY.DOC
+  |   +-- Chat                 K1.PRY.CON
+  |   +-- Historial            K1.PRY.CON.QUE
+  +-- Subir proyecto (ingesta)
+  +-- Ayuda / glosario (K2.PRD.MAN)
+
+  Los 12 items del sidebar se mapean 1:1 con nodos de la taxonomia; ninguna
+  vista existe sin nodo de conocimiento asociado.
+
+8.2 MAPA DEL VAULT (K2)
+  00_Inbox
+  01_Fases
+    F1 Fuentes primarias
+    F2 Inventario funcional
+    F3 SRS
+    F4 ARD
+    F5 Arquitectura del conocimiento
+  02_Requisitos
+    RF-FE / RF-BE / RNF / RN / RE
+  03_Arquitectura
+    ASR / ADR / ESC
+  04_Manual
+    Usuario / Instalacion / API
+  05_Operacion
+    Entorno / Seguridad / Privacidad
+  99_Plantillas
+
+8.3 BREADCRUMBS
+  Regla: `Dominio > Proyecto > Dimension > Artefacto`.
+  Ejemplos:
+    Proyecto > OpenCommerce Core > Arquitectura > Modulo payments
+    Producto > Fase 4 > ARD > ADR-01
+  - El breadcrumb es clicable en cada nivel.
+  - En movil se colapsa a "Proyecto > ... > Artefacto".
+  - El ultimo nivel no es enlace.
+
+8.4 INDICE DE BUSQUEDA
+  Campos indexados (peso):
+    titulo (5), etiquetas (4), claim (3), codigo_taxonomia (3),
+    nombre_entidad (3), resumen (2), contenido (2), evidencia (1).
+  Filtros: dominio, proyecto, tipo, dimension, severidad, estado, nivel,
+    lenguaje, autor, fecha.
+  El indice se reconstruye al cambiar el estado (alta, edicion, retiro).
+
+8.5 FACETAS
+  - Dominio: K1 / K2.
+  - Proyecto: uno o varios (solo K1).
+  - Tipo: modulo, riesgo, deuda, tabla, caso de uso, documento...
+  - Dimension: contexto, arquitectura, datos, comportamiento, calidad,
+    documentacion, conversacion.
+  - Estado: borrador, validado, obsoleto.
+  - Nivel: basico, intermedio, avanzado.
+  - Severidad: alta, media, baja (solo riesgos).
+  Las facetas muestran conteo y se combinan con AND.
+
+8.6 RANKING (formula simple y explicable)
+  score = 5*titulo + 4*etiqueta + 3*claim + 3*codigo + 3*entidad
+        + 2*resumen + 2*contenido + 1*evidencia
+        + 0.5*recencia + 0.5*confianza_alta
+  Desempate: estado validado > borrador; luego fecha descendente.
+  Sin IA en v1: ranking determinista y auditable.
+
+8.7 SINTAXIS DE CONSULTA
+  - Texto libre: `acoplamiento pagos`
+  - Campo: `tipo:riesgo severidad:alta`
+  - Proyecto: `proyecto:opencommerce`
+  - Etiqueta: `tag:seguridad`
+  - Estado: `estado:validado`
+  - Combinacion: `tipo:deuda estado:borrador proyecto:opencommerce`
+  - Frase exacta: `"idempotencia distribuida"`
+  - Rango: `fecha:[2026-11-01 TO 2026-11-11]`
+
+8.8 EXPANSION DE SINONIMOS (tesauro)
+  Consulta del usuario          Expansion
+  repo                          proyecto, repositorio
+  componente / servicio         modulo
+  bug / issue                   riesgo, vulnerabilidad
+  deuda / TODO                  deuda tecnica
+  chat / pregunta               mensaje, consulta
+  doc / entregable              documento
+  La expansion se muestra como "Se busco tambien: ..." para que sea
+  transparente.
+
+8.9 ENLACES INTERNOS Y BACKLINKS
+  - Cada artefacto tiene un panel "Relacionado" con:
+      evidencia (fuente), derivados (KUs), documentos que lo citan y
+      vistas donde aparece.
+  - Reglas: enlace con tipo; sin enlaces a nodos obsoletos (se muestran
+    tachados); backlinks calculados desde `edges`.
+  - En el chat, cada respuesta puede citar `[KU-00042]` y abrir la ficha.
+
+8.10 NAVEGACION POR TECLADO
+  Ctrl/Cmd+K  abrir buscador global
+  G luego P  ir a Proyectos
+  G luego A  ir a Arquitectura
+  G luego C  ir a Chat
+  Esc         cerrar modal / panel
+  ?           abrir ayuda de atajos
+  (Los atajos se documentan en K2.PRD.MAN.USR.)
+
+8.11 ESTADOS VACIOS
+  - Sin resultados: "No hay conocimiento que coincida" + sugerencias de
+    quitar filtros + enlace al glosario.
+  - Proyecto sin analisis: "Analiza el proyecto para generar conocimiento".
+  - Dimension vacia: no se muestra en el menu (regla T6).
+
+8.12 METRICAS DE BUSQUEDA
+  - Tasa de cero resultados < 10%.
+  - Tiempo hasta el primer clic < 15 s.
+  - Consultas repetidas que terminan en el mismo resultado (indica mala
+    navegacion).
+  - Uso de facetas por sesion.
+
+
+==============================================================================
+ 9. MAPA DE CONOCIMIENTO
+==============================================================================
+
+9.1 LEYENDA
+  [K1] verde   = conocimiento del proyecto analizado
+  [K2] azul    = conocimiento del producto
+  [KU] ambar   = unidad atomica / evidencia
+  [DOC] violeta= documento compuesto
+  ---  linea continua = relacion verificada (dura)
+  ...  linea punteada = relacion inferida por IA (blanda)
+
+9.2 GRAFO CONCEPTUAL (ASCII)
+  Nota: el grafo completo y navegable esta en el archivo
+  `Mapa_Conocimiento_CodeExplain.html` (seccion 9.4).
+
+                          +---------------------------+
+                          |   CODEEXPLAIN KNOWLEDGE   |
+                          +-------------+-------------+
+                                        |
+                 +----------------------+----------------------+
+                 |                                             |
+        +--------v--------+                          +---------v---------+
+        | K1 PROYECTO     |                          | K2 PRODUCTO       |
+        | (analizado)     |                          | (CodeExplain)     |
+        +--------+--------+                          +---------+---------+
+                 |                                             |
+   +------+------+------+------+------+------+      +------+---+-----+------+------+
+   |      |      |      |      |      |      |      |      |         |      |      |
+  CTX   ARQ    DAT    COM    CAL    DOC    CON    F1-F5  REQ      ARQ    MAN    OPS
+   |      |      |      |      |      |      |      |      |         |      |      |
+  VIS   MOD    TAB    CU     RIE    REA    SES    F3     RF/RNF    ADR    USR    ENT
+  STK   DEP    COL    GHE    CVE    OAS    MSG    F4     RN/RE     ASR    INS    SEG
+  REP   MET    REL    API    DEU    C4     QUE           (SRS)     ESC    API    PRI
+  ENT   DIA    MIG    FLU    SPO    ADR    PRO
+                              AST
+
+  Enlaces cruzados (los 12 del mapa):
+    K1.CAL.RIE  --documenta-->  K1.DOC.ADR
+    K1.ARQ.MOD  --documenta-->  K1.DOC.C4
+    K1.COM.API  --documenta-->  K1.DOC.OAS
+    K1.CON.MSG  --cita-->       K1.DOC.REA
+    K1.CAL.DEU  --deriva_de-->  K1.CAL.RIE
+    K1.CTX.REP  --contiene-->   K1.ARQ.MOD
+    K1.CAL.RIE  --afecta-->     K1.COM.CU
+    K1.CAL.DEU  --deriva_de-->  K1.CAL.CVE
+    K2.ARQ.ADR  --documenta-->  K1.ARQ.MOD (cuando aplica)
+    K2.MAN.USR  --cita-->       K2.REQ.RF
+    K2.REQ.RNF  --afecta-->     K2.ARQ.ASR
+    K2.OPS.PRI  --afecta-->     K1.CON.QUE
+
+9.3 NODOS Y ARISTAS (resumen)
+  Nodos raiz      : 2 (K1, K2) bajo el nodo CE.
+  Dimensiones     : 12 (7 de K1 + 5 de K2).
+  Tipos de artefacto: 47 (29 de K1 + 18 de K2; ver anexo A).
+  Nodos totales del mapa: 62 (1 CE + 2 dominios + 12 dimensiones + 47 tipos).
+  Aristas de contencion: 61 (una por nodo, excepto CE).
+  Aristas cruzadas: 12 (ver 9.2 y 7.5).
+  Aristas tipadas : 10 (evidencia, depende_de, contiene, usa, afecta,
+                    deriva_de, documenta, cita, contradice, reemplaza).
+  Profundidad     : 4 niveles (dominio > dimension > tipo > instancia).
+  Nodos tipicos por proyecto: 150-400 (un proyecto mediano).
+  Nodos K2        : 5 fases + 85 requerimientos + 18 ASR + 13 ADR + manual.
+
+9.4 VERSION VISUAL
+  Archivo: `Mapa_Conocimiento_CodeExplain.html`
+  - Grafo interactivo en SVG, sin dependencias externas (offline).
+  - Nodos agrupados por dominio, con color por tipo.
+  - Al pasar el mouse se resaltan las aristas conectadas.
+  - Al hacer clic se abre una ficha con: codigo, definicion, ejemplo de
+    metadatos y enlaces.
+  - Incluye leyenda, buscador simple y boton "centrar".
+  - Se abre en el navegador; sirve como anexo visual del documento.
+
+9.5 MANTENIMIENTO DEL MAPA
+  - El mapa no se dibuja a mano: se genera desde la tabla `edges`.
+  - Alta de un nodo = alta de una fila en `nodes` con su codigo.
+  - Revision mensual: nodos huerfanos (sin arista) y enlaces rotos.
+  - El HTML es una proyeccion de solo lectura; la fuente es el JSON/SQLite.
+
+
+==============================================================================
+ 10. REUTILIZACION DEL CONOCIMIENTO
+==============================================================================
+
+10.1 MATRIZ ARTEFACTO -> REUTILIZACION
++---------------------------+--------------------------------------+---------------------------+
+| Artefacto (KU)            | Se reutiliza en                     | Mecanismo                 |
++---------------------------+--------------------------------------+---------------------------+
+| Glosario / tesauro        | UI, prompts IA, documentos           | inyeccion + tooltips      |
+| KU de modulo              | vista arquitectura, C4, README, chat | composicion por codigo    |
+| KU de tabla/columna       | vista BD, OpenAPI, README            | plantilla + secciones     |
+| KU de caso de uso         | vista CU, Gherkin, README            | composicion               |
+| KU de riesgo              | vista riesgos, ADR, informe de deuda | enlace + seccion          |
+| KU de deuda               | vista deuda, informe exportable      | agregacion por proyecto   |
+| Evidencia (fuente)        | auditoria, confianza, trazabilidad   | cita con hash y lineas    |
+| Plantilla de documento    | generador, export, chat              | seleccion por doc_type    |
+| Prompt por nivel          | chat, explain, documentos            | biblioteca de prompts     |
+| Consulta validada         | historial, FAQ, onboarding           | promocion a KU            |
++---------------------------+--------------------------------------+---------------------------+
+
+10.2 PLANTILLAS Y SNIPPETS
+  - Plantilla de documento: README, OpenAPI, C4, ADR (ya existen en RF-BE-20).
+  - Snippet de codigo: bloque reutilizable con lenguaje y evidencia.
+  - Snippet de riesgo: categoria + severidad + mitigacion + evidencia.
+  - Snippet de metrica: nombre + valor + unidad + fecha + fuente.
+  Regla: un snippet no se copia; se referencia por ID para que las
+  actualizaciones se propaguen.
+
+10.3 BIBLIOTECA DE PROMPTS POR NIVEL
+  - `prompt.basico.v1`, `prompt.intermedio.v1`, `prompt.avanzado.v1`
+    (alineados con LEVEL_PROMPTS de server.ts).
+  - Versionados y con metadatos: nivel, objetivo, tono, prohibiciones.
+  - Se inyectan junto con el glosario para evitar sinonimos.
+  - Se pueden probar contra un set de preguntas de referencia.
+
+10.4 PATRONES ENTRE PROYECTOS
+  - Solo se comparten patrones anonimos, nunca codigo ni datos del cliente.
+  - Un patron es una KU de K1 promovida a K2 con `sensibilidad=publico`.
+  - Requiere revision humana y consentimiento (C-REG-02).
+  - Ejemplo: "webhook sin validacion de firma" como patron de riesgo.
+
+10.5 CICLO DE VIDA
+  Capturar -> Clasificar -> Enlazar -> Validar -> Reutilizar -> Retirar
+  1. Capturar: ingesta o consulta genera una KU candidata.
+  2. Clasificar: tipo, codigo de taxonomia, etiquetas, nivel.
+  3. Enlazar: evidencia, entidad afectada, documentos que la citan.
+  4. Validar: revision humana si confianza < alta.
+  5. Reutilizar: aparece en vistas, documentos, prompts y busqueda.
+  6. Retirar: estado=obsoleto; se conserva por trazabilidad.
+
+
+==============================================================================
+ 11. GOBERNANZA Y CALIDAD
+==============================================================================
+
+11.1 ROLES
++---------------------+-----------------------------------------------------------+
+| Rol                 | Responsabilidad                                           |
++---------------------+-----------------------------------------------------------+
+| Knowledge Owner     | Define taxonomia, tesauro y prioridades.                  |
+| Curador             | Revisa KUs, valida, deduplica y retira.                   |
+| Contribuidor        | Crea KUs desde analisis, chat o documentos.               |
+| Consumidor          | Usa busqueda, vistas y documentos (no edita).             |
+| Administrador TI    | Configura entorno, secretos y retencion.                  |
++---------------------+-----------------------------------------------------------+
+
+11.2 VERSIONADO
+  - KU: semver (1.0.0). Cambio de claim = major; correccion = minor;
+    formato = patch.
+  - Documento: version + checksum; se guarda el historial de generaciones.
+  - Tesauro: versionado aparte; un cambio de termino afecta la busqueda y
+    los prompts (se prueba antes de publicar).
+
+11.3 REGLAS DE CALIDAD
+  Q1. Toda KU tiene evidencia y codigo de taxonomia.
+  Q2. Sin duplicados por hash_contenido.
+  Q3. Sin enlaces rotos (validacion semanal).
+  Q4. Sin sinonimos prohibidos en titulos y claims.
+  Q5. Los documentos citan las KUs que los componen.
+  Q6. Las opiniones estan separadas de los hechos.
+
+11.4 METRICAS
++-----------------------------+----------------------------------+-------------------+
+| Metrica                     | Formula                          | Objetivo          |
++-----------------------------+----------------------------------+-------------------+
+| Cobertura                   | entidades con KU / entidades     | >= 80%            |
+| Completitud de metadatos    | campos llenos / obligatorios     | >= 90%            |
+| Nodos huerfanos             | nodos sin arista / total         | <= 5%             |
+| Enlaces rotos               | rotos / total                    | 0                 |
+| Duplicados                  | duplicados detectados            | 0                 |
+| Reutilizacion               | KUs citadas en 2+ salidas / total| >= 40%            |
+| Frescura                    | KUs sin revisar > 90 dias / total| <= 10%            |
+| Busqueda sin resultados     | consultas con 0 resultados       | <= 10%            |
++-----------------------------+----------------------------------+-------------------+
+
+11.5 RETENCION Y DEPRECACION
+  - Codigo y evidencia: retencion=sesion (no se persiste en v1.0).
+  - Consultas: 30d por defecto; el usuario puede borrarlas.
+  - Documentos: permanentes mientras el proyecto exista.
+  - K2 (producto): permanente y versionado.
+  - Retiro: estado=obsoleto + motivo + fecha + reemplazo (si existe).
+  - Derecho de eliminacion: borra KUs y evidencia del proyecto, conserva
+    solo metricas agregadas y anonimas.
+
+
+==============================================================================
+ 12. TRAZABILIDAD CON LAS FASES 1-4
+==============================================================================
+
++----------------+--------------------------------------+-----------------------------------+
+| Fase           | Elemento                             | Como lo cubre esta arquitectura    |
++----------------+--------------------------------------+-----------------------------------+
+| F1 pain point  | Documentacion de uso incompleta      | K2.PRD.MAN + glosario en la UI     |
+| F1 pain point  | Analisis simulado                    | K1 con evidencia obligatoria (I2)  |
+| F1 pain point  | Historial sin persistencia           | K1.PRY.CON.QUE + retencion 30d     |
+| F1 pain point  | Chat sin Markdown                    | KU + render seguro (ADR-06)        |
+| F1 pain point  | Privacidad                           | sensibilidad + retencion + aviso   |
+| F2 modulo M1   | Navegacion / shell                   | 12 vistas mapeadas 1:1 a taxonomia |
+| F2 modulo M3   | Ingesta                              | flujo F1 (captura)                 |
+| F2 modulo M4   | Chat IA                              | K1.PRY.CON + biblioteca de prompts |
+| F2 modulo M12  | Generador de documentacion           | flujo F4 (composicion)             |
+| F2 modulo M13  | Historial                            | K1.PRY.CON.QUE                    |
+| F3 entidad     | ProjectWorkspace, MonitoredRepo...   | modelo de dominio 5.1              |
+| F3 requisito   | RN-01 coherencia de documentos       | I3 + composicion por proyecto      |
+| F3 requisito   | RNF-BE-03 payload/digest             | digest como KU de entrada          |
+| F4 ASR-01      | Analisis ZIP grande                  | L0 evidencia + limites de KU       |
+| F4 ASR-06      | Persistencia                         | v1.1 SQLite + DER                 |
+| F4 ASR-08      | Privacidad                           | sensibilidad/retencion (11.5)      |
+| F4 C-TEC-01    | Despliegue local                     | JSON/Markdown offline (7.3)        |
+| F4 C-BIZ-01    | Costo minimo                         | sin servicios extra en v1.0        |
++----------------+--------------------------------------+-----------------------------------+
+
+
+==============================================================================
+ 13. VALIDACION
+==============================================================================
+
+13.1 CHECKLIST
+  [ ] La taxonomia cubre las 12 vistas y las 7 entidades reales.
+  [ ] El tesauro elimina los sinonimos que hoy se usan en la UI.
+  [ ] Toda KU tiene metadatos minimos y evidencia.
+  [ ] El modelo de dominio distingue hecho, inferencia y opinion.
+  [ ] La granularidad elegida permite reutilizar sin duplicar.
+  [ ] Las herramientas respetan C-TEC-01 y C-BIZ-01.
+  [ ] La busqueda tiene campos, facetas, ranking y sinonimos definidos.
+  [ ] El mapa de conocimiento se puede generar desde `edges`.
+  [ ] La retencion cumple con la decision regulatoria (C-REG-01).
+  [ ] Los roles y metricas de gobernanza estan asignados.
+
+13.2 DECISIONES A CONFIRMAR
++-----+--------------------------------------------------+-------------+-----------+
+| D#  | Decision pendiente                               | Dueno       | Estado    |
++-----+--------------------------------------------------+-------------+-----------+
+| KD-01| Granularidad hibrida (KU atomica + composicion) | Wilder      | Pendiente |
+| KD-02| Stack v1: JSON/Markdown + grafo SVG             | Wilder/Dev  | Pendiente |
+| KD-03| Idioma del tesauro: es con claves en           | Wilder      | Pendiente |
+| KD-04| Retencion: sesion para codigo, 30d consultas    | Wilder      | Pendiente |
+| KD-05| Neo4j solo en v2 (no ahora)                     | Dev         | Pendiente |
+| KD-06| Obsidian para K2 y SQLite para K1 en v1.1       | Dev         | Pendiente |
+| KD-07| Owner del tesauro y cadencia de revision        | Wilder      | Pendiente |
++-----+--------------------------------------------------+-------------+-----------+
+
+13.3 CRITERIOS DE SALIDA
+  [ ] Taxonomia y tesauro aprobados.
+  [ ] Esquema de metadatos validado contra las 7 entidades reales.
+  [ ] KD-01..KD-07 cerradas.
+  [ ] Mapa de conocimiento revisado y sin nodos huerfanos.
+  [ ] Plan de migracion a SQLite/Obsidian aceptado para v1.1.
+
+
+==============================================================================
+ 14. ANEXOS
+==============================================================================
+
+ANEXO A. CATALOGO DE CODIGOS DE TAXONOMIA
+  K1 - PROYECTO ANALIZADO (29)
+  Contexto
+    K1.PRY.CTX.VIS  Vision general
+    K1.PRY.CTX.STK  Stack tecnologico
+    K1.PRY.CTX.REP  Repositorios
+    K1.PRY.CTX.ENT  Entradas detectadas
+  Arquitectura
+    K1.PRY.ARQ.MOD  Modulos
+    K1.PRY.ARQ.DEP  Dependencias
+    K1.PRY.ARQ.MET  Metricas
+    K1.PRY.ARQ.DIA  Diagramas C4 / UML
+  Datos
+    K1.PRY.DAT.TAB  Tablas
+    K1.PRY.DAT.COL  Columnas
+    K1.PRY.DAT.REL  Relaciones
+    K1.PRY.DAT.MIG  Migraciones
+  Comportamiento
+    K1.PRY.COM.CU   Casos de uso
+    K1.PRY.COM.GHE  Escenarios Gherkin
+    K1.PRY.COM.API  Endpoints
+    K1.PRY.COM.FLU  Flujos de usuario
+  Calidad
+    K1.PRY.CAL.RIE  Riesgos
+    K1.PRY.CAL.CVE  CVEs
+    K1.PRY.CAL.DEU  Deuda tecnica
+    K1.PRY.CAL.SPO  SPOF
+    K1.PRY.CAL.AST  Salud del AST
+  Documentacion
+    K1.PRY.DOC.REA  README
+    K1.PRY.DOC.OAS  OpenAPI
+    K1.PRY.DOC.C4   Diagrama C4
+    K1.PRY.DOC.ADR  ADR del proyecto
+  Conversacion
+    K1.PRY.CON.SES  Sesiones de chat
+    K1.PRY.CON.MSG  Mensajes
+    K1.PRY.CON.QUE  Consultas
+    K1.PRY.CON.PRO  Prompts
+
+  K2 - PRODUCTO CODEEXPLAIN (18)
+  Vision y fases
+    K2.PRD.VIS.F1   Fase 1 - Fuentes primarias
+    K2.PRD.VIS.F2   Fase 2 - Inventario funcional
+    K2.PRD.VIS.F3   Fase 3 - SRS
+    K2.PRD.VIS.F4   Fase 4 - ARD
+    K2.PRD.VIS.F5   Fase 5 - Arquitectura del conocimiento
+  Requisitos
+    K2.PRD.REQ.RF   Requerimientos funcionales
+    K2.PRD.REQ.RNF  Requerimientos no funcionales
+    K2.PRD.REQ.RN   Reglas de negocio
+    K2.PRD.REQ.RE   Restricciones
+  Arquitectura tecnica
+    K2.PRD.ARQ.ADR  Decisiones (ADR)
+    K2.PRD.ARQ.ASR  Requerimientos significativos
+    K2.PRD.ARQ.ESC  Escenarios medibles
+  Manuales
+    K2.PRD.MAN.USR  Manual de usuario
+    K2.PRD.MAN.INS  Instalacion
+    K2.PRD.MAN.API  Contratos de API
+  Operacion
+    K2.PRD.OPS.ENT  Entorno
+    K2.PRD.OPS.SEG  Seguridad
+    K2.PRD.OPS.PRI  Privacidad y retencion
+
+  Total: 47 codigos (29 K1 + 18 K2), identicos a los nodos del mapa.
+
+ANEXO B. PLANTILLA DE KU
+  ku_id:
+  tipo:
+  dominio: K1 | K2
+  proyecto_id:
+  codigo_taxonomia:
+  titulo:
+  claim:            (una sola afirmacion verificable)
+  autor: user | system | gemini
+  fecha_creacion:
+  fecha_actualizacion:
+  version: 1.0.0
+  estado: borrador
+  nivel: basico | intermedio | avanzado | na
+  fuente_id:        (obligatorio en K1)
+  confianza: alta | media | baja
+  sensibilidad: publico | interno | restringido
+  retencion: sesion | 30d | 90d | permanente
+  idioma: es | en
+  etiquetas: [ ]
+  enlaces: [ {rel, destino} ]
+  hash_contenido:
+  modelo:
+
+ANEXO C. ESQUEMA JSON MINIMO (para el indice)
+  {
+    "nodes": [
+      {"id":"KU-00042","tipo":"ku","dominio":"K1","codigo":"K1.PRY.ARQ.DEP",
+       "titulo":"payments depende de redis","estado":"validado",
+       "etiquetas":["arquitectura","pagos"]}
+    ],
+    "edges": [
+      {"origen":"KU-00042","rel":"evidencia","destino":"SRC-server","peso":1.0},
+      {"origen":"KU-00042","rel":"afecta","destino":"MOD-payments","peso":0.9}
+    ]
+  }
+
+ANEXO D. INVENTARIO DE ARTEFACTOS
+  Documentacion_Fase1_CodeExplain.txt        (necesidades y pain points)
+  Documentacion_Fase2_CodeExplain.txt        (inventario funcional)
+  Documentacion_Fase3_SRS_CodeExplain.txt    (SRS, 85 req., DER)
+  Documentacion_Fase4_ARD_CodeExplain.txt    (18 ASR, 14 drivers, 15 constraints)
+  Documentacion_Fase5_ArquitecturaConocimiento_CodeExplain.txt (este documento)
+  Mapa_Conocimiento_CodeExplain.html         (mapa visual interactivo)
+  src/types/index.ts                         (7 entidades reales)
+  src/views/*.tsx                            (12 vistas)
+  server.ts                                  (endpoints y prompts)
+
+ANEXO E. SIGUIENTE PASO
+  1. Aprobar KD-01..KD-07.
+  2. Implementar el esquema de metadatos y la tabla `edges` en la app.
+  3. Generar el mapa desde datos reales (no escrito a mano).
+  4. Migrar K2 a un vault Obsidian y K1 a SQLite en v1.1.
+  5. Revisar la busqueda con 10 consultas reales de usuario.
+
+==============================================================================
+ FIN DEL DOCUMENTO - Arquitectura del Conocimiento v1.0 (Fase 5)
+==============================================================================

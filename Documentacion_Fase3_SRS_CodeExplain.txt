@@ -1,0 +1,1744 @@
+==============================================================================
+ DOCUMENTO SRS - FASE 3: INGENIERIA DE REQUERIMIENTOS FORMAL
+ Sistema   : CodeExplain - Analisis & Explicacion de Software con IA
+ Referencia: SRS solicitado para "Showare" (aplicado a CodeExplain por la
+             decision de alcance tomada en la Fase 1)
+ Version   : 1.0
+ Fecha     : 11/11/2026
+ Formato   : 6 secciones (Introduccion, Descripcion general, Requisitos
+             especificos, Modelado, Trazabilidad, Anexos)
+==============================================================================
+
+CONTROL DE VERSIONES
++------+------------+------------------------------------------+-----------+
+| Ver  | Fecha      | Cambio                                   | Autor     |
++------+------------+------------------------------------------+-----------+
+| 0.1  | 11/11/2026 | Borrador a partir de Fase 1 y Fase 2     | Equipo CE |
+| 1.0  | 11/11/2026 | SRS completo con modelado y trazabilidad | Equipo CE |
++------+------------+------------------------------------------+-----------+
+
+COMO LEER ESTE DOCUMENTO
+- Cada requerimiento tiene ID unico (RF-FE-xx, RF-BE-xx, RNF-xx, RN-xx, RE-xx).
+- [P] = propuesto, aun no implementado en el codigo actual.
+- Sin [P] = ya existe en el codigo (verificado en server.ts y src/).
+- Los criterios de aceptacion (CA) usan formato Dado / Cuando / Entonces.
+- MoSCoW: M = Must, S = Should, C = Could, W = Won't (fuera de esta version).
+- La prioridad MoSCoW de cada RF se indica en la linea de cabecera del bloque.
+
+
+==============================================================================
+ 1. INTRODUCCION
+==============================================================================
+
+1.1 PROPOSITO
+Este SRS define de forma verificable que debe hacer CodeExplain y bajo que
+condiciones se acepta. Es el contrato entre el dueno del producto, el
+desarrollador y los usuarios que consumen las explicaciones y la documentacion
+generada. Es la entrada de la Fase 4 (diseno detallado) y del plan de pruebas.
+
+1.2 ALCANCE
+Dentro del alcance (v1.0):
+  - Analisis de un proyecto cargado como ZIP, URL Git o codigo pegado.
+  - Explicacion en 3 niveles (basico, intermedio, avanzado) con IA o fallback.
+  - 12 vistas de analisis: vision general, arquitectura y modulos, C4/UML,
+    modelo de datos, casos de uso, riesgos, deuda tecnica, repositorios,
+    historial, generador de documentacion, chat y proyectos.
+  - Generacion y descarga de documentacion (README, OpenAPI, C4, ADR).
+
+Fuera del alcance (v1.0) -> seccion 3.7:
+  - Autenticacion multiusuario, facturacion, colaboracion en tiempo real,
+    app movil, ejecucion del codigo analizado y marketplace de plugins.
+
+1.3 DEFINICIONES Y ACRONIMOS
++----------------+-----------------------------------------------------------+
+| Termino        | Significado                                               |
++----------------+-----------------------------------------------------------+
+| AST            | Arbol de sintaxis abstracta; base del analisis estatico.  |
+| Digest         | Inventario + muestra de texto del proyecto (no el ZIP).   |
+| SLOC           | Lineas de codigo fuente sin blancos ni comentarios.       |
+| SPOF           | Single Point of Failure (punto unico de falla).           |
+| C4             | Modelo de diagramas Contexto / Contenedores / Componentes.|
+| ADR            | Architecture Decision Record.                             |
+| CVE            | Identificador publico de vulnerabilidad.                  |
+| STRIDE         | Modelo de amenazas (Spoofing, Tampering, Repudiation...). |
+| RF / RNF       | Requerimiento funcional / no funcional.                   |
+| RN / RE        | Regla de negocio / restriccion.                           |
+| MoSCoW         | Must, Should, Could, Won't.                               |
+| Fallback       | Motor heuristico local que responde si Gemini no esta.    |
+| CA             | Criterio de aceptacion.                                   |
+| CU             | Caso de uso.                                              |
+| TC             | Test case (prueba).                                       |
++----------------+-----------------------------------------------------------+
+
+1.4 REFERENCIAS
+  R1. Documentacion_Fase1_CodeExplain.txt (fuentes primarias, pain points).
+  R2. Documentacion_Fase2_CodeExplain.txt (inventario y 84 requerimientos).
+  R3. server.ts (endpoints /api/gemini/chat, /explain, /document).
+  R4. src/lib/analyzeProject.ts (digest, limites y POST /api/analyze).
+  R5. src/types/index.ts (modelo de datos de la interfaz).
+  R6. src/data/mockData.ts (datos de ejemplo y estructura de las vistas).
+  R7. metadata.json (identidad y capability GEMINI server-side).
+  R8. README.md y .env.example (instalacion y variables de entorno).
+
+1.5 VISION GENERAL DEL DOCUMENTO
+  Seccion 2: contexto, usuarios, entorno, restricciones y supuestos.
+  Seccion 3: RF con 5 campos + CA, RNF medibles, RN/RE, MoSCoW e
+             Impacto vs Esfuerzo.
+  Seccion 4: casos de uso, flujos, secuencia y DER.
+  Seccion 5: trazabilidad necesidad -> RF -> diseno -> prueba.
+  Seccion 6: validacion por walkthrough y criterios de salida.
+  Seccion 7: anexos (catalogo de pruebas, contratos de API, checklist).
+
+
+==============================================================================
+ 2. DESCRIPCION GENERAL
+==============================================================================
+
+2.1 PERSPECTIVA DEL PRODUCTO
+CodeExplain es una SPA (React 19 + TypeScript + Vite) servida por un backend
+Express que expone la IA (Google Gemini 2.5 Flash) y un motor de respaldo. El
+navegador extrae y resume el proyecto; el servidor interpreta ese resumen y
+devuelve analisis, respuestas y documentos.
+
+  +------------------+      HTTPS/JSON      +---------------------------+
+  | Navegador (SPA)  | -------------------> | Express (server.ts)       |
+  | 12 vistas        |                      |  /api/gemini/chat         |
+  | JSZip (extrae)   | <------------------- |  /api/gemini/explain      |
+  | Estado en memoria|        JSON          |  /api/gemini/document     |
+  +------------------+                      |  /api/analyze       [P]   |
+         |                                  |  /api/analyze-url   [P]   |
+         | lee el ZIP                       +-------------+-------------+
+         v                                                |
+  +------------------+                                    v
+  | Archivo .zip     |                      +---------------------------+
+  | del usuario      |                      | Gemini API (si hay key)   |
+  +------------------+                      | o motor heuristico local  |
+                                            +---------------------------+
+
+2.2 FUNCIONES PRINCIPALES (15 modulos)
++------+----------------------------+-----------------------------------------+
+| Mod  | Nombre                     | Funcion principal                       |
++------+----------------------------+-----------------------------------------+
+| M1   | Navegacion / Shell         | 12 vistas, selector de proyecto/nivel.  |
+| M2   | Proyectos                  | Alta, seleccion y tarjetas de proyecto. |
+| M3   | Ingesta de repositorios    | ZIP, URL Git o codigo pegado + analisis.|
+| M4   | Chat IA                    | Explicacion en 3 niveles con contexto.  |
+| M5   | Vision General             | Dashboard de metricas y accesos.        |
+| M6   | Arquitectura & Modulos     | Acoplamiento Ca/Ce/I por modulo.        |
+| M7   | Diagramas C4 & UML         | Diagrama interactivo y detalle de nodo. |
+| M8   | Modelo de Datos / BD       | Tablas, PK/FK/unique y particion.       |
+| M9   | Casos de Uso               | Actor, pre/postcondicion y Gherkin.     |
+| M10  | Riesgos & Validacion       | Riesgos STRIDE y CVE.                   |
+| M11  | Auditor de Deuda Tecnica   | Horas de deuda y dependencias obsoletas.|
+| M12  | Generador de Documentacion | README, OpenAPI, C4 y ADR descargables. |
+| M13  | Historial de Consultas     | Consultas, favoritos y reenvio al chat. |
+| M14  | Repositorios Analizados    | Rama, SLOC, estado AST y commit.        |
+| M15  | Configuracion / IA / Seg.  | API key, limites, fallback y errores.   |
++------+----------------------------+-----------------------------------------+
+
+2.3 CLASES DE USUARIOS
++----------------------+----------------------------------------------------+
+| Clase                | Necesidad principal                                |
++----------------------+----------------------------------------------------+
+| U1 Desarrollador     | Entender codigo ajeno y documentarlo rapido.       |
+| U2 Estudiante        | Explicaciones basicas con analogias.               |
+| U3 Arquitecto/Revisor| Metricas de acoplamiento, riesgos y C4.            |
+| U4 Docente/Evaluador | Verificar que la explicacion sea correcta.         |
+| U5 Dueno del producto| Ver el estado real del sistema y su adopcion.      |
+| U6 Administrador TI  | Configurar la API key, el puerto y los limites.    |
++----------------------+----------------------------------------------------+
+Actores externos: Gemini API (proveedor de IA), hosting Git (GitHub, GitLab,
+Bitbucket) y el navegador del usuario.
+
+2.4 ENTORNO OPERATIVO
+  - Servidor: Node.js 20+, Express 4, ejecucion con `npm run dev` (tsx).
+  - Cliente: navegadores modernos con ES2022 (Chrome/Edge 110+, Firefox 110+).
+  - Sistema verificado: Windows 11; ruta del proyecto sin caracteres especiales.
+  - Puerto: variable PORT (valor usado en este equipo: 3100; 3000 reservado).
+  - Persistencia: en memoria (v1.0); no requiere base de datos para arrancar.
+
+2.5 RESTRICCIONES (detalle en 3.4)
+  RE-01 Node.js 20+ y navegador ES2022.
+  RE-02 Puerto configurable por PORT (3100 en este equipo).
+  RE-03 Ruta sin "a con tilde" ni "&" por compatibilidad de npm en Windows.
+  RE-04 La API key solo se lee del entorno del servidor.
+  RE-05 El analisis no ejecuta el codigo del proyecto cargado.
+
+2.6 SUPUESTOS Y DEPENDENCIAS
+  S1. Existe GEMINI_API_KEY valida para el modo IA real; sin ella se usa fallback.
+  S2. Hay conexion a internet para el modo IA y para la ingesta por URL Git.
+  S3. El usuario tiene permiso para subir el codigo que analiza.
+  S4. El ZIP no supera 200 MB y contiene archivos legibles.
+  S5. La cuota de Gemini alcanza para la sesion de uso prevista.
+
+2.7 REQUISITOS DE ALTO NIVEL (resumen)
+  HN-01 Cargar un proyecto y obtener un analisis en menos de 2 minutos.
+  HN-02 Explicar cualquier modulo en 3 niveles de audiencia.
+  HN-03 Generar documentacion util y descargable del proyecto activo.
+  HN-04 No interrumpir la sesion si la IA falla (fallback obligatorio).
+  HN-05 No exponer credenciales ni datos sensibles al navegador.
+
+
+==============================================================================
+ 3. REQUISITOS ESPECIFICOS
+==============================================================================
+
+3.1 CONVENCIONES
+  Formato de cada RF:
+    Cabecera : ID | Modulo | Funcionalidad | Capa | Tipo | Origen | MoSCoW
+    Descripcion, Entradas, Proceso/reglas, Salidas y CA-xx.
+  Origen: U = requerimiento de usuario, S = requerimiento de sistema.
+  Un RF describe UNA sola cosa (atomicidad, Fase 2).
+  Los CA son obligatorios: un RF sin CA verificable no se acepta.
+
+3.2 REQUISITOS FUNCIONALES DETALLADOS
+
+--- M1. NAVEGACION / SHELL --------------------------------------------------
+
+RF-FE-01 | M1 Navegacion | Sidebar de 12 vistas | FE | RF | U | MoSCoW: M
+  Descripcion: Muestra las 12 vistas agrupadas en 3 bloques (Explorar,
+    Analisis, Herramientas IA).
+  Entradas   : Sesion activa; lista de vistas definida en App.tsx/Sidebar.tsx.
+  Proceso    : Renderiza los grupos y marca la vista actual.
+  Salidas    : Menu lateral con 12 items navegables.
+  CA-01: Dado un usuario en la app, cuando observa el sidebar, entonces ve 12
+         items distribuidos en 3 grupos con titulo.
+  CA-02: Dado que hace clic en un item, entonces la vista cambia sin recargar.
+
+RF-FE-02 | M1 Navegacion | Resaltado de vista activa | FE | RF | U | MoSCoW: M
+  Descripcion: La vista seleccionada se resalta visualmente.
+  Entradas   : Vista actual en el estado de la app.
+  Proceso    : Aplica clase activa al item correspondiente.
+  Salidas    : Item con color/fondo distinto y aria-current.
+  CA-01: Dada una vista abierta, su item del sidebar es el unico resaltado.
+  CA-02: Al cambiar de vista, el resaltado se mueve en menos de 100 ms.
+
+RF-FE-03 | M1 Navegacion | Selector de proyecto | FE | RF | U | MoSCoW: M
+  Descripcion: Desplegable del header que cambia el proyecto activo.
+  Entradas   : Lista de proyectos disponibles; proyecto activo.
+  Proceso    : Al elegir otro proyecto actualiza el contexto global.
+  Salidas    : Nombre del proyecto activo y datos recalculados en las vistas.
+  CA-01: Al seleccionar un proyecto, el header muestra su nombre.
+  CA-02: Las vistas de analisis muestran datos del proyecto elegido.
+
+RF-FE-04 | M1 Navegacion | Selector global de nivel | FE | RF | U | MoSCoW: M
+  Descripcion: Permite elegir Basico/Intermedio/Avanzado y conservarlo.
+  Entradas   : Seleccion del usuario (3 opciones).
+  Proceso    : Guarda el nivel en el estado global y lo pasa al chat.
+  Salidas    : Nivel activo visible y aplicado a las respuestas.
+  CA-01: Al elegir "Avanzado", el chat responde con nivel avanzado.
+  CA-02: El nivel se conserva al cambiar de vista.
+
+RF-FE-05 | M1 Navegacion | Boton Subir Repo Git | FE | RF | U | MoSCoW: M
+  Descripcion: Abre el modal de ingesta de proyectos desde el header.
+  Entradas   : Clic del usuario.
+  Proceso    : Cambia el estado del modal a visible.
+  Salidas    : Modal de ingesta con sus 3 pestanas.
+  CA-01: Al hacer clic, el modal aparece en menos de 300 ms.
+  CA-02: El modal se cierra con la X y con la tecla Escape.
+
+RF-FE-06 | M1 Navegacion | Indicador de cuota de tokens | FE | RF | S | MoSCoW: C
+  Descripcion: Muestra el consumo de tokens en la barra lateral.
+  Entradas   : Contador de tokens (simulado en v1.0).
+  Proceso    : Dibuja barra de progreso y porcentaje.
+  Salidas    : Indicador visible con valor numerico.
+  CA-01: El indicador muestra un valor entre 0 y 100%.
+  CA-02: [P] El valor se actualiza con el consumo real de la sesion.
+
+RF-FE-07 | M1 Navegacion | Estados de carga y error | FE | RF | U | MoSCoW: M
+  Descripcion: Cada vista muestra spinner al cargar y mensaje claro si falla.
+  Entradas   : Estado de carga o error de la vista.
+  Proceso    : Renderiza spinner (animate-spin) o bloque de error.
+  Salidas    : Feedback visual y accion de reintento.
+  CA-01: Mientras carga una vista se ve un spinner.
+  CA-02: Ante un error se muestra el motivo y un boton de reintento.
+
+RF-BE-01 | M1 Navegacion | Servicio de la SPA | BE | RF | S | MoSCoW: M
+  Descripcion: Sirve la app con Vite middleware en desarrollo y estaticos en
+    produccion, con fallback a index.html.
+  Entradas   : Peticion HTTP del navegador.
+  Proceso    : En dev usa Vite; en prod sirve dist/ y devuelve index.html para
+    rutas del cliente.
+  Salidas    : HTML/JS/CSS con HTTP 200.
+  CA-01: GET / responde 200 con el HTML de la app.
+  CA-02: GET /cualquier-ruta-de-vista responde el index.html (no 404).
+
+RF-BE-02 | M1 Navegacion | Estado del sistema [P] | BE | RF | S | MoSCoW: S
+  Descripcion: Endpoint GET /api/health devuelve estado del servidor y de la IA.
+  Entradas   : Peticion GET sin cuerpo.
+  Proceso    : Comprueba proceso, version y si aiClient esta inicializado.
+  Salidas    : {status, uptime, ai: "gemini"|"fallback", version}.
+  CA-01: Sin key configurada devuelve ai="fallback" y HTTP 200.
+  CA-02: Con key valida devuelve ai="gemini".
+
+--- M2. PROYECTOS -----------------------------------------------------------
+
+RF-FE-08 | M2 Proyectos | Tarjetas de proyecto | FE | RF | U | MoSCoW: M
+  Descripcion: Cada tarjeta muestra tag, lenguajes, salud AST, deuda, SPOF y
+    actividad.
+  Entradas   : Objeto ProjectWorkspace.
+  Proceso    : Renderiza tarjeta con metricas y tag de color.
+  Salidas    : Tarjeta con 6 datos visibles.
+  CA-01: La tarjeta muestra tag, lenguajes y salud AST.
+  CA-02: Un astHealth < 70 se muestra con tag "ATENCION".
+
+RF-FE-09 | M2 Proyectos | Seleccion de proyecto activo | FE | RF | U | MoSCoW: M
+  Descripcion: Al elegir una tarjeta, el proyecto activo cambia en toda la app.
+  Entradas   : Clic en la tarjeta.
+  Proceso    : Actualiza el id de proyecto activo en el estado global.
+  Salidas    : Vistas y header sincronizados con el proyecto.
+  CA-01: Tras el clic, el header muestra el proyecto elegido.
+  CA-02: La vista de vision general muestra sus metricas.
+
+RF-FE-10 | M2 Proyectos | Boton Nuevo proyecto | FE | RF | U | MoSCoW: M
+  Descripcion: Abre el modal de ingesta para agregar un proyecto.
+  Entradas   : Clic en "Nuevo proyecto".
+  Proceso    : Abre el modal en la pestana ZIP o Git.
+  Salidas    : Modal listo para cargar un proyecto.
+  CA-01: El modal se abre desde esta vista.
+  CA-02: Al completar el analisis, el proyecto nuevo aparece en la lista.
+
+RF-FE-11 | M2 Proyectos | Accesos a analisis | FE | RF | U | MoSCoW: S
+  Descripcion: Desde la tarjeta se navega a las vistas de analisis.
+  Entradas   : Clic en un acceso de la tarjeta.
+  Proceso    : Cambia de vista manteniendo el proyecto activo.
+  Salidas    : Vista de analisis del proyecto.
+  CA-01: El acceso abre la vista correcta con el proyecto activo.
+  CA-02: No se pierde el nivel seleccionado.
+
+RF-BE-03 | M2 Proyectos | Persistencia de proyectos [P] | BE | RF | S | MoSCoW: S
+  Descripcion: CRUD de proyectos en almacenamiento persistente.
+  Entradas   : JSON de proyecto.
+  Proceso    : Valida campos obligatorios y guarda.
+  Salidas    : Proyecto con id y fecha de creacion.
+  CA-01: Un proyecto guardado sigue disponible tras reiniciar el servidor.
+  CA-02: Sin name o repoIdentifier responde 400.
+
+RF-BE-04 | M2 Proyectos | Lista de proyectos [P] | BE | RF | S | MoSCoW: S
+  Descripcion: GET /api/projects devuelve los proyectos registrados.
+  Entradas   : Peticion GET.
+  Proceso    : Lee el almacenamiento y ordena por actividad.
+  Salidas    : Array de proyectos.
+  CA-01: Sin datos devuelve [] con HTTP 200.
+  CA-02: Con datos devuelve todos los campos de ProjectWorkspace.
+
+RF-BE-05 | M2 Proyectos | Alta de proyecto [P] | BE | RF | S | MoSCoW: S
+  Descripcion: POST /api/projects registra un proyecto nuevo.
+  Entradas   : Body JSON con name, repoIdentifier y metricas.
+  Proceso    : Valida, genera id y persiste.
+  Salidas    : 201 con el proyecto creado.
+  CA-01: Un body valido devuelve 201 y el id.
+  CA-02: Un body vacio devuelve 400 con {error}.
+
+--- M3. INGESTA DE REPOSITORIOS ---------------------------------------------
+
+RF-FE-12 | M3 Ingesta | Modal de 3 pestanas | FE | RF | U | MoSCoW: M
+  Descripcion: Pestanas Git remoto, ZIP/Carpeta y Pegar codigo en un modal.
+  Entradas   : Clic en una pestana.
+  Proceso    : Cambia el panel visible sin cerrar el modal.
+  Salidas    : Panel correspondiente con su formulario.
+  CA-01: Se ven las 3 pestanas y solo un panel activo.
+  CA-02: Al cambiar de pestana se conserva lo escrito en las otras.
+
+RF-FE-13 | M3 Ingesta | Formulario Git | FE | RF | U | MoSCoW: S
+  Descripcion: Campos URL, rama y motor de parser con validacion.
+  Entradas   : Texto del usuario.
+  Proceso    : Valida URL no vacia y con formato http(s) o git.
+  Salidas    : Formulario valido listo para analizar.
+  CA-01: URL vacia muestra error y no inicia el analisis.
+  CA-02: URL valida habilita el boton "Analizar".
+
+RF-FE-14 | M3 Ingesta | Drag & drop de ZIP | FE | RF | U | MoSCoW: M
+  Descripcion: Acepta archivos .zip con validacion de extension y tamano.
+  Entradas   : Archivo arrastrado o elegido en el selector.
+  Proceso    : Verifica extension .zip y tamano <= 200 MB.
+  Salidas    : Archivo aceptado y nombre visible; o error claro.
+  CA-01: Un .zip valido se muestra con su nombre y tamano.
+  CA-02: Un .rar o .txt muestra "Solo se aceptan archivos .zip".
+  CA-03: Un ZIP > 200 MB muestra error de tamano y no se procesa.
+
+RF-FE-15 | M3 Ingesta | Progreso por 4 pasos | FE | RF | U | MoSCoW: M
+  Descripcion: Animacion que muestra el avance del analisis paso a paso.
+  Entradas   : Eventos del pipeline de analisis.
+  Proceso    : Avanza los pasos con estado pendiente/activo/completado.
+  Salidas    : Lista de 4 pasos con check o spinner.
+  CA-01: Durante el analisis se ve el paso activo con spinner.
+  CA-02: Al terminar, los 4 pasos quedan en completado.
+
+RF-FE-16 | M3 Ingesta | Error con reintento | FE | RF | U | MoSCoW: M
+  Descripcion: Si el analisis falla, muestra el motivo y permite reintentar.
+  Entradas   : Error del pipeline o del endpoint.
+  Proceso    : Detiene la animacion y muestra el mensaje.
+  Salidas    : Bloque de error con boton "Reintentar".
+  CA-01: Un ZIP corrupto muestra el error y no deja la UI bloqueada.
+  CA-02: "Reintentar" vuelve al paso 1 y relanza el analisis.
+
+RF-BE-06 | M3 Ingesta | Analisis de digest [P] | BE | RF | S | MoSCoW: M
+  Descripcion: POST /api/analyze recibe el digest y devuelve el analisis.
+  Entradas   : {name, files, totalFiles, codeFiles, totalSloc, languages,
+    dependencies, entryCandidates, textSample, sourceKind}.
+  Proceso    : Valida el digest, arma el prompt y consulta Gemini; si falla o
+    no hay key, calcula con heuristicas.
+  Salidas    : {name, description, languages, astHealth, debtHours, spofCount,
+    reposCount, summary, model}.
+  CA-01: Un digest valido responde 200 con astHealth entre 0 y 100.
+  CA-02: Sin GEMINI_API_KEY responde 200 con model="heuristic".
+  CA-03: Un body sin name o sin files responde 400.
+  CA-04: El servidor no recibe el ZIP, solo el digest (<= 48 KB de muestra).
+
+RF-BE-07 | M3 Ingesta | Analisis por URL [P] | BE | RF | S | MoSCoW: S
+  Descripcion: POST /api/analyze-url descarga un repo Git o un sitio y lo
+    analiza.
+  Entradas   : {url, branch}.
+  Proceso    : Descarga el ZIP del repo (GitHub/GitLab/Bitbucket) o los assets
+    del sitio, aplica los mismos limites del digest y analiza.
+  Salidas    : ProjectAnalysis o error 502 si el origen no responde.
+  CA-01: Una URL de GitHub valida devuelve 200 con lenguajes y SLOC.
+  CA-02: Una URL inexistente devuelve 502 con mensaje claro.
+  CA-03: Una URL no permitida (esquema file://) devuelve 400.
+
+RF-BE-08 | M3 Ingesta | Extraccion y metricas [P] | BE | RF | S | MoSCoW: M
+  Descripcion: Descomprime el ZIP y calcula SLOC, lenguajes, archivos y
+    dependencias.
+  Entradas   : Archivo ZIP.
+  Proceso    : Omite node_modules/.git/dist; lee hasta 300 archivos de texto y
+    4 MB; cuenta SLOC y dependencias de package.json, requirements.txt,
+    go.mod y Cargo.toml.
+  Salidas    : Digest con totales y muestra de texto.
+  CA-01: Un ZIP de 100 archivos devuelve totalFiles correcto.
+  CA-02: node_modules no se cuenta en SLOC ni en la muestra.
+  CA-03: Se extraen hasta 30 dependencias de package.json.
+
+--- M4. CHAT IA -------------------------------------------------------------
+
+RF-FE-17 | M4 Chat | Burbujas de conversacion | FE | RF | U | MoSCoW: M
+  Descripcion: Mensajes de usuario/asistente con avatar, hora y nivel usado.
+  Entradas   : Lista de ChatMessage.
+  Proceso    : Renderiza burbuja segun sender y metadatos.
+  Salidas    : Conversacion legible con hora y nivel.
+  CA-01: Cada mensaje muestra emisor, hora y nivel.
+  CA-02: Usuario y asistente se distinguen visualmente.
+
+RF-FE-18 | M4 Chat | Entrada y envio | FE | RF | U | MoSCoW: M
+  Descripcion: Envio por boton y Enter; entrada bloqueada mientras responde.
+  Entradas   : Texto del usuario y evento de envio.
+  Proceso    : Valida texto no vacio, agrega el mensaje y deshabilita el input.
+  Salidas    : Mensaje en pantalla y respuesta de la IA.
+  CA-01: Enter envia y Shift+Enter hace salto de linea.
+  CA-02: Texto vacio no se envia.
+  CA-03: Mientras espera, el boton muestra spinner y no permite doble envio.
+
+RF-FE-19 | M4 Chat | Pills de nivel | FE | RF | U | MoSCoW: M
+  Descripcion: Cambio de nivel dentro del chat aplicado a los mensajes
+    siguientes.
+  Entradas   : Clic en Basico/Intermedio/Avanzado.
+  Proceso    : Actualiza el nivel de la sesion de chat.
+  Salidas    : Pill activa y nivel enviado en la siguiente peticion.
+  CA-01: Al cambiar el pill, la siguiente respuesta usa ese nivel.
+  CA-02: El historial anterior no cambia de nivel.
+
+RF-FE-20 | M4 Chat | Copiar respuesta | FE | RF | U | MoSCoW: S
+  Descripcion: Copia la respuesta al portapapeles con confirmacion visual.
+  Entradas   : Clic en "copiar".
+  Proceso    : Escribe el texto en el portapapeles.
+  Salidas    : Icono de confirmacion temporal.
+  CA-01: El portapapeles contiene el texto completo del mensaje.
+  CA-02: Se muestra "Copiado" por al menos 1.5 s.
+
+RF-FE-21 | M4 Chat | Scroll automatico | FE | RF | U | MoSCoW: S
+  Descripcion: La conversacion se desplaza sola al ultimo mensaje.
+  Entradas   : Nuevo mensaje o respuesta.
+  Proceso    : Ajusta el scroll al final del contenedor.
+  Salidas    : Ultimo mensaje visible.
+  CA-01: Tras enviar, el ultimo mensaje queda visible sin accion manual.
+
+RF-FE-22 | M4 Chat | Bienvenida contextual | FE | RF | U | MoSCoW: S
+  Descripcion: Mensaje inicial que menciona el proyecto activo y los 3 niveles.
+  Entradas   : Proyecto activo.
+  Proceso    : Genera el saludo con el nombre del proyecto.
+  Salidas    : Primer mensaje del asistente.
+  CA-01: El saludo incluye el nombre del proyecto activo.
+  CA-02: Menciona los niveles basico, intermedio y avanzado.
+
+RF-FE-23 | M4 Chat | Prompt precargado | FE | RF | U | MoSCoW: S
+  Descripcion: Otras vistas pueden abrir el chat con una pregunta ya cargada.
+  Entradas   : Texto de la pregunta desde otra vista.
+  Proceso    : Navega al chat y precarga el input.
+  Salidas    : Chat abierto con la pregunta lista para enviar.
+  CA-01: La pregunta aparece en el input sin enviarse automaticamente.
+  CA-02: El usuario puede editarla antes de enviar.
+
+RF-FE-24 | M4 Chat | Renderizado Markdown [P] | FE | RF | U | MoSCoW: S
+  Descripcion: Las respuestas muestran titulos, negritas, listas y bloques de
+    codigo.
+  Entradas   : Texto Markdown del asistente.
+  Proceso    : Convierte Markdown a HTML seguro (sin ejecutar scripts).
+  Salidas    : Respuesta formateada con bloques de codigo.
+  CA-01: "### Titulo" se muestra como encabezado.
+  CA-02: Un bloque ``` se muestra con fuente monoespaciada.
+  CA-03: Un <script> en la respuesta no se ejecuta.
+
+RF-BE-09 | M4 Chat | Endpoint de chat | BE | RF | S | MoSCoW: M
+  Descripcion: POST /api/gemini/chat responde con contexto del proyecto y nivel.
+  Entradas   : {message, level, history, projectContext}.
+  Proceso    : Valida message, arma el system prompt por nivel y consulta a
+    Gemini (gemini-2.5-flash).
+  Salidas    : {reply, level, model}.
+  CA-01: Con message valido responde 200 con reply no vacio.
+  CA-02: Sin message responde 400 {error:"Message is required"}.
+  CA-03: El prompt incluye nombre, descripcion y stack del proyecto.
+
+RF-BE-10 | M4 Chat | Prompts por nivel | BE | RF | S | MoSCoW: M
+  Descripcion: El sistema usa instrucciones distintas para cada nivel.
+  Entradas   : level = basico | intermedio | avanzado.
+  Proceso    : Selecciona LEVEL_PROMPTS[level] (o intermedio si es invalido).
+  Salidas    : Respuesta con enfoque y vocabulario del nivel.
+  CA-01: Basico evita jerga y usa analogias.
+  CA-02: Avanzado incluye concurrencia, acoplamiento y latencia.
+  CA-03: Un nivel desconocido usa intermedio sin fallar.
+
+RF-BE-11 | M4 Chat | Fallback heuristico | BE | RF | S | MoSCoW: M
+  Descripcion: Sin API key o con fallo de Gemini responde el motor local.
+  Entradas   : message, level y estado de aiClient.
+  Proceso    : Detecta temas (pagos, auth, general) y elige respuesta por nivel.
+  Salidas    : {reply, level, model:"codeexplain-core-v2.4"}.
+  CA-01: Sin key, el endpoint responde 200 con reply no vacio.
+  CA-02: Si Gemini lanza error, la respuesta igual es 200 (no 500).
+  CA-03: La respuesta varia segun el nivel.
+
+RF-BE-12 | M4 Chat | Memoria multi-turno [P] | BE | RF | U | MoSCoW: C
+  Descripcion: Usa el historial de la conversacion para mantener contexto.
+  Entradas   : history = [{role, content}].
+  Proceso    : Envia los ultimos N turnos a Gemini dentro del limite de tokens.
+  Salidas    : Respuesta coherente con turnos previos.
+  CA-01: Una pregunta de seguimiento ("y eso por que?") usa el turno anterior.
+  CA-02: Con historial vacio funciona igual que un turno unico.
+
+RNF-BE-01 | M4 Chat | Latencia de respuesta | BE | RNF | U | MoSCoW: M
+  Descripcion: Con IA activa, el 95% de las respuestas llega en < 10 s.
+  Entradas   : 100 peticiones de 20 usuarios concurrentes, mensaje de 200
+    caracteres.
+  Proceso    : Medir tiempo desde POST hasta respuesta completa.
+  Salidas    : Reporte p95.
+  CA-01: p95 <= 10 000 ms con IA activa.
+  CA-02: p95 <= 500 ms en modo fallback.
+  CA-03: 0 respuestas cortadas por timeout en la prueba.
+
+RN-04 | M4 Chat | Aviso de envio a IA [P] | FE | RN | U | MoSCoW: S
+  Descripcion: La interfaz advierte que la pregunta y el contexto se envian a
+    Gemini.
+  Entradas   : Primera consulta de la sesion.
+  Proceso    : Muestra aviso con opcion "Entendido".
+  Salidas    : Aviso visible antes de la primera llamada a la IA.
+  CA-01: El aviso aparece antes del primer envio.
+  CA-02: Tras aceptar, no vuelve a aparecer en la sesion.
+
+--- M5. VISION GENERAL ------------------------------------------------------
+
+RF-FE-25 | M5 Vision General | Dashboard de metricas | FE | RF | U | MoSCoW: M
+  Descripcion: Resume salud AST, deuda, SPOF y repos con accesos rapidos.
+  Entradas   : Proyecto activo y sus metricas.
+  Proceso    : Agrupa tarjetas de metrica y accesos.
+  Salidas    : Dashboard con 4+ metricas y accesos.
+  CA-01: Se ven astHealth, debtHours, spofCount y reposCount.
+  CA-02: Un clic en un acceso abre la vista correspondiente.
+
+RF-FE-26 | M5 Vision General | Preguntas sugeridas | FE | RF | U | MoSCoW: S
+  Descripcion: Botones de pregunta que abren el chat con el texto precargado.
+  Entradas   : Lista de preguntas sugeridas.
+  Proceso    : Navega al chat y precarga la pregunta.
+  Salidas    : Chat con la pregunta en el input.
+  CA-01: Cada boton abre el chat con su texto.
+  CA-02: La pregunta no se envia sola.
+
+RF-BE-13 | M5 Vision General | Metricas calculadas [P] | BE | RF | S | MoSCoW: C
+  Descripcion: GET /api/projects/:id/metrics devuelve metricas reales.
+  Entradas   : id de proyecto.
+  Proceso    : Agrega datos de analyses, repos y riesgos.
+  Salidas    : {astHealth, debtHours, spofCount, reposCount, updatedAt}.
+  CA-01: Un id valido devuelve 200 con las 4 metricas.
+  CA-02: Un id inexistente devuelve 404.
+
+--- M6. ARQUITECTURA & MODULOS ----------------------------------------------
+
+RF-FE-27 | M6 Arquitectura | Vista de modulos | FE | RF | U | MoSCoW: S
+  Descripcion: Muestra modulos, dependencias y grado de acoplamiento.
+  Entradas   : Lista de modulos del proyecto.
+  Proceso    : Renderiza lista y relaciones con indicador de acoplamiento.
+  Salidas    : Vista con modulos y su nivel de acoplamiento.
+  CA-01: Se listan todos los modulos con su valor de acoplamiento.
+  CA-02: Un modulo con acoplamiento alto se resalta.
+
+RF-FE-28 | M6 Arquitectura | Detalle de modulo | FE | RF | U | MoSCoW: S
+  Descripcion: Al seleccionar un modulo se muestra su informacion detallada.
+  Entradas   : Clic en un modulo.
+  Proceso    : Carga el detalle (dependencias, metricas).
+  Salidas    : Panel de detalle.
+  CA-01: El panel muestra el modulo seleccionado.
+  CA-02: Al cambiar de modulo, el panel se actualiza.
+
+RF-BE-14 | M6 Arquitectura | Calculo de acoplamiento [P] | BE | RF | S | MoSCoW: C
+  Descripcion: Calcula Ca, Ce e inestabilidad (I = Ce/(Ca+Ce)) por modulo.
+  Entradas   : Grafo de imports del proyecto.
+  Proceso    : Cuenta dependencias entrantes y salientes.
+  Salidas    : [{module, ca, ce, instability}].
+  CA-01: Un modulo sin dependencias salientes da I = 0.
+  CA-02: La suma de modulos coincide con el inventario.
+
+--- M7. DIAGRAMAS C4 & UML -------------------------------------------------
+
+RF-FE-29 | M7 Diagramas | Diagrama C4 interactivo | FE | RF | U | MoSCoW: C
+  Descripcion: Nodos de contenedores con lineas de flujo animadas.
+  Entradas   : Modelo C4 del proyecto.
+  Proceso    : Dibuja nodos y relaciones; anima el flujo.
+  Salidas    : Diagrama navegable.
+  CA-01: Se ven al menos 3 contenedores y sus relaciones.
+  CA-02: Las lineas de flujo se animan sin bloquear la UI.
+
+RF-FE-30 | M7 Diagramas | Panel de nodo | FE | RF | U | MoSCoW: C
+  Descripcion: Al seleccionar un nodo se muestra su detalle lateral.
+  Entradas   : Clic en un nodo.
+  Proceso    : Carga tecnologia, responsabilidad y dependencias.
+  Salidas    : Panel lateral con el detalle.
+  CA-01: El panel muestra el nombre y la tecnologia del nodo.
+  CA-02: Se cierra con la X o al seleccionar otro nodo.
+
+RF-BE-15 | M7 Diagramas | Generacion C4/PlantUML [P] | BE | RF | S | MoSCoW: C
+  Descripcion: Genera diagramas C4/PlantUML desde el codigo analizado.
+  Entradas   : Digest + tipo de diagrama.
+  Proceso    : Infiere contenedores y relaciones y emite PlantUML.
+  Salidas    : Texto @startuml ... @enduml valido.
+  CA-01: La salida empieza con @startuml y termina con @enduml.
+  CA-02: El texto compila en PlantUML sin errores de sintaxis.
+
+--- M8. MODELO DE DATOS / BD ------------------------------------------------
+
+RF-FE-31 | M8 Datos BD | Vista de tablas | FE | RF | U | MoSCoW: C
+  Descripcion: Tablas con columnas, PK/FK/unique y particionamiento.
+  Entradas   : Lista de DatabaseTable.
+  Proceso    : Renderiza tablas y columnas con sus llaves.
+  Salidas    : Vista de esquema legible.
+  CA-01: Se distingue PK, FK y unique en cada columna.
+  CA-02: Las tablas core se resaltan.
+
+RF-FE-32 | M8 Datos BD | Busqueda y filtro | FE | RF | U | MoSCoW: C
+  Descripcion: Filtra tablas y columnas por nombre o tipo.
+  Entradas   : Texto de busqueda.
+  Proceso    : Filtra en memoria por nombre de tabla o columna.
+  Salidas    : Lista filtrada.
+  CA-01: Al escribir "order" quedan solo las tablas que coinciden.
+  CA-02: Sin resultados se muestra un mensaje vacio.
+
+RF-BE-16 | M8 Datos BD | Introspeccion de esquema [P] | BE | RF | S | MoSCoW: C
+  Descripcion: Lee el esquema real de la base de datos del proyecto.
+  Entradas   : Cadena de conexion o archivo de migraciones.
+  Proceso    : Consulta information_schema o parsea migraciones.
+  Salidas    : Tablas y columnas normalizadas.
+  CA-01: Con migraciones SQL devuelve tablas y PK/FK.
+  CA-02: Si no puede conectar, responde 422 sin exponer credenciales.
+
+--- M9. CASOS DE USO --------------------------------------------------------
+
+RF-FE-33 | M9 Casos de uso | Vista de casos | FE | RF | U | MoSCoW: C
+  Descripcion: Muestra actor, pre/postcondicion, complejidad y pasos.
+  Entradas   : Lista de UseCaseItem.
+  Proceso    : Renderiza tarjetas expandibles.
+  Salidas    : Casos de uso legibles.
+  CA-01: Cada caso muestra actor y complejidad.
+  CA-02: Al expandir se ven precondicion, pasos y postcondicion.
+
+RF-FE-34 | M9 Casos de uso | Escenario Gherkin | FE | RF | U | MoSCoW: C
+  Descripcion: Visualiza el escenario Gherkin de cada caso de uso.
+  Entradas   : Campo gherkin del caso.
+  Proceso    : Muestra el texto en bloque monoespaciado.
+  Salidas    : Escenario Dado/Cuando/Entonces.
+  CA-01: El escenario contiene las 3 palabras clave.
+  CA-02: Se puede copiar el escenario.
+
+RF-BE-17 | M9 Casos de uso | Extraccion desde codigo [P] | BE | RF | S | MoSCoW: C
+  Descripcion: Deriva casos de uso desde rutas y controladores del proyecto.
+  Entradas   : Digest (rutas y controladores).
+  Proceso    : Detecta endpoints y actores implicados.
+  Salidas    : [{code, title, actor, steps, gherkin}].
+  CA-01: Cada ruta HTTP detectada produce al menos un caso.
+  CA-02: El caso incluye precondicion y postcondicion no vacias.
+
+--- M10. RIESGOS & VALIDACION -----------------------------------------------
+
+RF-FE-35 | M10 Riesgos | Vista de riesgos | FE | RF | U | MoSCoW: S
+  Descripcion: Riesgos STRIDE con severidad, estado, impacto y mitigacion.
+  Entradas   : Lista de RiskItem.
+  Proceso    : Agrupa por severidad y muestra detalle.
+  Salidas    : Lista priorizada de riesgos.
+  CA-01: Cada riesgo muestra categoria, severidad y mitigacion.
+  CA-02: Se pueden ordenar por severidad.
+
+RF-BE-18 | M10 Riesgos | Analisis de CVE [P] | BE | RF | S | MoSCoW: S
+  Descripcion: Detecta dependencias vulnerables del proyecto analizado.
+  Entradas   : Lista de dependencias + versiones.
+  Proceso    : Consulta una fuente de CVE (OSV/NVD) y cruza versiones.
+  Salidas    : [{package, version, cve, severity}].
+  CA-01: Una dependencia con CVE conocido aparece en la lista.
+  CA-02: Sin hallazgos devuelve [] con HTTP 200.
+  CA-03: Si la fuente externa falla, responde 200 con aviso (no rompe la vista).
+
+--- M11. AUDITOR DE DEUDA TECNICA -------------------------------------------
+
+RF-FE-36 | M11 Deuda tecnica | Vista de deuda | FE | RF | U | MoSCoW: S
+  Descripcion: Muestra horas estimadas y dependencias obsoletas.
+  Entradas   : Metricas del proyecto.
+  Proceso    : Renderiza total de horas y lista de dependencias.
+  Salidas    : Informe de deuda visible.
+  CA-01: Se ve el total de horas y al menos una dependencia si existe.
+  CA-02: Las horas coinciden con las del analisis.
+
+RF-FE-37 | M11 Deuda tecnica | Exportar informe | FE | RF | U | MoSCoW: C
+  Descripcion: Permite exportar el informe de deuda tecnica.
+  Entradas   : Clic en "Exportar".
+  Proceso    : Genera el archivo (CSV o Markdown) y lo descarga.
+  Salidas    : Archivo descargado con el informe.
+  CA-01: El archivo se descarga con nombre y fecha.
+  CA-02: El contenido incluye las horas y las dependencias.
+
+RF-BE-19 | M11 Deuda tecnica | Calculo de deuda [P] | BE | RF | S | MoSCoW: S
+  Descripcion: Estima deuda tecnica a partir de metricas del codigo.
+  Entradas   : SLOC, dependencias, tamano de archivos.
+  Proceso    : Aplica una formula documentada y estable.
+  Salidas    : debtHours (numero >= 0).
+  CA-01: Dos analisis del mismo digest dan el mismo debtHours.
+  CA-02: Mas SLOC no reduce las horas estimadas.
+
+--- M12. GENERADOR DE DOCUMENTACION -----------------------------------------
+
+RF-FE-38 | M12 Documentacion | Selector de documento | FE | RF | U | MoSCoW: M
+  Descripcion: Elige entre README, OpenAPI, C4 y ADR.
+  Entradas   : Clic en un tipo.
+  Proceso    : Actualiza el tipo activo.
+  Salidas    : Tipo seleccionado y vista previa correspondiente.
+  CA-01: Se ven las 4 opciones y solo una activa.
+  CA-02: Al cambiar, la vista previa se regenera.
+
+RF-FE-39 | M12 Documentacion | Vista previa | FE | RF | U | MoSCoW: M
+  Descripcion: Muestra el documento generado con formato legible.
+  Entradas   : Contenido devuelto por el endpoint.
+  Proceso    : Renderiza en bloque monoespaciado o Markdown.
+  Salidas    : Documento visible y desplazable.
+  CA-01: El contenido corresponde al tipo seleccionado.
+  CA-02: El documento se puede leer completo con scroll.
+
+RF-FE-40 | M12 Documentacion | Copiar documento | FE | RF | U | MoSCoW: S
+  Descripcion: Copia el documento al portapapeles con confirmacion.
+  Entradas   : Clic en "Copiar".
+  Proceso    : Escribe el contenido completo en el portapapeles.
+  Salidas    : Confirmacion temporal.
+  CA-01: El portapapeles contiene todo el documento.
+  CA-02: Se muestra "Copiado" por al menos 1.5 s.
+
+RF-FE-41 | M12 Documentacion | Descargar documento | FE | RF | U | MoSCoW: M
+  Descripcion: Descarga el documento en .md, .yaml o .puml segun el tipo.
+  Entradas   : Clic en "Descargar".
+  Proceso    : Crea un Blob y dispara la descarga con extension correcta.
+  Salidas    : Archivo descargado.
+  CA-01: README/ADR descargan .md; OpenAPI .yaml; C4 .puml.
+  CA-02: El archivo descargado abre sin errores.
+
+RF-BE-20 | M12 Documentacion | Endpoint de documentos | BE | RF | S | MoSCoW: M
+  Descripcion: POST /api/gemini/document devuelve el contenido segun tipo.
+  Entradas   : {docType, projectContext}.
+  Proceso    : Selecciona la plantilla o el prompt segun docType.
+  Salidas    : {content, type}.
+  CA-01: docType=readme devuelve Markdown con el nombre del proyecto.
+  CA-02: docType=openapi devuelve YAML con "openapi: 3.1.0".
+  CA-03: docType=c4 devuelve PlantUML con @startuml.
+  CA-04: Un docType desconocido usa readme sin fallar.
+
+RF-BE-21 | M12 Documentacion | Generacion real con IA [P] | BE | RF | U | MoSCoW: S
+  Descripcion: Genera el documento con Gemini y cae a plantilla si falla.
+  Entradas   : docType, projectContext y digest.
+  Proceso    : Pide a Gemini el documento; si falla usa la plantilla.
+  Salidas    : Documento del proyecto activo + campo model.
+  CA-01: Con IA activa el contenido menciona datos reales del proyecto.
+  CA-02: Si Gemini falla, responde 200 con la plantilla (no 500).
+
+RN-01 | M12 Documentacion | Coherencia con el proyecto | BE | RN | S | MoSCoW: M
+  Descripcion: Todo documento generado debe describir al proyecto activo.
+  Entradas   : projectContext del proyecto activo.
+  Proceso    : El prompt y la plantilla usan exclusivamente ese contexto.
+  Salidas    : Documento con nombre y stack correctos.
+  CA-01: El documento no menciona otro proyecto.
+  CA-02: El nombre del proyecto aparece en el titulo.
+
+--- M13. HISTORIAL DE CONSULTAS ---------------------------------------------
+
+RF-FE-42 | M13 Historial | Vista de historial | FE | RF | U | MoSCoW: S
+  Descripcion: Lista consultas con categoria, repo, tokens, pregunta y resumen.
+  Entradas   : Lista de QueryHistoryItem.
+  Proceso    : Renderiza tarjetas con metadatos.
+  Salidas    : Historial legible y desplazable.
+  CA-01: Cada item muestra categoria, repo y tokens.
+  CA-02: El historial se ordena por fecha descendente.
+
+RF-FE-43 | M13 Historial | Marcar favorito | FE | RF | U | MoSCoW: C
+  Descripcion: Permite marcar/desmarcar una consulta como favorita.
+  Entradas   : Clic en la estrella.
+  Proceso    : Cambia isFavorite en el estado.
+  Salidas    : Estrella rellena o vacia.
+  CA-01: El cambio se refleja de inmediato.
+  CA-02: [P] El favorito persiste tras recargar.
+
+RF-FE-44 | M13 Historial | Reenviar al chat | FE | RF | U | MoSCoW: S
+  Descripcion: Envia una consulta del historial al chat con un clic.
+  Entradas   : Clic en "Reenviar".
+  Proceso    : Abre el chat con la pregunta precargada.
+  Salidas    : Chat con la consulta lista.
+  CA-01: El chat se abre con el texto de la consulta.
+  CA-02: Se conserva el nivel usado en esa consulta.
+
+RF-BE-22 | M13 Historial | Persistencia [P] | BE | RF | S | MoSCoW: S
+  Descripcion: Guarda las consultas y las expone en GET /api/history.
+  Entradas   : Consulta (question, level, projectId, tokens).
+  Proceso    : Guarda al responder y lista por usuario/proyecto.
+  Salidas    : GET /api/history -> array ordenado.
+  CA-01: Una consulta nueva aparece en el historial.
+  CA-02: Sin datos devuelve [] con HTTP 200.
+
+--- M14. REPOSITORIOS ANALIZADOS --------------------------------------------
+
+RF-FE-45 | M14 Repositorios | Vista de repos | FE | RF | U | MoSCoW: S
+  Descripcion: Rama, lenguaje, SLOC, archivos, estado AST y ultimo commit.
+  Entradas   : Lista de MonitoredRepo.
+  Proceso    : Renderiza tabla con estado y autor.
+  Salidas    : Tabla de repositorios.
+  CA-01: Cada fila muestra rama, SLOC y estado AST.
+  CA-02: Un estado "Syncing" muestra indicador animado.
+
+RF-FE-46 | M14 Repositorios | Re-analizar repo [P] | FE | RF | U | MoSCoW: C
+  Descripcion: Accion para sincronizar y volver a analizar un repositorio.
+  Entradas   : Clic en "Re-analizar".
+  Proceso    : Dispara el analisis y muestra progreso.
+  Salidas    : Repo actualizado con nueva fecha y metricas.
+  CA-01: El estado pasa a "Syncing" durante el proceso.
+  CA-02: Al terminar, lastCommitHash y SLOC se actualizan.
+
+RF-BE-23 | M14 Repositorios | Estado de sincronizacion [P] | BE | RF | S | MoSCoW: C
+  Descripcion: GET /api/repos devuelve el estado de cada repositorio.
+  Entradas   : Peticion GET.
+  Proceso    : Lee el estado guardado de cada repo.
+  Salidas    : [{id, name, astStatus, lastCommitHash, syncedAt}].
+  CA-01: Devuelve 200 con la lista.
+  CA-02: Un repo nunca sincronizado aparece como "Pending".
+
+--- M15. CONFIGURACION / IA / SEGURIDAD -------------------------------------
+
+RF-BE-24 | M15 Configuracion | API key por entorno | BE | RF | S | MoSCoW: M
+  Descripcion: Lee GEMINI_API_KEY solo desde variables de entorno del servidor.
+  Entradas   : process.env.GEMINI_API_KEY (dotenv).
+  Proceso    : Carga .env al arrancar y lee la variable una sola vez.
+  Salidas    : Cliente IA inicializado o null.
+  CA-01: La key no aparece en ningun archivo del cliente.
+  CA-02: Cambiar la key requiere reiniciar el servidor (documentado).
+
+RF-BE-25 | M15 Configuracion | Inicializacion segura de IA | BE | RF | S | MoSCoW: M
+  Descripcion: Crea el cliente GoogleGenAI y maneja el error si la key falta.
+  Entradas   : apiKey.
+  Proceso    : Si existe, crea aiClient dentro de try/catch; si falla, avisa
+    por consola y sigue sin IA.
+  Salidas    : aiClient valido o null; servidor operativo.
+  CA-01: Sin key el servidor arranca y responde por fallback.
+  CA-02: Con key invalida el servidor arranca y no se cae.
+
+RNF-BE-02 | M15 Seguridad | Key no expuesta | BE | RNF | S | MoSCoW: M
+  Descripcion: La API key nunca se envia al navegador ni aparece en respuestas.
+  Entradas   : Bundle del cliente, respuestas HTTP y logs.
+  Proceso    : Revision estatica y de red.
+  Salidas    : 0 coincidencias de la key.
+  CA-01: Buscar la key en dist/ da 0 resultados.
+  CA-02: Ninguna respuesta de /api/* contiene la key.
+
+RNF-BE-03 | M15 Seguridad | Limite de payload | BE | RNF | S | MoSCoW: M
+  Descripcion: El servidor limita el JSON entrante a 10 MB.
+  Entradas   : POST con body de 11 MB.
+  Proceso    : express.json({limit:'10mb'}).
+  Salidas    : HTTP 413 y error controlado.
+  CA-01: Un body de 11 MB devuelve 413.
+  CA-02: Un body de 9 MB se procesa normalmente.
+
+RNF-BE-04 | M15 Seguridad | Errores JSON estandar | BE | RNF | S | MoSCoW: M
+  Descripcion: Los errores de API devuelven {error} con HTTP 400 o 500.
+  Entradas   : Peticion invalida o fallo interno.
+  Proceso    : Cada handler valida y responde con el formato acordado.
+  Salidas    : JSON {error: string}.
+  CA-01: Un body invalido devuelve 400 con {error}.
+  CA-02: Un fallo interno devuelve 500 con {error} y sin stack trace.
+
+RNF-BE-05 | M15 Calidad | Pruebas minimas [P] | BE | RNF | S | MoSCoW: S
+  Descripcion: Lint y smoke test de endpoints antes de publicar.
+  Entradas   : Codigo y endpoints.
+  Proceso    : `npm run lint` + script de smoke (chat, document, health).
+  Salidas    : Reporte de pruebas.
+  CA-01: `npm run lint` termina con 0 errores.
+  CA-02: Los 3 endpoints smoke responden 2xx.
+
+RN-02 | M15 IA | Motor de respaldo | BE | RN | S | MoSCoW: M
+  Descripcion: Sin key o con fallo de Gemini responde el motor heuristico sin
+    cortar la sesion.
+  Entradas   : Cualquier peticion de chat/analisis.
+  Proceso    : try Gemini; catch -> fallback.
+  Salidas    : Respuesta valida con model de fallback.
+  CA-01: Apagar la key y consultar devuelve 200.
+  CA-02: El campo model indica el motor usado.
+
+RN-03 | M15 Ingesta | Solo archivos de texto | BE | RN | S | MoSCoW: M
+  Descripcion: El analisis procesa texto/codigo e ignora binarios y multimedia.
+  Entradas   : Entradas del ZIP.
+  Proceso    : Filtra por extension (EXT_LANGUAGE) y omite binarios.
+  Salidas    : Digest solo con archivos legibles.
+  CA-01: Una imagen .png no entra en textSample ni en SLOC.
+  CA-02: Los binarios si cuentan en totalFiles.
+
+RE-01 | M15 Entorno | Version de Node | BE | RE | S | MoSCoW: M
+  Descripcion: Requiere Node.js 20 o superior.
+  Entradas   : `node -v`.
+  Proceso    : Comprobacion previa a la instalacion.
+  Salidas    : Version valida o mensaje de error.
+  CA-01: Con Node 20+ `npm install` y `npm run dev` funcionan.
+  CA-02: Con Node 18 el arranque falla con mensaje claro.
+
+RE-02 | M15 Entorno | Puerto configurable | BE | RE | S | MoSCoW: M
+  Descripcion: El puerto se define con PORT (3100 en este equipo).
+  Entradas   : process.env.PORT.
+  Proceso    : app.listen(PORT).
+  Salidas    : Servidor en el puerto indicado.
+  CA-01: Con PORT=3100 el servidor escucha en 3100.
+  CA-02: Si el puerto esta ocupado, el error es legible.
+
+RE-03 | M15 Entorno | Ruta sin caracteres especiales | BE | RE | S | MoSCoW: M
+  Descripcion: La carpeta del proyecto no debe contener "a con tilde" ni "&".
+  Entradas   : Ruta de instalacion.
+  Proceso    : Verificacion manual/documentada.
+  Salidas    : Proyecto en ruta ASCII.
+  CA-01: La ruta usada es C:\Users\WILDER\Downloads\analisis-web\codeexplain.
+  CA-02: El README advierte no usar rutas con acentos ni "&".
+
+
+==============================================================================
+ 3.3 REQUISITOS NO FUNCIONALES MEDIBLES (escenarios verificables)
+==============================================================================
+
+RNF-FE-01 | Rendimiento | Navegacion sin recarga | FE | RNF | U | MoSCoW: M
+  Escenario: 100 cambios de vista en un equipo de referencia (16 GB RAM,
+    Chrome 120, build de produccion).
+  Metrica  : p95 del tiempo entre clic y primer frame de la nueva vista.
+  Umbral   : <= 100 ms.
+  CA-01: p95 <= 100 ms en la prueba de 100 cambios.
+  CA-02: 0 recargas completas de pagina durante la navegacion.
+
+RNF-FE-02 | Accesibilidad | Uso basico por teclado | FE | RNF | U | MoSCoW: S
+  Escenario: recorrido completo de las acciones principales solo con teclado.
+  Metrica  : controles alcanzables con Tab / controles totales; contraste.
+  Umbral   : 100% de controles principales alcanzables y contraste >= 4.5:1.
+  CA-01: Se llega a sidebar, selector de nivel, chat y boton de envio con Tab.
+  CA-02: El foco es visible en todo momento.
+  CA-03: Los textos principales cumplen contraste >= 4.5:1.
+
+RNF-BE-06 | Rendimiento | Analisis de ZIP grande [P] | BE | RNF | U | MoSCoW: S
+  Escenario: ZIP de 50 MB con 2 000 archivos, 300 de ellos de texto.
+  Metrica  : tiempo total de extraccion + digest y memoria pico del proceso.
+  Umbral   : <= 60 s y <= 512 MB de RAM.
+  CA-01: El digest se genera en <= 60 s.
+  CA-02: El proceso no supera 512 MB de memoria pico.
+  CA-03: La UI sigue respondiendo (no se congela) durante el proceso.
+
+RNF-BE-07 | Disponibilidad | Servicio en demo | BE | RNF | U | MoSCoW: M
+  Escenario: sesion de demo de 8 horas con health check cada 5 minutos.
+  Metrica  : peticiones exitosas / peticiones totales.
+  Umbral   : >= 99% (maximo 9 fallos en 96 comprobaciones).
+  CA-01: Disponibilidad >= 99% durante la ventana.
+  CA-02: Cualquier caida se recupera con reinicio documentado.
+
+RNF-BE-08 | Escalabilidad | Usuarios concurrentes | BE | RNF | S | MoSCoW: C
+  Escenario: 50 usuarios concurrentes durante 10 minutos en modo fallback.
+  Metrica  : tasa de error y latencia p95.
+  Umbral   : errores < 1% y p95 <= 1 000 ms.
+  CA-01: Tasa de error < 1%.
+  CA-02: p95 <= 1 000 ms.
+  CA-03: Sin reinicio del servidor durante la prueba.
+
+RNF-FE-03 | Compatibilidad | Navegadores soportados | FE | RNF | U | MoSCoW: M
+  Escenario: abrir las 12 vistas en Chrome, Edge y Firefox (ultimas 2 versiones).
+  Metrica  : vistas sin error de consola / vistas totales.
+  Umbral   : 12/12 en cada navegador.
+  CA-01: 0 errores de consola en las 12 vistas por navegador.
+  CA-02: El layout no se rompe a 1280x720 y 1920x1080.
+
+Resumen RNF: 10 requerimientos no funcionales medibles (7 de la Fase 2 + 3
+complementarios [P]: RNF-BE-06, RNF-BE-07, RNF-BE-08; RNF-FE-03 completa la
+accesibilidad y compatibilidad).
+
+
+==============================================================================
+ 3.4 REGLAS DE NEGOCIO Y RESTRICCIONES (resumen verificable)
+==============================================================================
+
++------+------------------+--------------------------------------------------+
+| ID   | Tipo             | Enunciado y verificacion                         |
++------+------------------+--------------------------------------------------+
+| RN-01| Coherencia docs  | Todo documento describe al proyecto activo.       |
+|      |                  | Verificacion: TC-19/20/21 buscan el nombre.      |
+| RN-02| Fallback IA      | Sin key o con fallo, responde el motor local.     |
+|      |                  | Verificacion: TC-11 y TC-16.                      |
+| RN-03| Solo texto       | Binarios no entran en SLOC ni en la muestra.      |
+|      |                  | Verificacion: TC-05 revisa el digest.             |
+| RN-04| Aviso de IA [P]  | Aviso antes de enviar codigo a Gemini.            |
+|      |                  | Verificacion: TC-29 (manual).                     |
+| RE-01| Node 20+         | Verificacion: `node -v` en el equipo.             |
+| RE-02| Puerto PORT      | Verificacion: arranque en 3100.                   |
+| RE-03| Ruta ASCII       | Verificacion: ruta sin acentos ni "&".            |
+| RE-04| Key server-side  | Verificacion: TC-23 (busqueda en dist/ y red).    |
+| RE-05| No ejecutar code | El analisis es estatico; nunca ejecuta el codigo. |
++------+------------------+--------------------------------------------------+
+
+
+==============================================================================
+ 3.5 PRIORIZACION MoSCoW
+==============================================================================
+
++------+---------------------------+----+----+----+----+
+| Mod  | Must                      | S  | C  | W  | Tot|
++------+---------------------------+----+----+----+----+
+| M1   | FE01-05,07, BE01          | 2  | 0  | 0  |  9 |
+| M2   | FE08,09,10                | 4  | 0  | 0  |  7 |
+| M3   | FE12,14,15,16, BE06,08    | 2  | 0  | 0  |  8 |
+| M4   | FE17,18,19, BE09,10,11,   | 6  | 1  | 0  | 14 |
+|      | RNF-BE-01                 |    |    |    |    |
+| M5   | FE25                      | 1  | 1  | 0  |  3 |
+| M6   | -                         | 2  | 1  | 0  |  3 |
+| M7   | -                         | 0  | 3  | 0  |  3 |
+| M8   | -                         | 0  | 3  | 0  |  3 |
+| M9   | -                         | 0  | 3  | 0  |  3 |
+| M10  | -                         | 2  | 0  | 0  |  2 |
+| M11  | -                         | 2  | 1  | 0  |  3 |
+| M12  | FE38,39,41, BE20, RN01    | 2  | 0  | 0  |  7 |
+| M13  | -                         | 3  | 1  | 0  |  4 |
+| M14  | -                         | 1  | 2  | 0  |  3 |
+| M15  | BE24,25, RNF-BE-02,03,04, | 1  | 0  | 0  | 11 |
+|      | RN02,03, RE01,02,03       |    |    |    |   |
++------+---------------------------+----+----+----+----+
+| TOTAL| 39                        | 28 | 16 | 0  | 83 |
++------+---------------------------+----+----+----+----+
+
+NOTA DE CONTEO: la Fase 2 reporto 84 requerimientos; al separar RNF-FE-01 y
+RNF-FE-02 y agregar 3 RNF complementarios [P], el total verificable es 85
+(71 RF + 7 RNF base + 4 RN + 3 RE). La tabla MoSCoW cubre los 83 RF/RNF
+priorizables; RN y RE son obligatorios por definicion.
+
+LECTURA PRACTICA
+- Must (39) = lo que debe estar para que la demo sea valida: ingesta real,
+  chat con 3 niveles y fallback, documentacion descargable y seguridad.
+- Should (28) = mejora la experiencia y la credibilidad tecnica (Git URL,
+  historial persistente, CVE, Markdown, export de deuda).
+- Could (16) = valor alto pero no bloquea la entrega (C4 generado, BD real,
+  casos de uso extraidos, re-analisis).
+- Won't = fuera de v1.0 (seccion 3.7).
+
+
+==============================================================================
+ 3.6 MATRIZ IMPACTO vs ESFUERZO
+==============================================================================
+
+Escala: Impacto 1-5 (valor para el usuario/negocio) y Esfuerzo 1-5
+(1 = horas, 5 = semanas). Cuadrante: QV = quick win, PR = proyecto,
+RE = relleno, EV = evitar por ahora.
+
++------------+---------------------------------------------+-----+-----+------+
+| Requisito  | Descripcion corta                           | Imp | Esf | Cua  |
++------------+---------------------------------------------+-----+-----+------+
+| RF-BE-06   | POST /api/analyze real                      |  5  |  3  | PR   |
+| RF-BE-08   | Extraccion ZIP + metricas                   |  5  |  3  | PR   |
+| RF-BE-07   | Ingesta por URL Git                         |  4  |  4  | PR   |
+| RF-BE-21   | Documentos con IA real                      |  5  |  3  | PR   |
+| RF-BE-18   | Analisis CVE                                |  4  |  4  | PR   |
+| RF-BE-22   | Historial persistente                       |  4  |  3  | PR   |
+| RF-FE-24   | Renderizado Markdown del chat               |  5  |  1  | QV   |
+| RN-04      | Aviso de envio a IA                         |  4  |  1  | QV   |
+| RF-BE-02   | GET /api/health                             |  4  |  1  | QV   |
+| RF-FE-16   | Error con reintento en ingesta              |  4  |  1  | QV   |
+| RF-FE-41   | Descarga de documento                       |  5  |  1  | QV   |
+| RF-FE-37   | Exportar informe de deuda                   |  4  |  2  | QV   |
+| RF-BE-04/05| Lista y alta de proyectos                   |  4  |  2  | QV   |
+| RF-BE-03   | Persistencia de proyectos                   |  4  |  3  | PR   |
+| RF-FE-43   | Favoritos en historial                      |  2  |  1  | RE   |
+| RF-FE-32   | Filtro de tablas BD                         |  2  |  1  | RE   |
+| RF-FE-30   | Panel de nodo C4                            |  2  |  2  | RE   |
+| RF-BE-16   | Introspeccion de BD real                    |  3  |  5  | EV   |
+| RF-BE-14   | Acoplamiento Ca/Ce exacto                   |  3  |  5  | EV   |
+| RF-BE-17   | Extraccion de casos de uso                  |  3  |  5  | EV   |
+| RF-BE-23   | Sincronizacion de repos                     |  2  |  4  | EV   |
++------------+---------------------------------------------+-----+-----+------+
+
+DECISION DE PRIORIZACION
+1) Quick wins primero (1-2 semanas): Markdown, aviso de IA, health, reintento,
+   descarga, export de deuda y CRUD de proyectos.
+2) Proyectos del trimestre: analisis ZIP real, documentos con IA, historial,
+   CVE e ingesta Git.
+3) Rellenos solo si sobra tiempo.
+4) Evitar en v1.0: introspeccion de BD, acoplamiento exacto, extraccion de
+   casos de uso y sincronizacion automatica (alto esfuerzo, valor medio).
+
+
+==============================================================================
+ 3.7 FUERA DE ALCANCE (Won't - v1.0)
+==============================================================================
+
+W-01 Autenticacion multiusuario, registro y SSO (OAuth/SAML).
+W-02 Facturacion, planes y limites por suscripcion.
+W-03 Colaboracion en tiempo real (comentarios, presencia, edicion).
+W-04 Aplicacion movil nativa.
+W-05 Ejecucion, compilacion o testeo del codigo analizado.
+W-06 Marketplace de plugins o extensiones.
+W-07 Multi-tenant con aislamiento de datos por empresa.
+W-08 Integracion CI/CD (webhooks de GitHub Actions, GitLab CI).
+
+Justificacion: ninguno es necesario para validar el valor central (entender y
+documentar software). Se reevaluan en la Fase 5 (roadmap).
+
+
+==============================================================================
+ 4. MODELADO
+==============================================================================
+
+4.1 ACTORES Y DIAGRAMA DE CASOS DE USO
+Actores primarios : U1 Desarrollador, U2 Estudiante, U3 Arquitecto/Revisor,
+                    U5 Dueno del producto, U6 Administrador TI.
+Actores secundarios: Gemini API (IA), Git Hosting (GitHub/GitLab/Bitbucket).
+
+                        +--------------------------------------+
+                        |            CodeExplain               |
+                        |                                      |
+   U1/U2/U3 ----------->| (CU-01) Ingestar proyecto (ZIP/Git)  |
+                        | (CU-02) Consultar chat en 3 niveles  |
+   U1/U2/U3 ----------->| (CU-03) Generar documentacion        |
+                        | (CU-04) Explorar arquitectura y C4   |
+   U3 ---------------->| (CU-05) Auditar deuda y riesgos      |
+                        | (CU-06) Consultar historial          |
+   U5 ---------------->| (CU-07) Ver estado y metricas        |
+   U6 ---------------->| (CU-08) Configurar IA y entorno      |
+                        |                                      |
+                        +-----+----------------------+---------+
+                              |                      |
+                     +--------v--------+    +--------v---------+
+                     |   Gemini API    |    |   Git Hosting    |
+                     +-----------------+    +------------------+
+
+Relaciones:
+  - CU-01 incluye CU-02 (todo proyecto analizado habilita el chat).
+  - CU-03 usa la salida de CU-01 (necesita el proyecto activo).
+  - CU-08 es prerequisito de CU-02 en modo IA real (si no hay key, fallback).
+  - U1/U2/U3 heredan de "Usuario" (actor generalizado).
+
+4.2 ESPECIFICACION DE CASOS DE USO PRINCIPALES
+
+CU-01 | Ingestar proyecto
+  Actores   : U1/U2/U3, Git Hosting (si es URL).
+  Precond.  : App abierta; usuario con permiso sobre el codigo.
+  Postcond. : Proyecto activo creado y visible en la lista.
+  Flujo principal:
+    1. El usuario abre el modal (RF-FE-05).
+    2. Elige pestana ZIP, Git o codigo pegado (RF-FE-12).
+    3. ZIP: arrastra un .zip valido <= 200 MB (RF-FE-14).
+       Git: escribe URL y rama validas (RF-FE-13).
+    4. El sistema extrae el digest (RF-BE-08) o descarga el repo (RF-BE-07).
+    5. El servidor analiza (RF-BE-06) con IA o fallback (RN-02).
+    6. La UI muestra el progreso en 4 pasos (RF-FE-15).
+    7. Se crea el proyecto y se abre la vision general (RF-FE-25).
+  Flujos alternos:
+    A1. Extension invalida -> error y no se procesa (RF-FE-16).
+    A2. ZIP corrupto -> error con reintento (RF-FE-16).
+    A3. Sin API key -> analisis heuristico, model="heuristic" (RN-02).
+    A4. URL Git inaccesible -> 502 con mensaje claro (RF-BE-07).
+  Postcond. de fallo: no se crea proyecto y la UI queda usable.
+
+CU-02 | Consultar chat en 3 niveles
+  Actores   : U1/U2/U3, Gemini API.
+  Precond.  : Proyecto activo.
+  Postcond. : Respuesta mostrada con el nivel elegido.
+  Flujo principal:
+    1. El usuario abre el chat (RF-FE-17).
+    2. Escribe la pregunta y elige nivel (RF-FE-18/19).
+    3. El cliente envia {message, level, history, projectContext} (RF-BE-09).
+    4. El servidor arma el prompt del nivel (RF-BE-10) y consulta Gemini.
+    5. Se devuelve {reply, level, model} y se muestra (RF-FE-17/24).
+  Alternos:
+    A1. Sin key o error de Gemini -> fallback local (RF-BE-11, RN-02).
+    A2. Mensaje vacio -> no se envia (RF-FE-18).
+    A3. Nivel invalido -> se usa intermedio (RF-BE-10).
+
+CU-03 | Generar documentacion
+  Actores   : U1/U2/U3.
+  Precond.  : Proyecto activo con analisis.
+  Postcond. : Documento visible y descargado/copiado.
+  Flujo principal:
+    1. El usuario entra al generador y elige tipo (RF-FE-38).
+    2. El cliente envia {docType, projectContext} (RF-BE-20).
+    3. El servidor genera con IA o plantilla (RF-BE-21) respetando RN-01.
+    4. La vista previa muestra el contenido (RF-FE-39).
+    5. El usuario copia (RF-FE-40) o descarga (RF-FE-41).
+  Alternos:
+    A1. Tipo desconocido -> se genera README (RF-BE-20).
+    A2. Fallo de IA -> plantilla con HTTP 200 (RF-BE-21).
+
+CU-04 | Explorar arquitectura y C4
+  Actores   : U1/U3.
+  Precond.  : Proyecto con modulos detectados.
+  Postcond. : Vista de arquitectura o diagrama consultada.
+  Flujo: abre vista de modulos (RF-FE-27) -> selecciona modulo (RF-FE-28) ->
+    abre C4 (RF-FE-29) -> selecciona nodo (RF-FE-30).
+  Alternos: sin diagrama generado -> se muestra el modelo base.
+
+CU-05 | Auditar deuda y riesgos
+  Actores   : U3/U5.
+  Precond.  : Proyecto con analisis y dependencias.
+  Postcond. : Informe de deuda y lista de riesgos revisada.
+  Flujo: abre deuda (RF-FE-36) -> exporta (RF-FE-37) -> abre riesgos
+    (RF-FE-35) -> revisa CVE (RF-BE-18).
+  Alternos: fuente CVE caida -> aviso y lista vacia (RF-BE-18).
+
+CU-06 | Consultar historial
+  Actores   : U1/U2.
+  Precond.  : Al menos una consulta realizada.
+  Postcond. : Consulta localizada, marcada o reenviada.
+  Flujo: abre historial (RF-FE-42) -> filtra por categoria -> marca favorito
+    (RF-FE-43) -> reenvia al chat (RF-FE-44).
+  Alternos: historial vacio -> estado vacio con acceso al chat.
+
+CU-07 | Ver estado y metricas
+  Actores   : U5.
+  Precond.  : Servidor arriba.
+  Postcond. : Estado del sistema y metricas conocidos.
+  Flujo: GET /api/health (RF-BE-02) -> dashboard (RF-FE-25) -> metricas
+    (RF-BE-13).
+  Alternos: endpoint caido -> mensaje de estado no disponible.
+
+CU-08 | Configurar IA y entorno
+  Actores   : U6.
+  Precond.  : Acceso al servidor y al archivo .env.
+  Postcond. : Servidor arrancado con o sin IA, en el puerto definido.
+  Flujo: define GEMINI_API_KEY y PORT (RF-BE-24/25) -> arranca -> verifica
+    /api/health (RF-BE-02).
+  Alternos: key invalida -> servidor arranca en fallback (RF-BE-25).
+
+4.3 FLUJOS DE USUARIO (FRONTEND)
+
+F-01 Ingesta de proyecto (ZIP)
+  Header "Subir Repo Git"
+        |
+        v
+  [Modal: Git | ZIP | Codigo] --(ZIP)--> [Drag & drop .zip]
+        |                                      |
+        | extension/tamano invalido            | valido
+        v                                      v
+  [Error + reintento]                 [Extraer digest (JSZip)]
+                                               |
+                                               v
+                                    [POST /api/analyze]
+                                               |
+                        +----------------------+----------------------+
+                        |                                             |
+                   (200 OK)                                      (4xx/5xx)
+                        |                                             |
+                        v                                             v
+              [4 pasos completados]                        [Error + Reintentar]
+                        |
+                        v
+              [Crear ProjectWorkspace] -> [Vision General]
+
+F-02 Chat en 3 niveles
+  [Chat] -> escribe pregunta -> elige nivel (Basico/Intermedio/Avanzado)
+     -> Enter o boton -> [spinner en el boton] -> respuesta
+     -> [render Markdown] -> copiar / cambiar nivel / seguir preguntando.
+
+F-03 Documentacion
+  [Generador] -> elige tipo (README/OpenAPI/C4/ADR) -> [vista previa]
+     -> Copiar -> "Copiado" 1.5 s
+     -> Descargar -> archivo .md/.yaml/.puml
+
+4.4 DIAGRAMAS DE SECUENCIA (BACKEND)
+
+S-01 Analisis de ZIP
+  Usuario    UI (UploadModal)      JSZip        Express        Gemini/Heur.
+     |              |                 |             |                |
+     |--sube .zip-->|                 |             |                |
+     |              |--loadAsync----->|             |                |
+     |              |<--digest--------|             |                |
+     |              |--POST /api/analyze (JSON)---->|                |
+     |              |                 |             |--prompt------->|
+     |              |                 |             |<--analisis-----|
+     |              |                 |             | (o fallback)   |
+     |              |<--200 {astHealth,debtHours,...}|                |
+     |<--proyecto---|                 |             |                |
+  Nota: el ZIP nunca sale del navegador; solo viaja el digest (<= 48 KB de
+  muestra + inventario).
+
+S-02 Chat con fallback
+  UI (Chat)            Express                 Gemini API        Motor local
+     |                    |                        |                  |
+     |--POST /api/gemini/chat {message,level}----->|                  |
+     |                    |--generateContent------>|                  |
+     |                    |<--texto o error--------|                  |
+     |                    |--si error------------------------------->|
+     |                    |<--respuesta heuristica-----------------|
+     |<--200 {reply,level,model}-------------------|                  |
+
+S-03 Documento
+  UI (Generador)        Express                 Gemini/Plantilla
+     |                    |                        |
+     |--POST /api/gemini/document {docType}------>|
+     |                    |--prompt / plantilla--->|
+     |                    |<--contenido------------|
+     |<--200 {content,type}-----------------------|
+     |--Blob + <a download>--> archivo
+
+S-04 Ingesta por URL Git [P]
+  UI          Express        Git Hosting        Analizador
+   |             |                |                 |
+   |--POST /api/analyze-url {url,branch}----------->|
+   |             |--GET repo.zip-->|                 |
+   |             |<--zip-----------|                 |
+   |             |--extraer + digest--------------->|
+   |             |<--ProjectAnalysis---------------|
+   |<--200 JSON--|                |                 |
+  Alternos: 404/403 del hosting -> 502; esquema no http(s) -> 400.
+
+4.5 DER / ERD PRELIMINAR (base de datos del producto)
+
+Entidades y relaciones:
+  users 1---N projects 1---N repositories
+  projects 1---N analyses 1---N analysis_languages
+  projects 1---N modules
+  projects 1---N chat_sessions 1---N chat_messages
+  projects 1---N documents
+  projects 1---N risks
+  projects 1---N use_cases
+  projects 1---N db_tables 1---N db_columns
+  users 1---N query_history N---1 projects
+
+  +-------------+        +----------------+        +------------------+
+  | users       |1      N| projects       |1      N| repositories     |
+  |-------------|--------|----------------|--------|------------------|
+  | id (PK)     |        | id (PK)        |        | id (PK)          |
+  | email (UQ)  |        | user_id (FK)   |        | project_id (FK)  |
+  | password_h  |        | name           |        | name             |
+  | role        |        | repo_identifier|        | branch           |
+  | created_at  |        | tag            |        | language         |
+  +-------------+        | description    |        | sloc             |
+                         | created_at     |        | files_count      |
+                         +-------+--------+        | ast_status       |
+                                 |                 | last_commit_hash |
+        +------------------------+--------+        | last_commit_msg  |
+        |                        |        |        | author           |
+        v                        v        v        | synced_at        |
+  +-----------+          +-----------+ +--------+ +------------------+
+  | analyses  |          | modules   | | docs   |
+  |-----------|          |-----------| |--------|
+  | id (PK)   |          | id (PK)   | | id(PK) |
+  | project_id|          | project_id| | proj_id|
+  | kind      |          | name      | | doc_type|
+  | total_files|         | ca        | | content|
+  | code_files|          | ce        | | model  |
+  | sloc      |          | instability| | created|
+  | ast_health|          +-----------+ +--------+
+  | debt_hours|
+  | spof_count|
+  | model     |
+  | created_at|
+  +-----+-----+
+        |1
+        |N
+  +-----v-------------+
+  | analysis_languages|
+  |-------------------|
+  | id (PK)           |
+  | analysis_id (FK)  |
+  | language          |
+  | files_count       |
+  +-------------------+
+
+  +----------------+       +----------------+      +------------------+
+  | chat_sessions  |1     N| chat_messages  |      | query_history    |
+  |----------------|-------|----------------|      |------------------|
+  | id (PK)        |       | id (PK)        |      | id (PK)          |
+  | project_id(FK) |       | session_id(FK) |      | user_id (FK)     |
+  | user_id (FK)   |       | sender         |      | project_id (FK)  |
+  | level          |       | content        |      | category         |
+  | created_at     |       | level          |      | question         |
+  +----------------+       | tokens         |      | summary          |
+                           | created_at     |      | tokens           |
+                           +----------------+      | is_favorite      |
+                                                   | created_at       |
+  +----------------+       +----------------+      +------------------+
+  | risks          |       | use_cases      |
+  |----------------|       |----------------|
+  | id (PK)        |       | id (PK)        |
+  | project_id(FK) |       | project_id(FK) |
+  | category       |       | code           |
+  | severity       |       | title          |
+  | status         |       | actor          |
+  | title          |       | precondition   |
+  | impact         |       | postcondition  |
+  | mitigation     |       | complexity     |
+  | target_endpoint|       | gherkin        |
+  +----------------+       +----------------+
+
+  +----------------+       +----------------+
+  | db_tables      |1     N| db_columns     |
+  |----------------|-------|----------------|
+  | id (PK)        |       | id (PK)        |
+  | project_id(FK) |       | table_id (FK)  |
+  | name           |       | name           |
+  | is_core        |       | data_type      |
+  | rows_estimate  |       | is_pk          |
+  | partition_strat|       | is_fk          |
+  +----------------+       | is_unique      |
+                           | fk_target      |
+                           +----------------+
+
+DICCIONARIO RESUMIDO (campos clave)
++---------------------+---------------------------+--------------------------+
+| Tabla               | Campo                     | Regla                    |
++---------------------+---------------------------+--------------------------+
+| users               | email                     | UNIQUE, NOT NULL         |
+| users               | role                      | enum(user, admin)        |
+| projects            | tag                       | PROD/STAGE/LABS/ATENCION |
+| projects            | user_id                   | FK -> users.id           |
+| repositories        | ast_status                | Parsed/Syncing/Verified  |
+| analyses            | ast_health                | 0..100                   |
+| analyses            | kind                      | zip | url | snippet        |
+| analysis_languages  | (analysis_id, language)   | UNIQUE compuesto         |
+| modules             | instability               | 0..1 (Ce/(Ca+Ce))        |
+| chat_messages       | sender                    | user | assistant         |
+| documents           | doc_type                  | readme/openapi/c4/adr    |
+| query_history       | is_favorite               | boolean default false    |
+| risks               | severity                  | ALTA/MEDIA/BAJA          |
+| use_cases           | code                      | UNIQUE por proyecto      |
+| db_columns          | fk_target                 | tabla.columna o NULL     |
++---------------------+---------------------------+--------------------------+
+
+NORMALIZACION Y NOTAS
+  - 3FN en el nucleo (users, projects, repositories, analyses).
+  - analysis_languages evita un campo multivaluado en analyses.
+  - db_columns separa columnas de tablas para permitir busqueda y filtro.
+  - En v1.0 la persistencia es en memoria; este DER es el objetivo de la
+    Fase 4 (RF-BE-03/04/05/22).
+
+4.6 MAQUINA DE ESTADOS DEL ANALISIS
+  [Idle] --archivo valido--> [Extrayendo] --digest--> [Analizando]
+     ^                            |                        |
+     |                       error|                   ok/fallback
+     |                            v                        v
+     +----[Error] <----------[Error]                  [Completado]
+              |  reintentar                                |
+              +--------------------------------------------+
+  Reglas: desde Error solo se sale con reintentar o cerrar el modal; en
+  Completado se crea el proyecto y se navega a Vision General.
+
+
+==============================================================================
+ 5. TRAZABILIDAD
+==============================================================================
+
+5.1 MATRIZ NECESIDAD DEL STAKEHOLDER -> REQUERIMIENTO -> DISENO -> PRUEBA
+
++----+--------------------------------+---------------------------+-----------------------------+-----------+
+| N# | Necesidad (Fase 1)             | Requerimientos            | Diseno (componente/API)     | Prueba    |
++----+--------------------------------+---------------------------+-----------------------------+-----------+
+| N1 | Entender codigo ajeno rapido   | RF-FE-17..24, RF-BE-09..12| ChatAsistenteIA + /chat     | TC-15/16  |
+| N2 | Documentacion util/exportable  | RF-FE-38..41, RF-BE-20/21 | GeneradorDocumentacion      | TC-21/22  |
+| N3 | Explicaciones por nivel        | RF-FE-04/19, RF-BE-10     | Selector nivel + LEVEL_     | TC-03/16  |
+|    |                                |                           | PROMPTS                     |           |
+| N4 | Privacidad de lo enviado       | RN-04, RNF-BE-02          | Aviso en chat + key server  | TC-25/29  |
+| N5 | Cargar proyecto facil          | RF-FE-12..16, RF-BE-06/08 | UploadModal + JSZip +       | TC-05/09  |
+|    |                                |                           | /api/analyze                |           |
+| N6 | Ver arquitectura/acoplamiento  | RF-FE-27/28, RF-BE-14     | ArquitecturaModulos         | TC-30     |
+| N7 | Ver riesgos y deuda            | RF-FE-35/36, RF-BE-18/19  | RiesgosValidacion +         | TC-31     |
+|    |                                |                           | AuditorDeudaTecnica         |           |
+| N8 | Historial de consultas         | RF-FE-42..44, RF-BE-22    | HistorialConsultas +        | TC-28/34  |
+|    |                                |                           | /api/history                |           |
+| N9 | Documentacion del producto     | RF-BE-02, RNF-BE-05       | README + /api/health        | TC-26/27  |
+| N10| Confiabilidad sin key          | RN-02, RF-BE-11/25        | Fallback + init segura      | TC-11/18  |
+| N11| Rapidez de uso                 | RNF-FE-01, RNF-BE-01      | SPA sin recarga + cache     | TC-19/32  |
+| N12| Accesibilidad y compatibilidad | RNF-FE-02/03              | Teclado + navegadores       | TC-33     |
++----+--------------------------------+---------------------------+-----------------------------+-----------+
+
+5.2 MATRIZ RF -> CASO DE USO -> ENDPOINT -> PRUEBA (muestra representativa)
+
++-------------+--------+---------------------------+-----------+------------------+
+| Requerim.   | CU     | Endpoint / componente     | Prueba    | Estado           |
++-------------+--------+---------------------------+-----------+------------------+
+| RF-FE-12/14 | CU-01  | UploadModal.tsx           | TC-05/06  | Implementado     |
+| RF-FE-15    | CU-01  | UploadModal (pasos)       | TC-09     | Implementado     |
+| RF-BE-08    | CU-01  | analyzeProject.ts (JSZip) | TC-05     | Implementado     |
+| RF-BE-06    | CU-01  | POST /api/analyze         | TC-10/11  | Propuesto [P]    |
+| RF-BE-07    | CU-01  | POST /api/analyze-url     | TC-13/14  | Propuesto [P]    |
+| RF-FE-17/18 | CU-02  | ChatAsistenteIA.tsx       | TC-15     | Implementado     |
+| RF-FE-19    | CU-02  | Pills de nivel            | TC-16     | Implementado     |
+| RF-BE-09    | CU-02  | POST /api/gemini/chat     | TC-15/17  | Implementado     |
+| RF-BE-10    | CU-02  | LEVEL_PROMPTS             | TC-16     | Implementado     |
+| RF-BE-11    | CU-02  | Fallback heuristico       | TC-18     | Implementado     |
+| RF-BE-12    | CU-02  | history -> Gemini         | TC-15     | Propuesto [P]    |
+| RF-FE-24    | CU-02  | Render Markdown           | TC-20     | Propuesto [P]    |
+| RF-FE-38/39 | CU-03  | GeneradorDocumentacion    | TC-21     | Implementado     |
+| RF-FE-41    | CU-03  | Descarga Blob             | TC-21     | Implementado     |
+| RF-BE-20    | CU-03  | POST /api/gemini/document | TC-22/23  | Implementado     |
+| RF-BE-21    | CU-03  | Gemini + plantilla        | TC-22     | Propuesto [P]    |
+| RF-FE-27/28 | CU-04  | ArquitecturaModulos.tsx   | TC-30     | Implementado     |
+| RF-FE-29/30 | CU-04  | DiagramasC4UML.tsx        | Manual    | Implementado     |
+| RF-FE-35    | CU-05  | RiesgosValidacion.tsx     | Manual    | Implementado     |
+| RF-FE-36    | CU-05  | AuditorDeudaTecnica.tsx   | TC-31     | Implementado     |
+| RF-BE-18    | CU-05  | CVE (OSV/NVD)             | Manual    | Propuesto [P]    |
+| RF-FE-42/43 | CU-06  | HistorialConsultas.tsx    | TC-28     | Implementado     |
+| RF-FE-44    | CU-06  | Reenvio al chat           | TC-28     | Implementado     |
+| RF-BE-22    | CU-06  | GET /api/history          | TC-34     | Propuesto [P]    |
+| RF-FE-25    | CU-07  | VisionGeneral.tsx         | TC-02     | Implementado     |
+| RF-BE-02    | CU-07  | GET /api/health           | TC-26     | Propuesto [P]    |
+| RF-BE-24/25 | CU-08  | .env + GoogleGenAI        | TC-11/25  | Implementado     |
+| RN-02       | CU-08  | Motor de respaldo         | TC-11/18  | Implementado     |
++-------------+--------+---------------------------+-----------+------------------+
+
+5.3 COBERTURA
+  - Requerimientos con al menos una prueba asignada: 85/85 (100%).
+  - Requerimientos Must con prueba automatizable: 39/39.
+  - Requerimientos implementados hoy: 52; propuestos [P]: 33.
+  - Pain points de la Fase 1 cubiertos: 10/10 (ver tabla 5.1 y seccion 3.5).
+  - Reglas de negocio verificadas por prueba: RN-01 (TC-22), RN-02 (TC-18),
+    RN-03 (TC-05), RN-04 (TC-29).
+
+
+==============================================================================
+ 6. VALIDACION (REVISION / WALKTHROUGH CON EL STAKEHOLDER)
+==============================================================================
+
+6.1 OBJETIVO Y PARTICIPANTES
+  Objetivo: confirmar que los 39 Must reflejan la necesidad real y que los CA
+  son aceptables antes de pasar a diseno detallado.
+  Participantes:
+    - Stakeholder clave: Wilder (dueno del producto).
+    - Facilitador: analista de requerimientos.
+    - Escriba: toma decisiones y observaciones.
+    - Opcional: desarrollador (viabilidad) y 1 usuario operativo.
+  Duracion: 90 minutos. Modalidad: presencial o videollamada con pantalla
+  compartida y la app corriendo en http://localhost:3100.
+
+6.2 AGENDA
+  00-05  Contexto y alcance de la revision.
+  05-15  Recorrido de la seccion 2 (usuarios, entorno, restricciones).
+  15-40  Revision de los RF Must por modulo (M1 a M8).
+  40-60  Revision de los RF Must por modulo (M9 a M15) y RNF medibles.
+  60-70  Priorizacion MoSCoW e Impacto vs Esfuerzo (ajustes).
+  70-85  Modelado: CU-01 a CU-03 y DER (validar entidades y relaciones).
+  85-90  Cierre: decisiones, pendientes y firma del acta.
+
+6.3 MATERIALES
+  - Este SRS (secciones 1 a 5).
+  - App en ejecucion con un proyecto de ejemplo cargado.
+  - Fase 1 (pain points) y Fase 2 (inventario) como referencia.
+  - Plantilla de acta (6.5) y lista de decisiones.
+
+6.4 GUION DE VERIFICACION (checklist del facilitador)
+  [ ] El alcance de 1.2 coincide con lo que el negocio espera para v1.0.
+  [ ] Los 5 actores de 2.3 son los correctos (falta o sobra alguno).
+  [ ] Los 39 Must son realmente obligatorios para la demo.
+  [ ] Los Should se pueden posponer sin romper la propuesta de valor.
+  [ ] Cada CA es observable por una persona sin ambiguedad.
+  [ ] Los RNF tienen umbrales realistas (latencia, disponibilidad, memoria).
+  [ ] El flujo CU-01 refleja como se cargara el proyecto en la presentacion.
+  [ ] El flujo CU-02 refleja el uso real del chat por nivel.
+  [ ] El DER cubre lo que se quiere persistir en la Fase 4.
+  [ ] Las restricciones RE-01..03 son aceptables en el equipo actual.
+  [ ] No hay requisitos contradictorios entre si.
+  [ ] El stakeholder firma el acta o deja por escrito sus cambios.
+
+6.5 ACTA DE VALIDACION (plantilla)
+  Proyecto : CodeExplain
+  Documento: SRS v1.0 (Fase 3)
+  Fecha    : ____/____/______
+  Hora     : ____:____ a ____:____
+  Lugar    : ______________________________
+  Asistentes: _____________________________
+  Ausentes  : _____________________________
+
+  Decisiones:
+  +-----+---------------------------------------------+----------+----------+
+  | D#  | Decision                                    | Respons. | Fecha    |
+  +-----+---------------------------------------------+----------+----------+
+  | D-01|                                             |          |          |
+  | D-02|                                             |          |          |
+  | D-03|                                             |          |          |
+  +-----+---------------------------------------------+----------+----------+
+
+  Observaciones y cambios solicitados:
+  +-----+----------------+---------------------------+----------+----------+
+  | O#  | Requisito      | Observacion               | Tipo     | Estado   |
+  +-----+----------------+---------------------------+----------+----------+
+  | O-01|                |                           | Cambio   | Abierta  |
+  | O-02|                |                           | Duda     | Abierta  |
+  | O-03|                |                           | Mejora   | Abierta  |
+  +-----+----------------+---------------------------+----------+----------+
+
+  Resultado de la revision:
+  [ ] Aprobado sin cambios.
+  [ ] Aprobado con cambios menores (no afectan alcance).
+  [ ] Devuelto para ajustes (se reprograma revision).
+
+  Firmas:
+  Stakeholder clave: ____________________   Facilitador: ____________________
+
+6.6 REGISTRO DE VALIDACION (a completar en la reunion)
+  +-----+--------------------------------+------------------+----------------+
+  | O#  | Tema a confirmar               | Decision         | Impacto        |
+  +-----+--------------------------------+------------------+----------------+
+  | O-01| Limite de ZIP: 200 MB o menos  | Pendiente        | RF-FE-14       |
+  | O-02| Aviso de privacidad obligatorio| Pendiente        | RN-04          |
+  | O-03| Prioridad de CVE en la demo    | Pendiente        | RF-BE-18       |
+  | O-04| Persistencia real o en memoria | Pendiente        | RF-BE-03/22    |
+  | O-05| Umbral de latencia (10 s)      | Pendiente        | RNF-BE-01      |
+  | O-06| Navegadores a demostrar        | Pendiente        | RNF-FE-03      |
+  +-----+--------------------------------+------------------+----------------+
+
+6.7 CRITERIOS DE SALIDA DE LA FASE
+  [ ] 100% de los Must tiene CA verificable.
+  [ ] 0 requisitos contradictorios o duplicados.
+  [ ] 100% de los RF tiene al menos una prueba asignada (seccion 5.3).
+  [ ] El stakeholder aprobo el acta (firma o correo).
+  [ ] Los cambios solicitados quedaron registrados con responsable y fecha.
+  [ ] El DER fue revisado por quien implementara la persistencia.
+
+6.8 RIESGOS DE LA VALIDACION
+  R1. El stakeholder no asiste -> se valida con el desarrollador y se deja
+      constancia de la ausencia.
+  R2. Se intenta agregar alcance nuevo en la reunion -> se registra como
+      cambio y se evalua en la Fase 5, no se improvisa en v1.0.
+  R3. Falta de tiempo -> priorizar la revision de los 39 Must y del CU-01.
+  R4. Terminos tecnicos confusos -> usar el glosario 1.3 durante la sesion.
+
+
+==============================================================================
+ 7. ANEXOS
+==============================================================================
+
+ANEXO A. CATALOGO DE PRUEBAS (TC)
++-------+--------------+------------------------------------+---------------------------+
+| TC    | Requisito    | Pasos resumidos                    | Resultado esperado        |
++-------+--------------+------------------------------------+---------------------------+
+| TC-01 | FE-01/02     | Abrir app y recorrer las 12 vistas | 12 items, vista activa    |
+| TC-02 | FE-03,25     | Cambiar proyecto en el header      | Dashboard del proyecto    |
+| TC-03 | FE-04        | Elegir Avanzado y cambiar de vista | Nivel se conserva         |
+| TC-04 | FE-05        | Abrir y cerrar modal (X/Escape)    | Modal abre/cierra         |
+| TC-05 | FE-14,BE-08  | Subir ZIP de 100 archivos          | Digest con totales reales |
+| TC-06 | FE-14        | Subir un .rar                      | Error "solo .zip"         |
+| TC-07 | FE-14        | Subir ZIP > 200 MB                 | Error de tamano           |
+| TC-08 | FE-16        | Subir ZIP corrupto y reintentar    | Error + reintento usable  |
+| TC-09 | FE-15        | Observar los 4 pasos               | 4 pasos completados       |
+| TC-10 | BE-06        | POST /api/analyze con digest       | 200 + astHealth 0..100    |
+| TC-11 | BE-06,RN-02  | Igual sin GEMINI_API_KEY           | 200 + model heuristic     |
+| TC-12 | BE-06        | POST sin files                     | 400 {error}               |
+| TC-13 | BE-07        | POST URL GitHub valida             | 200 + lenguajes/SLOC      |
+| TC-14 | BE-07        | POST URL inexistente               | 502 con mensaje           |
+| TC-15 | FE-17/18     | Preguntar en nivel Basico          | Respuesta + hora + nivel  |
+| TC-16 | FE-19,BE-10  | Preguntar en nivel Avanzado        | Respuesta tecnica         |
+| TC-17 | BE-09        | POST /chat sin message             | 400                       |
+| TC-18 | BE-11        | Apagar key y preguntar             | 200 + model fallback      |
+| TC-19 | RNF-BE-01    | 100 peticiones / 20 usuarios       | p95 <= 10 s               |
+| TC-20 | FE-24        | Respuesta con ### y ```            | Markdown seguro           |
+| TC-21 | FE-41        | Descargar README                   | Archivo .md valido        |
+| TC-22 | BE-20,RN-01  | Generar OpenAPI                    | YAML con openapi: 3.1.0   |
+| TC-23 | BE-20        | Generar C4                         | @startuml ... @enduml     |
+| TC-24 | RNF-BE-03    | POST body de 11 MB                 | HTTP 413                  |
+| TC-25 | RNF-BE-02    | Buscar key en dist/ y respuestas   | 0 coincidencias           |
+| TC-26 | BE-02        | GET /api/health                    | 200 + ai gemini/fallback  |
+| TC-27 | RNF-BE-05    | npm run lint                       | 0 errores                 |
+| TC-28 | FE-43/44     | Marcar favorito y reenviar         | Estado y chat correctos   |
+| TC-29 | RN-04        | Primera consulta de la sesion      | Aviso antes de enviar     |
+| TC-30 | BE-13        | GET metrics de id inexistente      | 404                       |
+| TC-31 | FE-37        | Exportar informe de deuda          | Archivo con horas         |
+| TC-32 | RNF-FE-01    | 100 cambios de vista               | p95 <= 100 ms             |
+| TC-33 | RNF-FE-03    | 12 vistas en 3 navegadores         | 12/12 sin errores         |
+| TC-34 | BE-22        | Consultar y recargar historial     | Consulta persistida       |
++-------+--------------+------------------------------------+---------------------------+
+
+ANEXO B. CONTRATOS DE API
+
+B.1 POST /api/gemini/chat (implementado)
+  Request : {"message":"string","level":"basico|intermedio|avanzado",
+             "history":[{"role":"user","content":"string"}],
+             "projectContext":{"name":"string","description":"string",
+             "techStack":["string"]}}
+  Response 200: {"reply":"string","level":"string","model":"string"}
+  Errores : 400 {"error":"Message is required"} | 500 {"error":"..."}
+
+B.2 POST /api/gemini/explain (implementado)
+  Request : {"code":"string","level":"string"}
+  Response 200: {"summary":"string","steps":[{"title":"string",
+             "line":"string","description":"string"}],"advisorTip":"string"}
+  Errores : 400 {"error":"Code is required"} | 500 {"error":"..."}
+
+B.3 POST /api/gemini/document (implementado)
+  Request : {"docType":"readme|openapi|c4|adr","projectContext":{"name":"..."}}
+  Response 200: {"content":"string","type":"string"}
+  Errores : 500 {"error":"..."}
+
+B.4 POST /api/analyze (propuesto [P])
+  Request : {"name":"string","files":[{"path":"string","size":0}],
+             "totalFiles":0,"codeFiles":0,"totalSloc":0,
+             "languages":{"TypeScript":0},"dependencies":["string"],
+             "entryCandidates":["string"],"textSample":"string",
+             "sourceKind":"zip"}
+  Response 200: {"name":"string","description":"string",
+             "languages":["string"],"astHealth":0,"debtHours":0,
+             "spofCount":0,"reposCount":0,"summary":"string",
+             "model":"gemini|heuristic"}
+  Errores : 400 {"error":"..."} | 413 (payload) | 500 {"error":"..."}
+
+B.5 POST /api/analyze-url (propuesto [P])
+  Request : {"url":"https://github.com/org/repo","branch":"main"}
+  Response 200: igual a B.4
+  Errores : 400 URL invalida | 502 origen no disponible | 500
+
+B.6 GET /api/health (propuesto [P])
+  Response 200: {"status":"ok","uptime":0,"ai":"gemini|fallback",
+                 "version":"1.0.0"}
+
+ANEXO C. CHECKLIST DE CALIDAD DEL SRS
+  [x] Cada requisito tiene ID unico y no se repite.
+  [x] Cada RF es atomico (una sola cosa).
+  [x] Cada RF tiene entradas, proceso, salidas y CA.
+  [x] Cada RNF es medible (metrica + umbral + escenario).
+  [x] Los actores y casos de uso cubren el alcance.
+  [x] Hay flujos de usuario y diagramas de secuencia.
+  [x] Hay DER con diccionario y reglas de integridad.
+  [x] Hay trazabilidad necesidad -> RF -> diseno -> prueba.
+  [x] Hay priorizacion MoSCoW e Impacto vs Esfuerzo.
+  [x] Hay criterios de salida y acta de validacion.
+  [x] Lo implementado y lo propuesto [P] estan diferenciados.
+  [x] Las restricciones del entorno estan documentadas.
+
+ANEXO D. INVENTARIO DE ARTEFACTOS
+  Documentacion_Fase1_CodeExplain.txt  (fuentes primarias y pain points)
+  Documentacion_Fase2_CodeExplain.txt  (inventario y 84 requerimientos)
+  Documentacion_Fase3_SRS_CodeExplain.txt (este documento)
+  server.ts                            (3 endpoints implementados)
+  src/lib/analyzeProject.ts            (digest y cliente de /api/analyze)
+  src/components/UploadModal.tsx       (ingesta y animacion de 4 pasos)
+  src/views/*.tsx                      (12 vistas)
+  src/types/index.ts                   (modelo de datos de la UI)
+  src/data/mockData.ts                 (datos de ejemplo)
+
+ANEXO E. SIGUIENTE FASE (FASE 4 - DISENO)
+  1. Aprobar este SRS y firmar el acta (seccion 6).
+  2. Disenar la persistencia segun el DER (4.5) y elegir motor (SQLite/Postgres).
+  3. Especificar los endpoints [P] con OpenAPI 3.1 (B.4 a B.6).
+  4. Definir el plan de pruebas automatizadas a partir del Anexo A.
+  5. Estimar el sprint de los 39 Must con la matriz de 3.6.
+
+==============================================================================
+ FIN DEL DOCUMENTO SRS - CodeExplain v1.0 (Fase 3)
+==============================================================================

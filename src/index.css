@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-primary: #060807;
+    --bg-secondary: #0b0f0d;
+    --bg-card: #0f1612;
+    --bg-card-hover: #151f19;
+    --border-subtle: #1a2720;
+    --border-accent: #00ff8726;
+    --neon-green: #00ff87;
+    --neon-mint: #4edea3;
+    --signal-red: #ef4444;
+    --signal-amber: #f59e0b;
+    --signal-blue: #38bdf8;
+  }
+
+  body {
+    background-color: #060807;
+    color: #e2e8f0;
+    font-family: 'Geist', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Cybernetic grid & styling */
+.cyber-grid {
+  background-size: 32px 32px;
+  background-image: 
+    radial-gradient(circle, rgba(0, 255, 135, 0.08) 1px, transparent 1px);
+}
+
+.cyber-grid-dense {
+  background-size: 16px 16px;
+  background-image: 
+    radial-gradient(circle, rgba(0, 255, 135, 0.05) 1px, transparent 1px);
+}
+
+.glow-mint {
+  box-shadow: 0 0 20px -5px rgba(0, 255, 135, 0.25);
+}
+
+.glow-mint-lg {
+  box-shadow: 0 0 35px -5px rgba(0, 255, 135, 0.4);
+}
+
+.border-neon {
+  border-color: rgba(0, 255, 135, 0.35);
+}
+
+/* Custom cyber scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080c0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1b2921;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00ff8755;
+}
+
+/* Pulse animation for data streams */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+.animate-data-stream {
+  stroke-dasharray: 6 6;
+  animation: dash 1.5s linear infinite;
+}

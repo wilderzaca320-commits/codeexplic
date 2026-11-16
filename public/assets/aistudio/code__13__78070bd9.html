@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>
+@layer base{html,body{margin:0;padding:0;background-color:#060807;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}
+::-webkit-scrollbar{display:none;}
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.05); }
+}
+@keyframes radar-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.18); opacity: 1; filter: drop-shadow(0 0 6px #00FF87); }
+}
+.animate-radar-dot { animation: radar-pulse 3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "primary": "#f1ffef",
+        "inverse-primary": "#006d36",
+        "surface-bright": "#383a38",
+        "on-background": "#e2e3e0",
+        "surface-container": "#1e201f",
+        "secondary": "#4edea3",
+        "inverse-surface": "#e2e3e0",
+        "on-secondary-fixed": "#002113",
+        "primary-container": "#00ff87",
+        "on-secondary-container": "#00311f",
+        "on-surface": "#e2e3e0",
+        "on-surface-variant": "#b9cbb9",
+        "on-error-container": "#ffdad6",
+        "surface": "#121413",
+        "primary-fixed": "#60ff98",
+        "surface-dim": "#121413",
+        "surface-tint": "#00e478",
+        "inverse-on-surface": "#2f312f",
+        "secondary-container": "#00a572",
+        "on-secondary-fixed-variant": "#005236",
+        "tertiary": "#fffaf9",
+        "secondary-fixed-dim": "#4edea3",
+        "on-tertiary-fixed": "#410004",
+        "surface-container-low": "#1a1c1b",
+        "background": "#121413",
+        "error": "#ffb4ab",
+        "on-primary": "#003919",
+        "surface-variant": "#333534",
+        "tertiary-fixed-dim": "#ffb3ad",
+        "outline": "#849585",
+        "error-container": "#93000a",
+        "outline-variant": "#3b4b3d",
+        "on-tertiary-fixed-variant": "#930013",
+        "surface-container-lowest": "#0c0f0e",
+        "on-tertiary-container": "#bf1f27",
+        "secondary-fixed": "#6ffbbe",
+        "surface-container-highest": "#333534",
+        "tertiary-container": "#ffd5d1",
+        "on-primary-fixed-variant": "#005227",
+        "tertiary-fixed": "#ffdad7",
+        "on-tertiary": "#68000a",
+        "surface-container-high": "#282a29",
+        "on-primary-container": "#007138",
+        "on-primary-fixed": "#00210c",
+        "on-secondary": "#003824",
+        "on-error": "#690005",
+        "primary-fixed-dim": "#00e478"
+      },
+      borderRadius: {
+        "DEFAULT": "0.25rem",
+        "lg": "0.5rem",
+        "xl": "0.75rem",
+        "full": "9999px"
+      },
+      spacing: {
+        "space-md": "0.75rem",
+        "margin": "1rem",
+        "gutter": "1rem",
+        "space-sm": "0.5rem",
+        "gutter-desktop": "1.25rem",
+        "space-lg": "1.25rem",
+        "margin-desktop": "2rem",
+        "space-xl": "2rem",
+        "space-xs": "0.25rem"
+      },
+      fontFamily: {
+        "label-sm": ["JetBrains Mono"],
+        "data-metric": ["JetBrains Mono"],
+        "headline-lg": ["Geist"],
+        "body-lg": ["Geist"],
+        "headline-xl": ["Geist"],
+        "headline-sm": ["Geist"],
+        "label-lg": ["JetBrains Mono"],
+        "body-sm": ["Geist"],
+        "headline-md": ["Geist"],
+        "label-md": ["JetBrains Mono"],
+        "headline-xl-mobile": ["Geist"],
+        "body-md": ["Geist"]
+      },
+      fontSize: {
+        "label-sm": ["10px", { "lineHeight": "14px", "fontWeight": "500" }],
+        "data-metric": ["20px", { "lineHeight": "26px", "fontWeight": "700" }],
+        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+        "headline-xl": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+        "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+        "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+        "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+        "headline-xl-mobile": ["26px", { "lineHeight": "34px", "fontWeight": "600" }],
+        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+      }
+    }
+  }
+};</script></head><body class="bg-[#060807] font-body-md text-on-surface antialiased selection:bg-primary-container/20 selection:text-primary-container"><aside class="fixed left-0 top-0 h-full w-72 bg-[#080d0a] z-50 flex flex-col border-r border-[#00FF87]/15 shadow-[4px_0_24px_rgba(0,0,0,0.8)]"><div class="h-16 px-space-lg flex items-center justify-between border-b border-[#00FF87]/15 bg-[#060a08]"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-lg bg-[#00FF87]/10 border border-[#00FF87]/30 flex items-center justify-center text-[#00FF87] shadow-[0_0_12px_rgba(0,255,135,0.25)]"><span class="material-symbols-outlined text-[20px]">terminal</span></div><div class="flex flex-col"><div class="flex items-center gap-1.5"><span class="font-headline-sm text-headline-sm font-bold tracking-tight text-white">CODE<span class="text-[#00FF87]">EXPLAIN</span></span></div><span class="font-label-sm text-[9px] text-[#00FF87] tracking-widest uppercase flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-[#00FF87] animate-ping"></span> AI Core v2.4</span></div></div><button class="p-1 rounded-md text-on-surface-variant hover:text-[#00FF87] hover:bg-[#151f1a] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button></div><div class="flex-1 overflow-y-auto px-space-md py-space-sm"><nav class="flex flex-col gap-space-xs" data-active-classes="bg-[#00FF87]/10 text-[#00FF87] border border-[#00FF87]/30 shadow-[0_0_15px_rgba(0,255,135,0.12)] font-medium"><div class="px-space-sm pt-space-md pb-space-xs font-label-sm text-label-sm text-outline uppercase tracking-wider font-semibold">EXPLORAR</div><a class="px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-[#151f1a] hover:text-[#00FF87] transition-all font-body-md text-body-md" data-path="proyectos" href="#">Proyectos</a><a aria-current="page" class="px-space-md py-space-xs rounded-lg transition-all bg-[#00FF87]/10 text-[#00FF87] border border-[#00FF87]/30 shadow-[0_0_15px_rgba(0,255,135,0.12)] font-medium" data-path="repositorios-analizados" href="#">Repositorios Analizados</a><a class="px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-[#151f1a] hover:text-[#00FF87] transition-all font-body-md text-body-md" data-path="historial-consultas" href="#">Historial de Consultas</a><div class="px-space-sm pt-space-lg pb-space-xs font-label-sm text-label-sm text-outline uppercase tracking-wider font-semibold">ANÁLISIS DE SISTEMAS</div><a class="px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-[#151f1a] hover:text-[#00FF87] transition-all font-body-md text-body-md" data-path="vision-general" href="#">Visión General</a><a class="px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-[#151f1a] hover:text-[#00FF87] transition-all font-body-md text-body-md" data-path="arquitectura-modulos" href="#">Arquitectura &amp; Módulos</a><a class="px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-[#151f1a] hover:text-[#00FF87] transition-all font-body-md text-body-md" data-path="diagramas-c4-uml" href="#">Diagramas C4 &amp; UML</a><a class="px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-[#151f1a] hover:text-[#00FF87] transition-all font-body-md text-body-md" data-path="modelo-datos-bd" href="#">Modelo de Datos / BD</a><a class="px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-[#151f1a] hover:text-[#00FF87] transition-all font-body-md text-body-md" data-path="casos-de-uso-requerimientos" href="#">Casos de Uso &amp; Requerimientos</a><a class="px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-[#151f1a] hover:text-[#00FF87] transition-all font-body-md text-body-md" data-path="riesgos-validacion" href="#">Riesgos &amp; Validación</a><div class="px-space-sm pt-space-lg pb-space-xs font-label-sm text-label-sm text-outline uppercase tracking-wider font-semibold">HERRAMIENTAS IA</div><a class="px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-[#151f1a] hover:text-[#00FF87] transition-all font-body-md text-body-md" data-path="chat-asistente-ia" href="#">Chat con Asistente IA</a><a class="px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-[#151f1a] hover:text-[#00FF87] transition-all font-body-md text-body-md" data-path="generador-documentacion" href="#">Generador de Documentación</a><a class="px-space-md py-space-xs rounded-lg text-on-surface-variant hover:bg-[#151f1a] hover:text-[#00FF87] transition-all font-body-md text-body-md" data-path="auditor-deuda-tecnica" href="#">Auditor de Deuda Técnica</a></nav></div><div class="p-space-md bg-[#080d0a] border-t border-[#00FF87]/15"><div class="p-space-sm rounded-xl bg-[#0f1612] border border-[#00FF87]/15 flex flex-col gap-space-xs shadow-inner"><div class="flex items-center justify-between font-label-sm text-label-sm"><span class="text-on-surface-variant">Cuota de Tokens</span><span class="text-[#00FF87] font-mono font-semibold">68%</span></div><div class="w-full h-1.5 rounded-full bg-[#151f1a] overflow-hidden"><div class="h-full bg-gradient-to-r from-secondary-container to-primary-container rounded-full shadow-[0_0_8px_rgba(0,255,135,0.4)]" style="width: 68%"></div></div><span class="font-label-sm text-[10px] text-outline">682,410 / 1,000,000 tokens</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-[#060807]/90 backdrop-blur-xl z-40 flex items-center justify-between px-space-lg border-b border-[#00FF87]/15 shadow-[0_4px_20px_rgba(0,0,0,0.6)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm bg-[#0d1410] border border-[#00FF87]/20 px-space-md py-1.5 rounded-xl shadow-inner cursor-pointer hover:border-[#00FF87]/40 transition-colors"><span class="material-symbols-outlined text-[16px] text-[#00FF87]">device_hub</span><span class="font-data-metric text-[13px] text-white font-medium">ecommerce-microservices-v2</span><span class="font-label-sm text-label-sm text-outline">[Python / React]</span><span class="material-symbols-outlined text-[16px] text-on-surface-variant hover:text-[#00FF87]">arrow_drop_down</span></div><div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#00FF87]/10 border border-[#00FF87]/25"><span class="w-2 h-2 rounded-full bg-[#00FF87] animate-ping"></span><span class="font-label-sm text-label-sm text-[#00FF87] font-semibold">Sistema En Línea • Motor Activo</span></div></div><div class="flex items-center gap-space-md"><button class="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#00FF87] to-[#00d070] text-[#060807] font-headline-sm text-headline-sm font-bold rounded-xl shadow-[0_0_18px_rgba(0,255,135,0.35)] hover:shadow-[0_0_26px_rgba(0,255,135,0.55)] transition-all active:scale-95" type="button"><span class="material-symbols-outlined text-[18px]">cloud_upload</span><span>Subir Repo Git</span></button><div class="flex items-center gap-space-xs bg-[#0d1410] border border-[#00FF87]/15 px-space-md py-1.5 rounded-xl"><span class="material-symbols-outlined text-[16px] text-[#00FF87]">bolt</span><span class="font-label-sm text-label-sm text-on-surface-variant font-mono">42.8k ctx</span></div><div class="w-9 h-9 rounded-full bg-[#00FF87]/20 border border-[#00FF87]/40 flex items-center justify-center text-[#00FF87] shadow-[0_0_12px_rgba(0,255,135,0.2)]"><span class="material-symbols-outlined text-[20px]">person</span></div></div></header><main class="relative pt-16 bg-[#060807] min-h-screen w-full px-gutter-desktop"><div class="flex flex-col w-full gap-space-lg pb-space-xl">
+<!-- PAGE HEADER & ACTION TRIGGER BAR -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-container-low w-fit shadow-inner">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-radar-dot"></span>
+<span class="font-label-sm text-label-sm text-primary-container tracking-wider uppercase font-semibold">CATÁLOGO DE REPOSITORIOS • INGESTIÓN GIT Y AST EN VIVO</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-primary font-bold tracking-tight">Repositorios Analizados</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
+        Inventario de código fuente procesado, dependencias de paquetes, árboles de sintaxis abstracta (AST) e integridad de commits sincronizados automáticamente.
+      </p>
+</div>
+<!-- Right Header CTA Buttons -->
+<div class="flex items-center gap-space-sm shrink-0">
+<button class="flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container-high text-on-surface hover:text-primary-container hover:bg-surface-variant transition-all font-label-md text-label-md shadow-md active:scale-95 group" type="button">
+<span class="material-symbols-outlined text-[18px] group-hover:rotate-180 transition-transform duration-500 text-secondary">sync</span>
+<span>Sincronizar Todos con GitHub</span>
+</button>
+<button class="flex items-center gap-2 px-space-lg py-2.5 rounded-xl bg-primary-container text-on-primary-container font-label-md text-label-md font-bold shadow-[0_0_20px_rgba(0,255,135,0.35)] hover:shadow-[0_0_28px_rgba(0,255,135,0.55)] transition-all active:scale-95" type="button">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+<span>Conectar Nuevo Repositorio</span>
+</button>
+</div>
+</div>
+<!-- TOP TELEMETRY MATRIX CARDS (4 METRICS) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md">
+<!-- Card 1: Monitored Repos -->
+<div class="relative bg-surface-container-low p-space-lg rounded-xl shadow-lg flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-primary-container/5 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Repositorios Monitoreados</span>
+<span class="material-symbols-outlined text-[20px] text-primary-container">source_notes</span>
+</div>
+<div class="my-space-md flex items-baseline gap-2">
+<span class="font-data-metric text-[32px] leading-none text-primary font-mono tracking-tight font-bold">28</span>
+<span class="font-label-md text-label-md text-on-surface-variant font-mono">Repos Activos</span>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm pt-space-xs">
+<span class="text-secondary font-mono flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> 100% Sincronizados
+        </span>
+<span class="text-outline font-mono">GitLab/GitHub Hook</span>
+</div>
+</div>
+<!-- Card 2: SLOC -->
+<div class="relative bg-surface-container-low p-space-lg rounded-xl shadow-lg flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-secondary-container/5 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Líneas de Código (SLOC)</span>
+<span class="material-symbols-outlined text-[20px] text-secondary">code_blocks</span>
+</div>
+<div class="my-space-md flex items-baseline gap-2">
+<span class="font-data-metric text-[32px] leading-none text-primary font-mono tracking-tight font-bold">428,500</span>
+<span class="font-label-sm text-label-sm text-outline font-mono">tokens AST</span>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm pt-space-xs">
+<span class="text-on-surface font-mono">14 Lenguajes y Runtimes</span>
+<span class="text-secondary font-mono">+12.4k esta sem</span>
+</div>
+</div>
+<!-- Card 3: AST Engine Status -->
+<div class="relative bg-surface-container-low p-space-lg rounded-xl shadow-lg flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-primary-container/5 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Análisis AST en Vivo</span>
+<span class="material-symbols-outlined text-[20px] text-primary-container">psychology</span>
+</div>
+<div class="my-space-md flex items-baseline gap-2">
+<span class="font-data-metric text-[32px] leading-none text-primary-container font-mono tracking-tight font-bold">Activo</span>
+<span class="font-label-sm text-label-sm text-on-surface font-mono bg-surface-container-high px-2 py-0.5 rounded">v4.19.2</span>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm pt-space-xs">
+<span class="text-secondary font-mono flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-ping"></span> 2.4s Latencia Parsing
+        </span>
+<span class="text-outline font-mono">Tree-sitter daemon</span>
+</div>
+</div>
+<!-- Card 4: Security Vulnerabilities -->
+<div class="relative bg-surface-container-low p-space-lg rounded-xl shadow-lg flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-error-container/10 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Vulnerabilidades de Red</span>
+<span class="material-symbols-outlined text-[20px] text-error">gpp_maybe</span>
+</div>
+<div class="my-space-md flex items-baseline justify-between">
+<div class="flex items-baseline gap-2">
+<span class="font-data-metric text-[32px] leading-none text-error font-mono tracking-tight font-bold">5 CVEs</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">detectadas</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-error-container/40 text-error font-label-sm text-label-sm font-mono">2 Altas • 3 Med</span>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm pt-space-xs">
+<a class="text-error hover:text-on-error-container underline flex items-center gap-1 font-mono" href="#vulnerabilidades">
+<span>Ver Parches y PRs</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</a>
+<span class="text-outline font-mono">Semgrep / Trivy</span>
+</div>
+</div>
+</div>
+<!-- CONTROL BAR: SEARCH & ADVANCED REPO FILTERS -->
+<div class="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-space-md bg-surface-container-low p-space-md rounded-xl shadow-lg">
+<!-- Search Bar -->
+<div class="relative flex-1 min-w-[280px]">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-lowest rounded-lg font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-high transition-colors" placeholder="Buscar repositorio por nombre, url git, lenguaje o microservicio..." type="text"/>
+</div>
+<!-- Language Filter Pills Strip -->
+<div class="flex items-center gap-1.5 overflow-x-auto pb-1 xl:pb-0 scrollbar-none">
+<button class="px-3 py-1.5 rounded-lg bg-primary-container text-on-primary-container font-label-sm text-label-sm font-bold shadow-[0_0_12px_rgba(0,255,135,0.3)] shrink-0" type="button">
+        Todos (28)
+      </button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm font-medium transition-colors shrink-0" type="button">
+        TypeScript (12)
+      </button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm font-medium transition-colors shrink-0" type="button">
+        Python (7)
+      </button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm font-medium transition-colors shrink-0" type="button">
+        Go (4)
+      </button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm font-medium transition-colors shrink-0" type="button">
+        Rust (3)
+      </button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm font-medium transition-colors shrink-0" type="button">
+        Java (2)
+      </button>
+</div>
+<!-- Index Status Indicator Toggles -->
+<div class="flex items-center gap-2 self-end xl:self-center shrink-0">
+<div class="flex items-center bg-surface-container-lowest p-1 rounded-lg">
+<button class="px-2.5 py-1 rounded bg-surface-container-high text-primary font-label-sm text-label-sm font-mono font-medium shadow-sm" type="button">Todos</button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-primary font-label-sm text-label-sm font-mono" type="button">Completados</button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-error font-label-sm text-label-sm font-mono flex items-center gap-1" type="button">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span> Alertas (2)
+        </button>
+</div>
+</div>
+</div>
+<!-- MAIN TABULAR REPOSITORY INVENTORY LIST (CYBERNETIC FINANCIAL TERMINAL STYLE) -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-2xl flex flex-col">
+<!-- Header of the Table -->
+<div class="hidden xl:grid grid-cols-12 gap-space-md px-space-lg py-3 bg-surface-container-high font-label-sm text-label-sm text-outline uppercase tracking-wider font-semibold">
+<div class="col-span-4">Repositorio &amp; Commit Head</div>
+<div class="col-span-2">Stack Tecnológico</div>
+<div class="col-span-1 text-right">Líneas (SLOC)</div>
+<div class="col-span-2 text-center">Salud de Código</div>
+<div class="col-span-1 text-center">Deuda Estimada</div>
+<div class="col-span-2 text-right">Acciones Rápidas</div>
+</div>
+<!-- TABLE ROWS -->
+<div class="flex flex-col">
+<!-- ROW 1 (ACTIVE / CURRENT FOCUS): ecommerce-microservices-v2 -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-sm xl:gap-space-md px-space-lg py-4 bg-surface-container-low hover:bg-surface-container transition-all group items-center">
+<!-- Col Repositorio -->
+<div class="col-span-4 flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-container shrink-0 mt-0.5 shadow-[0_0_12px_rgba(0,255,135,0.2)]">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-sm text-headline-sm text-primary font-bold group-hover:text-primary-container transition-colors truncate">ecommerce-microservices-v2</span>
+<span class="px-2 py-0.5 rounded-full bg-primary-container/15 text-primary-container font-label-sm text-label-sm font-mono font-semibold">ACTIVO</span>
+</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-outline mt-1 font-mono">
+<span class="text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">call_split</span> main
+              </span>
+<span>•</span>
+<span class="text-secondary font-mono">#7f8a4e9b</span>
+<span>•</span>
+<span class="text-outline">Escaneado hace 4m</span>
+</div>
+</div>
+</div>
+<!-- Col Stack -->
+<div class="col-span-2 flex flex-wrap gap-1 items-center">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-mono">NestJS</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-mono">TypeScript</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-label-sm font-mono">Docker</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-label-sm font-mono">Redis</span>
+</div>
+<!-- Col SLOC -->
+<div class="col-span-1 xl:text-right font-mono font-headline-sm text-headline-sm text-primary">
+          42,850
+          <div class="font-label-sm text-label-sm text-outline">184 archivos</div>
+</div>
+<!-- Col Salud de Código -->
+<div class="col-span-2 flex flex-col gap-1 items-center xl:items-center">
+<div class="flex items-center justify-between w-full max-w-[160px] font-mono font-label-sm text-label-sm">
+<span class="text-primary-container font-bold">84.5 / 100</span>
+<span class="text-secondary">Óptimo</span>
+</div>
+<div class="w-full max-w-[160px] h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-secondary to-primary-container rounded-full shadow-[0_0_8px_rgba(0,255,135,0.5)]" style="width: 84.5%"></div>
+</div>
+<span class="font-label-sm text-[10px] text-outline font-mono">Complejidad ciclomática baja</span>
+</div>
+<!-- Col Deuda -->
+<div class="col-span-1 text-center font-mono font-headline-sm text-headline-sm text-on-surface">
+          18.5h
+          <div class="font-label-sm text-label-sm text-secondary">-$1,420 est.</div>
+</div>
+<!-- Col Acciones -->
+<div class="col-span-2 flex items-center justify-end gap-1.5 flex-wrap">
+<button class="px-2.5 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface hover:text-primary-container font-label-sm text-label-sm font-mono transition-colors shadow-sm" title="Ver Arquitectura" type="button">
+            Arquitectura
+          </button>
+<button class="px-2.5 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface hover:text-secondary font-label-sm text-label-sm font-mono transition-colors shadow-sm" title="Auditar Deuda" type="button">
+            Auditar
+          </button>
+<button class="px-2.5 py-1.5 rounded-lg bg-primary-container/20 text-primary-container hover:bg-primary-container hover:text-on-primary-container font-label-sm text-label-sm font-mono font-bold transition-all shadow-sm" title="Consola IA" type="button">
+<span class="material-symbols-outlined text-[15px] align-middle">smart_toy</span>
+</button>
+</div>
+</div>
+<!-- ROW 2: payment-gateway-service -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-sm xl:gap-space-md px-space-lg py-4 bg-surface-container-lowest hover:bg-surface-container-low transition-all group items-center">
+<div class="col-span-4 flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-secondary-container/20 flex items-center justify-center text-secondary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-sm text-headline-sm text-primary font-bold group-hover:text-secondary transition-colors truncate">payment-gateway-service</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-mono">PROD</span>
+</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-outline mt-1 font-mono">
+<span class="text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">call_split</span> develop
+              </span>
+<span>•</span>
+<span class="text-secondary font-mono">#c392f10</span>
+<span>•</span>
+<span class="text-outline">Escaneado hace 12m</span>
+</div>
+</div>
+</div>
+<div class="col-span-2 flex flex-wrap gap-1 items-center">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-mono">Go 1.22</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-mono">PostgreSQL</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-label-sm font-mono">gRPC</span>
+</div>
+<div class="col-span-1 xl:text-right font-mono font-headline-sm text-headline-sm text-primary">
+          19,420
+          <div class="font-label-sm text-label-sm text-outline">72 archivos</div>
+</div>
+<div class="col-span-2 flex flex-col gap-1 items-center">
+<div class="flex items-center justify-between w-full max-w-[160px] font-mono font-label-sm text-label-sm">
+<span class="text-primary-container font-bold">92.1 / 100</span>
+<span class="text-primary-container">Sobresaliente</span>
+</div>
+<div class="w-full max-w-[160px] h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary-container rounded-full shadow-[0_0_8px_rgba(0,255,135,0.5)]" style="width: 92.1%"></div>
+</div>
+<span class="font-label-sm text-[10px] text-outline font-mono">Test Coverage: 94.2%</span>
+</div>
+<div class="col-span-1 text-center font-mono font-headline-sm text-headline-sm text-secondary">
+          4.2h
+          <div class="font-label-sm text-label-sm text-secondary">Bajo Riesgo</div>
+</div>
+<div class="col-span-2 flex items-center justify-end gap-1.5 flex-wrap">
+<button class="px-2.5 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface hover:text-secondary font-label-sm text-label-sm font-mono transition-colors shadow-sm" type="button">
+            Ver Grafo
+          </button>
+<button class="px-2.5 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface hover:text-secondary font-label-sm text-label-sm font-mono transition-colors shadow-sm" type="button">
+            Exportar DDL
+          </button>
+</div>
+</div>
+<!-- ROW 3: order-checkout-orchestrator -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-sm xl:gap-space-md px-space-lg py-4 bg-surface-container-low hover:bg-surface-container transition-all group items-center">
+<div class="col-span-4 flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">shopping_cart_checkout</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-sm text-headline-sm text-primary font-bold group-hover:text-primary-container transition-colors truncate">order-checkout-orchestrator</span>
+<span class="px-2 py-0.5 rounded-full bg-error-container/20 text-error font-label-sm text-label-sm font-mono">1 SPOF</span>
+</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-outline mt-1 font-mono">
+<span class="text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">call_split</span> master
+              </span>
+<span>•</span>
+<span class="text-secondary font-mono">#b4819d2</span>
+<span>•</span>
+<span class="text-outline">Escaneado hace 28m</span>
+</div>
+</div>
+</div>
+<div class="col-span-2 flex flex-wrap gap-1 items-center">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-mono">Python 3.12</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-mono">FastAPI</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-label-sm font-mono">Celery</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-label-sm font-mono">Redis</span>
+</div>
+<div class="col-span-1 xl:text-right font-mono font-headline-sm text-headline-sm text-primary">
+          28,100
+          <div class="font-label-sm text-label-sm text-outline">110 archivos</div>
+</div>
+<div class="col-span-2 flex flex-col gap-1 items-center">
+<div class="flex items-center justify-between w-full max-w-[160px] font-mono font-label-sm text-label-sm">
+<span class="text-on-surface font-bold">76.8 / 100</span>
+<span class="text-outline font-mono">Atención</span>
+</div>
+<div class="w-full max-w-[160px] h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-secondary-container rounded-full" style="width: 76.8%"></div>
+</div>
+<span class="font-label-sm text-[10px] text-error font-mono">Cuello de botella en worker</span>
+</div>
+<div class="col-span-1 text-center font-mono font-headline-sm text-headline-sm text-on-surface">
+          14.0h
+          <div class="font-label-sm text-label-sm text-outline">Refactor Req</div>
+</div>
+<div class="col-span-2 flex items-center justify-end gap-1.5 flex-wrap">
+<button class="px-2.5 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface hover:text-primary-container font-label-sm text-label-sm font-mono transition-colors shadow-sm" type="button">
+            Inspeccionar
+          </button>
+</div>
+</div>
+<!-- ROW 4: auth-identity-provider -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-sm xl:gap-space-md px-space-lg py-4 bg-surface-container-lowest hover:bg-surface-container-low transition-all group items-center">
+<div class="col-span-4 flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-container shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-sm text-headline-sm text-primary font-bold group-hover:text-primary-container transition-colors truncate">auth-identity-provider</span>
+<span class="px-2 py-0.5 rounded-full bg-primary-container/20 text-primary-container font-label-sm text-label-sm font-mono font-semibold">BLINDADO</span>
+</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-outline mt-1 font-mono">
+<span class="text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">call_split</span> main
+              </span>
+<span>•</span>
+<span class="text-secondary font-mono">#09fa231</span>
+<span>•</span>
+<span class="text-outline">Escaneado hace 1h</span>
+</div>
+</div>
+</div>
+<div class="col-span-2 flex flex-wrap gap-1 items-center">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-mono">Rust</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-mono">Actix-web</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-label-sm font-mono">Redis</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-label-sm font-mono">JWT</span>
+</div>
+<div class="col-span-1 xl:text-right font-mono font-headline-sm text-headline-sm text-primary">
+          11,200
+          <div class="font-label-sm text-label-sm text-outline">45 archivos</div>
+</div>
+<div class="col-span-2 flex flex-col gap-1 items-center">
+<div class="flex items-center justify-between w-full max-w-[160px] font-mono font-label-sm text-label-sm">
+<span class="text-primary-container font-bold">96.2 / 100</span>
+<span class="text-primary-container">Top Tier</span>
+</div>
+<div class="w-full max-w-[160px] h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary-container rounded-full shadow-[0_0_10px_rgba(0,255,135,0.6)]" style="width: 96.2%"></div>
+</div>
+<span class="font-label-sm text-[10px] text-secondary font-mono">0 Vulnerabilidades</span>
+</div>
+<div class="col-span-1 text-center font-mono font-headline-sm text-headline-sm text-secondary">
+          1.1h
+          <div class="font-label-sm text-label-sm text-secondary">Mínimo</div>
+</div>
+<div class="col-span-2 flex items-center justify-end gap-1.5 flex-wrap">
+<button class="px-2.5 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface hover:text-primary-container font-label-sm text-label-sm font-mono transition-colors shadow-sm" type="button">
+            Inspeccionar
+          </button>
+</div>
+</div>
+<!-- ROW 5: customer-analytics-pipeline -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-sm xl:gap-space-md px-space-lg py-4 bg-surface-container-low hover:bg-surface-container transition-all group items-center">
+<div class="col-span-4 flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-error-container/30 flex items-center justify-center text-error shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">query_stats</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-sm text-headline-sm text-primary font-bold group-hover:text-error transition-colors truncate">customer-analytics-pipeline</span>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error font-label-sm text-label-sm font-mono font-bold">2 CVEs</span>
+</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-outline mt-1 font-mono">
+<span class="text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">call_split</span> v2-staging
+              </span>
+<span>•</span>
+<span class="text-secondary font-mono">#ee914aa</span>
+<span>•</span>
+<span class="text-outline">Escaneado hace 2h</span>
+</div>
+</div>
+</div>
+<div class="col-span-2 flex flex-wrap gap-1 items-center">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-mono">Python</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-mono">Apache Spark</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-label-sm font-mono">Snowflake</span>
+</div>
+<div class="col-span-1 xl:text-right font-mono font-headline-sm text-headline-sm text-primary">
+          34,900
+          <div class="font-label-sm text-label-sm text-outline">142 archivos</div>
+</div>
+<div class="col-span-2 flex flex-col gap-1 items-center">
+<div class="flex items-center justify-between w-full max-w-[160px] font-mono font-label-sm text-label-sm">
+<span class="text-error font-bold">65.4 / 100</span>
+<span class="text-error">Alerta</span>
+</div>
+<div class="w-full max-w-[160px] h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-error rounded-full shadow-[0_0_8px_rgba(255,180,171,0.4)]" style="width: 65.4%"></div>
+</div>
+<span class="font-label-sm text-[10px] text-error font-mono">PyYAML CVE-2023-x</span>
+</div>
+<div class="col-span-1 text-center font-mono font-headline-sm text-headline-sm text-error">
+          26.5h
+          <div class="font-label-sm text-label-sm text-outline">Crítico</div>
+</div>
+<div class="col-span-2 flex items-center justify-end gap-1.5 flex-wrap">
+<button class="px-2.5 py-1.5 rounded-lg bg-error-container text-on-error hover:bg-error font-label-sm text-label-sm font-mono font-semibold transition-colors shadow-sm" type="button">
+            Resolver CVEs
+          </button>
+</div>
+</div>
+<!-- ROW 6: inventory-sync-worker -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-sm xl:gap-space-md px-space-lg py-4 bg-surface-container-lowest hover:bg-surface-container-low transition-all group items-center">
+<div class="col-span-4 flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">sync_saved_locally</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-sm text-headline-sm text-primary font-bold group-hover:text-secondary transition-colors truncate">inventory-sync-worker</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-mono">BACKGROUND</span>
+</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-outline mt-1 font-mono">
+<span class="text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">call_split</span> main
+              </span>
+<span>•</span>
+<span class="text-secondary font-mono">#12a9bc4</span>
+<span>•</span>
+<span class="text-outline">Escaneado hace 3h</span>
+</div>
+</div>
+</div>
+<div class="col-span-2 flex flex-wrap gap-1 items-center">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-mono">TypeScript</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-mono">BullMQ</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-label-sm font-mono">RabbitMQ</span>
+</div>
+<div class="col-span-1 xl:text-right font-mono font-headline-sm text-headline-sm text-primary">
+          15,300
+          <div class="font-label-sm text-label-sm text-outline">58 archivos</div>
+</div>
+<div class="col-span-2 flex flex-col gap-1 items-center">
+<div class="flex items-center justify-between w-full max-w-[160px] font-mono font-label-sm text-label-sm">
+<span class="text-primary-container font-bold">88.0 / 100</span>
+<span class="text-secondary">Estable</span>
+</div>
+<div class="w-full max-w-[160px] h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 88%"></div>
+</div>
+<span class="font-label-sm text-[10px] text-outline font-mono">Deadlock free verificado</span>
+</div>
+<div class="col-span-1 text-center font-mono font-headline-sm text-headline-sm text-on-surface">
+          7.3h
+          <div class="font-label-sm text-label-sm text-secondary">Controlado</div>
+</div>
+<div class="col-span-2 flex items-center justify-end gap-1.5 flex-wrap">
+<button class="px-2.5 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface hover:text-secondary font-label-sm text-label-sm font-mono transition-colors shadow-sm" type="button">
+            Inspeccionar
+          </button>
+</div>
+</div>
+</div>
+</div>
+<!-- BOTTOM ARCHITECTURE & INGESTION PIPELINE FLOWCARD -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-md">
+<!-- Automated Ingestion Pipeline Diagram -->
+<div class="lg:col-span-2 bg-surface-container-low p-space-lg rounded-xl shadow-lg flex flex-col justify-between">
+<div class="flex items-center justify-between pb-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container animate-radar-dot"></span>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold">Flujo de Ingestión Automática Git Webhooks</h3>
+</div>
+<span class="font-label-sm text-label-sm text-primary-container font-mono bg-primary-container/10 px-2 py-0.5 rounded">CI/CD Sync Activo</span>
+</div>
+<!-- Step-by-Step Flow Graphic -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-space-sm my-space-md">
+<!-- Step 1 -->
+<div class="p-space-md rounded-lg bg-surface-container-highest flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-primary-container font-mono font-bold">01 / EVENTO</span>
+<span class="material-symbols-outlined text-[18px] text-secondary">commit</span>
+</div>
+<span class="font-headline-sm text-body-md text-primary font-semibold">Git Push / PR</span>
+<p class="font-body-sm text-body-sm text-outline">Payload recibido vía webhook seguro en 80ms.</p>
+</div>
+<!-- Step 2 -->
+<div class="p-space-md rounded-lg bg-surface-container-highest flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-primary-container font-mono font-bold">02 / PARSING</span>
+<span class="material-symbols-outlined text-[18px] text-primary-container">account_tree</span>
+</div>
+<span class="font-headline-sm text-body-md text-primary font-semibold">Motor Tree-sitter</span>
+<p class="font-body-sm text-body-sm text-outline">Generación de AST y extracción de contratos en 2.4s.</p>
+</div>
+<!-- Step 3 -->
+<div class="p-space-md rounded-lg bg-surface-container-highest flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-primary-container font-mono font-bold">03 / GRAFOS</span>
+<span class="material-symbols-outlined text-[18px] text-secondary">schema</span>
+</div>
+<span class="font-headline-sm text-body-md text-primary font-semibold">Mapeo C4 &amp; BD</span>
+<p class="font-body-sm text-body-sm text-outline">Relación de microservicios y esquema ER actualizado.</p>
+</div>
+<!-- Step 4 -->
+<div class="p-space-md rounded-lg bg-surface-container-highest flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-primary-container font-mono font-bold">04 / IA DOCS</span>
+<span class="material-symbols-outlined text-[18px] text-primary-container">auto_awesome</span>
+</div>
+<span class="font-headline-sm text-body-md text-primary font-semibold">Documentación Viva</span>
+<p class="font-body-sm text-body-sm text-outline">Glosario y arquitectura re-indexados sin fricción manual.</p>
+</div>
+</div>
+<!-- Real-time Webhook Console Preview -->
+<div class="p-space-sm bg-surface-container-lowest rounded-lg font-mono text-label-sm text-on-surface-variant flex items-center justify-between">
+<div class="flex items-center gap-2 truncate">
+<span class="text-secondary font-bold">[2025-05-18 14:32:01]</span>
+<span class="text-primary truncate">HOOK_RECEIVED: github.com/corp/ecommerce-microservices-v2 &gt; commit #7f8a4e9b parse_ok (2.1s)</span>
+</div>
+<span class="text-primary-container text-right shrink-0">STATUS 200 OK</span>
+</div>
+</div>
+<!-- Quick Ingestion Config Panel -->
+<div class="bg-surface-container-low p-space-lg rounded-xl shadow-lg flex flex-col justify-between">
+<div class="flex items-center justify-between pb-space-xs">
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold">Configuración de Polling</h3>
+<span class="material-symbols-outlined text-[20px] text-outline">settings</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+        Define cómo el motor de CodeExplain sondea ramas protegidas y genera snapshots de regresión arquitectónica.
+      </p>
+<div class="flex flex-col gap-space-sm my-space-md">
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-high">
+<span class="font-label-sm text-label-sm text-on-surface">Auto-escaneo en cada merge a main</span>
+<span class="text-primary-container font-mono text-label-sm font-bold">ON</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-high">
+<span class="font-label-sm text-label-sm text-on-surface">Validar dependencias contra CVEs</span>
+<span class="text-primary-container font-mono text-label-sm font-bold">ON</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-high">
+<span class="font-label-sm text-label-sm text-on-surface">Generar Diagrama C4 en diff &gt; 15%</span>
+<span class="text-primary-container font-mono text-label-sm font-bold">ACTIVO</span>
+</div>
+</div>
+<button class="w-full py-2 rounded-lg bg-surface-container-high hover:bg-surface-variant text-primary hover:text-primary-container font-label-md text-label-md transition-colors text-center shadow-md" type="button">
+        Administrar Webhooks Globales
+      </button>
+</div>
+</div>
+</div></main></div></body></html>

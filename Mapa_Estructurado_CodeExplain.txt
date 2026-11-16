@@ -1,0 +1,635 @@
+================================================================================
+ MAPA ESTRUCTURADO DEL SOFTWARE - CODEEXPLAIN
+ Frontend + Backend
+ Version 1.0 - 12/11/2026
+ Alcance: solo CodeExplain. No incluye otros proyectos.
+================================================================================
+
+COMO LEER ESTE MAPA
+  Este documento describe TODO el software: lo que existe, donde esta y en que
+  estado. Las piezas simuladas se presentan como TERMINADAS, porque asi se
+  muestran hoy en la aplicacion. La seccion 9 dice que falta para que sean
+  reales.
+
+  Estados:
+  [R] REAL      : implementado y funcionando de verdad.
+  [S] SIMULADO  : la interfaz existe y se presenta como terminada, pero el
+                  dato es de demostracion. No es un error de diseno: es una
+                  pieza que ya tiene forma y solo espera el motor real.
+  [P] PENDIENTE : no existe todavia.
+
+  Cifras medidas el 12/11/2026 sobre el codigo actual.
+
+
+================================================================================
+ 1. FICHA DEL SISTEMA
+================================================================================
+
+  Nombre        : CodeExplain
+  Proposito     : analizar, comprender, explicar y documentar proyectos de
+                  software usando IA.
+  Tipo          : aplicacion web (SPA + API en el mismo proceso).
+  Usuario       : estudiante, desarrollador, arquitecto y docente.
+  Puerto local  : 3100
+  Arranque      : npm install  ->  npm run dev
+  Tamano        : 5 609 lineas en src/ (17 archivos .tsx + 3 .ts) + 220 lineas
+                  de servidor. Total 5 829 lineas de codigo propio.
+
+  Tres capacidades centrales:
+    1. Analizar  : cargar un proyecto (ZIP, URL Git o codigo) y medir.
+    2. Explicar  : responder preguntas en 3 niveles con IA.
+    3. Documentar: generar README, OpenAPI, C4 y ADR descargables.
+
+
+================================================================================
+ 2. STACK REAL (tomado de package.json)
+================================================================================
+
+  CAPA          TECNOLOGIA              VERSION    USO
+  ------------  ----------------------  ---------  --------------------------
+  UI            react                   19.0.1     Componentes
+  UI            react-dom               19.0.1     Render en navegador
+  UI            lucide-react            0.546.0    Iconos (80+ usados)
+  UI            motion                  12.23.24   Animaciones declarativas
+  Build         vite                    8.3.0      Dev server y build
+  Build         @vitejs/plugin-react    6.1.1      Transformacion JSX
+  Estilos       tailwindcss             4.3.3      Utilidades CSS
+  Estilos       @tailwindcss/vite        4.3.3      Integracion con Vite
+  Lenguaje      typescript              7.0.2      Tipado estricto
+  Servidor      express                 4.21.2     API HTTP
+  Servidor      dotenv                  17.2.3     Variables de entorno
+  IA            @google/genai           2.4.0      Gemini 2.5 Flash
+  Ingesta       jszip                   3.10.1     Leer ZIP en el navegador
+  Ejecucion     tsx                     4.21.0     Correr TypeScript directo
+  Build server  esbuild                 0.28.2     Empaquetar server.ts [P]
+
+  Entorno recomendado: Node 22 LTS (npm start requiere Node >= 22.6).
+
+
+================================================================================
+ 3. ARBOL DE CARPETAS (real)
+================================================================================
+
+  codeexplain/
+  |
+  +-- index.html                          Documento base, fuentes y metadatos
+  +-- package.json                        Scripts y dependencias
+  +-- tsconfig.json                       Configuracion TypeScript
+  +-- vite.config.ts                      Configuracion Vite
+  +-- metadata.json                       Identidad de la app
+  +-- server.ts                    220 L  Servidor Express + IA + fallback
+  +-- .env                                PORT, GEMINI_API_KEY, APP_URL
+  +-- .env.example                        Plantilla de variables
+  +-- .gitignore                          Excluye node_modules y .env
+  |
+  +-- public/                             Recursos estaticos
+  |
+  +-- src/
+      +-- main.tsx                   4 L  Punto de entrada React
+      +-- App.tsx                  153 L  Estado global y router de vistas
+      +-- index.css                 70 L  Tokens, grid, glow, scrollbars
+      |
+      +-- components/
+      |   +-- Header.tsx           151 L  Selector de proyecto y nivel
+      |   +-- Sidebar.tsx          162 L  Navegacion de 12 vistas
+      |   +-- UploadModal.tsx      285 L  Ingesta (ZIP / URL / codigo)
+      |
+      +-- views/                          Las 12 vistas del producto
+      |   +-- VisionGeneral.tsx          755 L
+      |   +-- ModeloDatosBD.tsx          551 L
+      |   +-- HistorialConsultas.tsx     451 L
+      |   +-- ChatAsistenteIA.tsx        417 L
+      |   +-- Proyectos.tsx              350 L
+      |   +-- RiesgosValidacion.tsx      349 L
+      |   +-- DiagramasC4UML.tsx         348 L
+      |   +-- ArquitecturaModulos.tsx    223 L
+      |   +-- GeneradorDocumentacion.tsx 192 L
+      |   +-- AuditorDeudaTecnica.tsx    162 L
+      |   +-- CasosDeUso.tsx             141 L
+      |   +-- RepositoriosAnalizados.tsx 127 L
+      |
+      +-- data/
+      |   +-- mockData.ts          440 L  7 conjuntos de datos de ejemplo
+      |
+      +-- lib/
+      |   +-- analyzeProject.ts    249 L  Motor real de ingesta (sin conectar)
+      |
+      +-- types/
+          +-- index.ts              99 L  9 tipos del dominio
+
+  Documentacion (raiz, no es codigo):
+    Documentacion_Fase1_CodeExplain.txt          F1 investigacion
+    Documentacion_Fase2_CodeExplain.txt          F2 mapeo funcional
+    Documentacion_Fase3_SRS_CodeExplain.txt      F3 SRS, 85 req.
+    Documentacion_Fase4_ARD_CodeExplain.txt      F4 ARD, 18 ASR
+    Documentacion_Fase5_ArquitecturaConocimiento_CodeExplain.txt
+    Documentacion_Fase6_UX_DX_CodeExplain.txt    F6 UX/DX
+    Mapa_Conocimiento_CodeExplain.html           Mapa interactivo, 62 nodos
+
+
+================================================================================
+ 4. FRONTEND
+================================================================================
+
+4.1 SHELL (el marco de la aplicacion)                          [R]
++----------------------+-------------------------------------------------------+
+| ARCHIVO              | RESPONSABILIDAD                                       |
++----------------------+-------------------------------------------------------+
+| App.tsx        153 L | Estado global y router por condicionales.             |
+|                      | 6 estados: activeView, projects, activeProject,       |
+|                      | explanationLevel, isUploadModalOpen, chatInitialPrompt|
+|                      | Handlers: handleAddProject, handleSendToChat,         |
+|                      | handleSelectView.                                     |
++----------------------+-------------------------------------------------------+
+| Header.tsx     151 L | Selector de proyecto, selector de nivel (basico /     |
+|                      | intermedio / avanzado) y boton Subir.                 |
++----------------------+-------------------------------------------------------+
+| Sidebar.tsx    162 L | 12 items en 3 grupos, colapso a 64 px, barra neon.    |
+|                      | Pie con cuota de tokens y "AI CORE V2.4" [S].         |
++----------------------+-------------------------------------------------------+
+| index.css       70 L | Tokens de color, cyber-grid, glow-mint, scrollbars,   |
+|                      | animate-data-stream, transiciones.                    |
++----------------------+-------------------------------------------------------+
+
+  Navegacion: nivel 0 shell, nivel 1 grupo, nivel 2 vista, nivel 3 detalle.
+  No hay URLs: el estado vive en memoria (recargar vuelve a Vision General).
+
+4.2 LAS 12 VISTAS (router real de App.tsx)
+
++----+------------------------------+---------------------------+------+---------------+
+| #  | VISTA                        | ARCHIVO                   | LINE | FUENTE DATOS  |
++----+------------------------------+---------------------------+------+---------------+
+| 01 | Vision General               | VisionGeneral.tsx         | 755  | inline + props|
+| 02 | Arquitectura & Modulos       | ArquitecturaModulos.tsx   | 223  | const inline  |
+| 03 | Diagramas C4 & UML           | DiagramasC4UML.tsx        | 348  | const inline  |
+| 04 | Modelo de Datos / BD         | ModeloDatosBD.tsx         | 551  | MOCK_DB_TABLES|
+| 05 | Casos de Uso & Requerim.     | CasosDeUso.tsx            | 141  | MOCK_USE_CASES|
+| 06 | Riesgos & Validacion         | RiesgosValidacion.tsx     | 349  | MOCK_RISKS    |
+| 07 | Chat con Asistente IA        | ChatAsistenteIA.tsx       | 417  | API + local   |
+| 08 | Generador de Documentacion   | GeneradorDocumentacion.tsx| 192  | plantillas    |
+| 09 | Auditor de Deuda Tecnica     | AuditorDeudaTecnica.tsx   | 162  | const inline  |
+| 10 | Proyectos                    | Proyectos.tsx             | 350  | props         |
+| 11 | Repositorios Analizados      | RepositoriosAnalizados.tsx| 127  | MOCK_REPOS    |
+| 12 | Historial de Consultas       | HistorialConsultas.tsx    | 451  | MOCK_QUERY    |
++----+------------------------------+---------------------------+------+---------------+
+
+  Agrupacion en el sidebar:
+    EXPLORAR (03)      : Proyectos, Repositorios, Historial
+    ANALISIS (06)      : Vision General, Arquitectura, Diagramas, Datos,
+                         Casos de Uso, Riesgos
+    HERRAMIENTAS (03)  : Chat, Generador, Auditor
+
+  Que muestra cada vista:
+    01 Vision General : proyecto activo, stack, archivos, SLOC, modulos,
+                        salud AST, deuda, riesgo alto, SPOF, siguiente paso.
+    02 Arquitectura   : modulos con responsabilidad, dependencias, Ca/Ce,
+                        inestabilidad y acoplamiento.
+    03 Diagramas      : C4 (contexto, contenedor) y UML en ASCII/SVG.
+    04 Datos          : tablas, columnas, PK, FK, unique y relaciones.
+    05 Casos de uso   : actores, precondicion, postcondicion, Gherkin.
+    06 Riesgos        : severidad, categoria, evidencia, estado, mitigacion.
+    07 Chat           : 3 niveles, streaming simulado, contexto de vista.
+    08 Generador      : README, OpenAPI, C4, ADR con vista previa y descarga.
+    09 Deuda          : horas, prioridad, archivo afectado, esfuerzo.
+    10 Proyectos      : tarjetas con tag, lenguajes, salud y ultima actividad.
+    11 Repositorios   : rama, SLOC, ultimo commit, estado de sincronizacion.
+    12 Historial      : consultas, categoria, tokens, favorito.
+
+4.3 COMPONENTES
+
++----------------------+------+--------------------------------------------------+
+| COMPONENTE           | LINE | ESTADO                                           |
++----------------------+------+--------------------------------------------------+
+| UploadModal          | 285  | [S] simula el analisis con setInterval (4 pasos)  |
+|                      |      | y crea un proyecto con metricas fijas:            |
+|                      |      | astHealth 88.0, debtHours 12.0, spofCount 1.      |
+|                      |      | 3 pestanas: Git, ZIP, codigo.                     |
++----------------------+------+--------------------------------------------------+
+| Header               | 151  | [R] props reales; nivel y proyecto conectados     |
+| Sidebar              | 162  | [R] navegacion; [S] cuota 68% y V2.4 hardcodeados |
++----------------------+------+--------------------------------------------------+
+
+  Animaciones que se conservan (no tocar):
+    - animate-data-stream (stroke-dashoffset 1.5 s lineal infinito)
+    - animate-pulse en indicadores de estado
+    - transiciones de 150 ms en hover de nav y tarjetas
+    - glow-mint / glow-mint-lg en foco y CTA
+    - animate-in fade-in en el modal
+
+4.4 DATOS DE EJEMPLO (src/data/mockData.ts, 440 lineas)
+
++---------------------------+------+------------------------------------------+
+| EXPORT                    | TIPO | CONTENIDO                                |
++---------------------------+------+------------------------------------------+
+| MOCK_PROJECTS             | [S]  | Proyectos con tag, salud, deuda, SPOF    |
+| MOCK_REPOS                | [S]  | Repositorios con rama, SLOC, commit      |
+| MOCK_QUERY_HISTORY        | [S]  | Consultas con categoria, tokens, favorito|
+| MOCK_DB_TABLES            | [S]  | Tablas con columnas, PK, FK, unique      |
+| MOCK_USE_CASES            | [S]  | Actores, pre/postcondicion, Gherkin      |
+| MOCK_RISKS                | [S]  | Severidad, categoria, evidencia, estado  |
+| SURVEY_METRICS            | [S]  | Metricas de encuesta                     |
++---------------------------+------+------------------------------------------+
+
+4.5 TIPOS DEL DOMINIO (src/types/index.ts, 99 lineas, 9 tipos)
+  ExplanationLevel, ViewType, ProjectWorkspace, MonitoredRepo,
+  QueryHistoryItem, DatabaseTable, UseCaseItem, RiskItem, ChatMessage.
+
+4.6 CONTEOS DEL FRONTEND
+  Archivos .tsx                   17
+  Archivos .ts                     3
+  Lineas totales                5 609
+  Componentes de vista            12
+  Estados useState                59
+  Manejadores onClick            110
+  Atributos aria-*                 0   [P]
+  Atributos role                   0   [P]
+  Atributos alt                    0   [P]
+  Atributos tabIndex               0   [P]
+
+
+================================================================================
+ 5. BACKEND
+================================================================================
+
+5.1 ARRANQUE (server.ts, 220 lineas)
+
+  1. dotenv.config() lee .env.
+  2. Express con express.json({ limit: '10mb' }).
+  3. Si GEMINI_API_KEY existe, crea el cliente GoogleGenAI.
+     Si la key es invalida, avisa y sigue: nunca cae el arranque.
+  4. En desarrollo monta Vite en modo middleware (HMR incluido).
+     En produccion sirve dist/ y devuelve index.html en cualquier ruta.
+  5. Escucha en PORT (3100 por defecto).
+
+5.2 ENDPOINTS
+
++------+------------------------+--------+--------------------------------------+
+| #    | RUTA                   | ESTADO | QUE HACE                             |
++------+------------------------+--------+--------------------------------------+
+| E-01 | POST /api/gemini/chat  | [R]    | Responde preguntas del proyecto.     |
+|      |                        |        | Entrada: message, level, history,    |
+|      |                        |        | projectContext.                      |
+|      |                        |        | Salida: reply, level, model.         |
++------+------------------------+--------+--------------------------------------+
+| E-02 | POST /api/gemini/      | [R]    | Explica un bloque de codigo.         |
+|      |      explain           |        | Entrada: code, level.                |
+|      |                        |        | Salida: summary, steps[], advisorTip.|
++------+------------------------+--------+--------------------------------------+
+| E-03 | POST /api/gemini/      | [S]    | Genera documento.                    |
+|      |      document          |        | Entrada: docType, projectContext.    |
+|      |                        |        | Salida: content, type.               |
+|      |                        |        | No llama a la IA: usa 3 plantillas   |
+|      |                        |        | fijas (readme, openapi, c4).         |
++------+------------------------+--------+--------------------------------------+
+| E-04 | POST /api/analyze      | [P]    | Recibe el digest y devuelve el       |
+|      |                        |        | analisis. El frontend ya lo llama.   |
++------+------------------------+--------+--------------------------------------+
+| E-05 | POST /api/analyze-url  | [P]    | Analiza un repositorio por URL.      |
+|      |                        |        | El frontend ya lo llama.             |
++------+------------------------+--------+--------------------------------------+
+| E-06 | GET  /api/health       | [P]    | Estado del motor de IA.              |
++------+------------------------+--------+--------------------------------------+
+
+5.3 MOTOR DE IA
+
+  Modelo          : gemini-2.5-flash
+  SDK             : @google/genai
+  Niveles         : basico, intermedio, avanzado (LEVEL_PROMPTS en server.ts)
+  Prompt actual   : rol + nombre del proyecto + descripcion + stack + nivel
+  Lo que NO tiene : restricciones de "no inventes", citas, formato de salida,
+                    temperatura, maxTokens ni timeout.
+  Modo respaldo   : motor heuristico local si no hay key, hay 429 o hay error.
+
+  Ramas del motor heuristico (E-01):
++---------------------------+-----------------------------------------------+
+| SI LA PREGUNTA MENCIONA   | RESPONDE SOBRE                                |
++---------------------------+-----------------------------------------------+
+| stripe, pago, webhook     | Redlock, idempotencia, order.settled          |
+| jwt, auth, seguridad      | RS256, rotacion de tokens, RBAC               |
+| cualquier otra cosa       | Analisis generico del proyecto                |
++---------------------------+-----------------------------------------------+
+
+  Aviso: el motor heuristico inventa cifras (34% de acoplamiento, 1.2 ms p95,
+  RSA-4096) y las presenta como datos del proyecto. Es el riesgo R-07 del ARD.
+
+5.4 CONFIGURACION (.env)
+
++----------------+----------+-----------------------------------------------+
+| VARIABLE       | ESTADO   | EFECTO                                        |
++----------------+----------+-----------------------------------------------+
+| PORT           | 3100     | Puerto del servidor                           |
+| GEMINI_API_KEY | VACIA    | Sin key se usa el motor heuristico            |
+| APP_URL        | vacia    | Enlaces de la app                             |
++----------------+----------+-----------------------------------------------+
+
+5.5 SCRIPTS (package.json)
+
++-------------+--------------------------------------+-------------------------+
+| SCRIPT      | COMANDO                              | ESTADO                  |
++-------------+--------------------------------------+-------------------------+
+| dev         | tsx server.ts                        | [R] funciona            |
+| start       | node server.ts                       | [P] falla en Node <22.6 |
+| build       | vite build                           | [R] pero no compila el  |
+|             |                                      |     servidor            |
+| preview     | vite preview                         | [R]                     |
+| clean       | rm -rf dist server.js                | [P] falla en Windows    |
+| lint        | tsc --noEmit                         | [R] solo tipos          |
++-------------+--------------------------------------+-------------------------+
+
+
+================================================================================
+ 6. CONTRATOS (la union entre frontend y backend)
+================================================================================
+
+6.1 ProjectDigest - lo que el navegador extrae del ZIP
+  Ya esta escrito en src/lib/analyzeProject.ts.
+  {
+    name            : string            nombre del proyecto
+    files           : [{path, size}]    inventario completo
+    totalFiles      : number
+    codeFiles       : number
+    totalSloc       : number
+    languages       : {lenguaje: n}     conteo por lenguaje
+    dependencies    : string[]          hasta 30
+    entryCandidates : string[]          index, main, app, server
+    textSample      : string            hasta 48 KB de codigo
+    sourceKind      : 'zip' | 'url'
+  }
+  Limites reales del motor: 300 archivos de texto, 4 MB de texto total,
+  6 KB por archivo en la muestra, 48 KB de muestra, 30 dependencias.
+  Se omiten node_modules, .git, binarios, .DS_Store y thumbs.db.
+
+6.2 ProjectAnalysis - lo que el servidor debe devolver
+  {
+    name        : string
+    description : string
+    languages   : string[]
+    astHealth   : number     0-100
+    debtHours   : number
+    spofCount   : number
+    reposCount  : number
+    summary     : string
+    model       : string     'gemini-2.5-flash' | 'codeexplain-core'
+  }
+
+6.3 Contrato del chat (E-01)
+  Request : { message, level, history[], projectContext }
+  Response: { reply, level, model }
+
+6.4 Contrato de explicacion (E-02)
+  Request : { code, level }
+  Response: { summary, steps[{title, line, description}], advisorTip }
+
+6.5 Contrato de documentacion (E-03)
+  Request : { docType: 'readme'|'openapi'|'c4', projectContext }
+  Response: { content, type }
+
+6.6 Contrato de analisis (E-04) - PENDIENTE
+  Request : ProjectDigest (6.1)
+  Response: ProjectAnalysis (6.2)
+  Errores : 400 digest invalido, 413 digest demasiado grande,
+            502 proveedor de IA caido (se responde con fallback).
+
+6.7 Contrato de analisis por URL (E-05) - PENDIENTE
+  Request : { url, branch }
+  Response: ProjectAnalysis (6.2)
+  Errores : 400 URL invalida, 422 repo privado o inaccesible,
+            504 timeout de descarga.
+
+  Importante: el cliente YA llama a /api/analyze y /api/analyze-url desde
+  analyzeDigest() y analyzeUrl(). Hoy nadie las usa porque UploadModal no
+  importa analyzeProject.ts. El contrato existe; falta el handler y el cable.
+
+
+================================================================================
+ 7. FLUJOS
+================================================================================
+
+7.1 FLUJO DE ANALISIS (F-01)
+
+  Usuario
+    |
+    v
+  Header "Subir"  ->  UploadModal  [S]
+    |                    |
+    |                    +-- Pestana Git  : url + rama
+    |                    +-- Pestana ZIP  : archivo
+    |                    +-- Pestana Code : fragmento
+    |
+    v
+  handleStartAnalysis()
+    |
+    +--> [HOY]  setInterval 4 pasos (900 ms)  ->  proyecto fijo
+    |
+    +--> [META] buildDigestFromZipFile()  ->  ProjectDigest
+                 |
+                 v
+              POST /api/analyze  ->  ProjectAnalysis
+                 |
+                 v
+              onAddProject()  ->  Vision General
+
+7.2 FLUJO DE CONSULTA (F-02)
+
+  Vista activa  ->  Chat
+    |
+    +--> contexto de la vista (proyecto, modulo, riesgo)
+    +--> nivel: basico | intermedio | avanzado
+    |
+    v
+  POST /api/gemini/chat
+    |
+    +--> [IA]       Gemini 2.5 Flash  ->  reply
+    +--> [RESPALDO] motor heuristico  ->  reply  (model = codeexplain-core)
+    |
+    v
+  Burbuja de respuesta  [S] texto plano, sin Markdown ni citas
+
+7.3 FLUJO DE DOCUMENTACION (F-03)
+
+  Generador
+    |
+    +--> tipo: README | OpenAPI | C4 | ADR
+    +--> nivel: basico | intermedio | avanzado
+    |
+    v
+  [HOY]  plantilla fija local          ->  vista previa  ->  descarga .md
+  [META] POST /api/gemini/document     ->  contenido del proyecto activo
+
+
+================================================================================
+ 8. MATRIZ DE ESTADO (todo el software)
+================================================================================
+
++----+------------------------------+----------+---------+---------+--------+------+
+| #  | MODULO                       | FRONTEND | BACKEND | DATOS   | ESTADO | FALTA|
++----+------------------------------+----------+---------+---------+--------+------+
+| 01 | Shell y navegacion           | [R]      | -       | [R]     | LISTO  | -    |
+| 02 | Selector de proyecto y nivel | [R]      | -       | [R]     | LISTO  | -    |
+| 03 | Vision General               | [R]      | [P]     | [S]     | PARCIAL| P-01 |
+| 04 | Arquitectura y Modulos       | [R]      | [P]     | [S]     | PARCIAL| P-01 |
+| 05 | Diagramas C4 y UML           | [R]      | [P]     | [S]     | PARCIAL| P-01 |
+| 06 | Modelo de Datos / BD         | [R]      | [P]     | [S]     | PARCIAL| P-01 |
+| 07 | Casos de Uso                 | [R]      | [P]     | [S]     | PARCIAL| P-01 |
+| 08 | Riesgos y Validacion         | [R]      | [P]     | [S]     | PARCIAL| P-01 |
+| 09 | Chat con IA                  | [R]      | [R]     | [R]     | LISTO* | P-06 |
+| 10 | Generador de Documentacion   | [R]      | [S]     | [S]     | PARCIAL| P-05 |
+| 11 | Auditor de Deuda Tecnica     | [R]      | [P]     | [S]     | PARCIAL| P-01 |
+| 12 | Proyectos                    | [R]      | -       | [R]     | LISTO  | -    |
+| 13 | Repositorios Analizados      | [R]      | [P]     | [S]     | PARCIAL| P-02 |
+| 14 | Historial de Consultas       | [R]      | [P]     | [S]     | PARCIAL| P-07 |
+| 15 | Ingesta ZIP                  | [S]      | [P]     | -       | SIMUL. | P-03 |
+| 16 | Ingesta por URL Git          | [S]      | [P]     | -       | SIMUL. | P-02 |
+| 17 | Motor de metricas            | [S]      | [P]     | -       | SIMUL. | P-08 |
+| 18 | Motor heuristico de respaldo | -        | [R]     | -       | LISTO* | P-06 |
+| 19 | Configuracion y arranque     | -        | [R]     | -       | LISTO  | -    |
+| 20 | Accesibilidad                | [P]      | -       | -       | FALTA  | P-10 |
+| 21 | Pruebas automatizadas        | [P]      | [P]     | -       | FALTA  | P-11 |
+| 22 | Docker, CI y OpenAPI         | [P]      | [P]     | -       | FALTA  | P-12 |
++----+------------------------------+----------+---------+---------+--------+------+
+
+  * LISTO con reservas: funciona, pero con datos inventados o formato pobre.
+
+  Resumen: 5 modulos listos, 11 parciales, 3 simulados, 3 faltantes.
+  De 22 modulos, el frontend esta en 15 y el backend en 3.
+
+
+================================================================================
+ 9. LO QUE FALTA (para que lo simulado sea real)
+================================================================================
+
+P-01  POST /api/analyze                                    prioridad 1
+  Archivo : server.ts
+  Que     : recibir ProjectDigest, validar, construir el prompt, llamar a
+            Gemini con responseMimeType application/json y devolver
+            ProjectAnalysis. Si la IA falla, calcular metricas localmente.
+  Criterio: 200 con JSON que cumpla 6.2; 400 si falta name o files;
+            0 stack traces en la respuesta; timeout de 20 s con fallback.
+  Impacto : desbloquea 8 vistas (03 a 08, 11 y 14).
+
+P-02  POST /api/analyze-url                                prioridad 1
+  Archivo : server.ts
+  Que     : recibir { url, branch }, validar host (github, gitlab,
+            bitbucket), descargar el ZIP por API, extraer y reutilizar el
+            mismo digest. Rechazar repos privados y binarios.
+  Criterio: 200 con ProjectAnalysis; 400 URL invalida; 422 repo privado;
+            504 si la descarga supera 30 s.
+
+P-03  Conectar UploadModal al motor real                   prioridad 1
+  Archivo : src/components/UploadModal.tsx
+  Que     : eliminar el setInterval; llamar a buildDigestFromZipFile() y
+            luego a analyzeDigest(); mostrar progreso por fases reales y
+            permitir reintentar solo la fase que fallo.
+  Criterio: 0 setInterval en el archivo; 5 fases con estado; error
+            recuperable; animaciones actuales intactas.
+
+P-04  GET /api/health                                      prioridad 2
+  Archivo : server.ts
+  Que     : devolver { status, ai: 'gemini'|'fallback', uptime, version }.
+  Criterio: responde en < 100 ms; no expone la API key.
+
+P-05  Generador contra la IA                               prioridad 2
+  Archivo : src/views/GeneradorDocumentacion.tsx
+  Que     : dejar de usar plantillas fijas; llamar a /api/gemini/document
+            con el proyecto activo y mostrar que KUs componen cada seccion.
+  Criterio: el documento generado menciona el proyecto activo y su stack;
+            0 textos de OpenCommerce.
+
+P-06  Chat legible y con evidencia                          prioridad 2
+  Archivo : src/views/ChatAsistenteIA.tsx, server.ts
+  Que     : render Markdown seguro (negritas, listas, codigo) y citas [KU]
+            a la evidencia; avisar cuando responde el motor heuristico.
+  Criterio: 0 XSS; el campo model se muestra al usuario; citas clicables.
+
+P-07  Persistencia local                                    prioridad 2
+  Archivo : src/App.tsx, src/lib/storage.ts (nuevo)
+  Que     : guardar proyectos, historial, nivel y vista activa en
+            localStorage; boton de exportar e importar JSON.
+  Criterio: recargar la pagina conserva el analisis; version de esquema.
+
+P-08  Motor de metricas real                                prioridad 2
+  Archivo : server.ts o src/lib/metrics.ts (nuevo)
+  Que     : calcular astHealth, debtHours y spofCount a partir del digest
+            (SLOC, dependencias, archivos sin doc, acoplamiento), no fijos.
+  Criterio: dos proyectos distintos producen metricas distintas y
+            justificadas; cada metrica tiene su formula documentada.
+
+P-09  Limite de 200 MB real                                 prioridad 3
+  Archivo : src/components/UploadModal.tsx
+  Que     : validar tamano antes de leer el ZIP y mostrar error claro.
+  Criterio: un ZIP de 210 MB se rechaza en < 2 s sin llamar a la API.
+
+P-10  Accesibilidad                                          prioridad 1
+  Archivo : los 17 .tsx
+  Que     : reemplazar div/span con onClick por button; aria-label en
+            iconos; aria-current en la navegacion; foco visible; lang="es";
+            alt en imagenes; contraste 4.5:1 (hoy hay 2.61:1).
+  Criterio: 0 onClick en elementos no interactivos; recorrido completo con
+            teclado; axe sin errores criticos.
+
+P-11  Scripts y pruebas                                     prioridad 2
+  Archivo : package.json, tests/
+  Que     : arreglar start (node dist/server.js), clean (rimraf), agregar
+            typecheck, test con vitest y 3 smoke tests de endpoints.
+  Criterio: npm start y npm run clean funcionan en Windows; 3 de 3 smoke
+            en verde; CI en menos de 5 min.
+
+P-12  Docker, OpenAPI y CI                                   prioridad 3
+  Archivo : Dockerfile, docker-compose.yml, openapi/codeexplain.yaml,
+            .github/workflows/ci.yml
+  Que     : levantar con un comando, documentar los 6 endpoints y correr
+            typecheck + test + build en cada PR.
+  Criterio: docker compose up deja la app en 3100; Swagger en /docs;
+            pipeline verde en menos de 5 min.
+
+P-00  Limpiar datos falsos                                   prioridad 1
+  Archivo : Sidebar.tsx, UploadModal.tsx, vistas
+  Que     : quitar o etiquetar "68%", "682,410 / 1.0M", "AI CORE V2.4",
+            "Gemini Pro v2.4", la URL de OpenCommerce por defecto y los
+            textos de OpenCommerce en las plantillas.
+  Criterio: 0 cifras sin fuente; lo demo se marca como demo.
+
+  Conteo: 1 bloqueante de confianza (P-00), 5 de prioridad 1, 5 de
+  prioridad 2, 2 de prioridad 3. Total 13 tareas.
+
+
+================================================================================
+ 10. LO QUE NO SE TOCA
+================================================================================
+
+  N1. La identidad visual: fondo #060807, neon #00ff87, mint #4edea3.
+  N2. Las animaciones listadas en 4.3 (data-stream, pulse, glow, fade-in).
+  N3. La estructura de las 12 vistas y los 3 grupos del sidebar.
+  N4. Los contratos de la seccion 6: si cambian, cambian en los dos lados.
+  N5. El fallback: la app nunca debe quedarse sin respuesta.
+  N6. La ruta del proyecto sin caracteres especiales (restriccion RE-03).
+
+
+================================================================================
+ 11. ORDEN DE TRABAJO SUGERIDO
+================================================================================
+
+  Semana 1  P-00 limpiar datos falsos + P-10 accesibilidad base
+  Semana 2  P-01 /api/analyze + P-03 conectar el modal
+  Semana 3  P-02 /api/analyze-url + P-08 metricas reales
+  Semana 4  P-04 health + P-05 generador + P-06 chat
+  Semana 5  P-07 persistencia + P-09 limite + P-11 pruebas
+  Semana 6  P-12 Docker, OpenAPI y CI
+
+  Regla: no se empieza una tarea si la anterior no tiene criterio de
+  aceptacion cumplido.
+
+
+================================================================================
+ 12. RESUMEN EN UNA LINEA
+================================================================================
+
+  El frontend esta construido (5 609 lineas, 12 vistas, 110 interacciones) y
+  el backend tiene 3 de 6 endpoints. Lo que se ve como terminado funciona,
+  pero 11 de 22 modulos dependen de datos de ejemplo. El unico bloqueo real
+  es /api/analyze: con ese endpoint y el cable del modal, 8 vistas pasan de
+  simuladas a reales.
+
+================================================================================
+ FIN DEL MAPA - CodeExplain
+================================================================================

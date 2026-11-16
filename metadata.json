@@ -1,0 +1,6 @@
+{
+  "name": "CodeExplain - Análisis & Explicación de Software con IA",
+  "description": "Plataforma de inteligencia artificial para analizar, comprender, explicar y documentar proyectos de software en niveles básico, intermedio y avanzado.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

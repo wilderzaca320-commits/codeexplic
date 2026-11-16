@@ -1,0 +1,356 @@
+==============================================================================
+ DOCUMENTACION - FASE 2: MAPEO DE FUNCIONALIDADES (BACKEND Y FRONTEND)
+ Proyecto: CodeExplain - Analisis & Explicacion de Software con IA
+ Alcance: SOLO la parte practica (inventario + requerimientos atomicos)
+ Fecha: 11/11/2026
+==============================================================================
+
+Objetivo de la fase:
+Convertir lo investigado en la Fase 1 en un inventario funcional separado
+por capa (Frontend / Backend) y en requerimientos atomicos (una sola cosa
+por requerimiento), clasificados segun el Tema 4.
+
+LEYENDA DE CLASIFICACION
+  Capa   : FE = Frontend | BE = Backend
+  Tipo   : RF  = Requerimiento funcional
+           RNF = Requerimiento no funcional (atributo de calidad)
+           RN  = Regla de negocio
+           RE  = Restriccion
+  Origen : U = Requerimiento de usuario
+           S = Requerimiento de sistema
+  [P]    : Propuesto (aun no implementado). Sin marca = implementado hoy.
+
+
+==============================================================================
+ 1. INVENTARIO FUNCIONAL POR MODULO (15 modulos)
+==============================================================================
+
+M1. NAVEGACION / SHELL
+  Frontend: sidebar con 12 vistas en 3 bloques; resaltado de vista activa;
+            selector de proyecto en el header; selector global de nivel
+            (Basico/Intermedio/Avanzado); boton "Subir Repo Git"; indicador
+            de cuota de tokens; spinners y mensajes de error por vista.
+  Backend : servicio de la SPA (Vite middleware en dev, estaticos en prod);
+            fallback a index.html para rutas del cliente.
+
+M2. PROYECTOS (WORKSPACE)
+  Frontend: tarjetas con tag, lenguajes, salud AST, deuda, SPOF y actividad;
+            seleccion de proyecto activo; boton "Nuevo proyecto"; navegacion
+            a vistas de analisis del proyecto.
+  Backend : persistencia de proyectos; lista y alta de proyectos.
+
+M3. INGESTA DE REPOSITORIOS (MODAL)
+  Frontend: modal con 3 pestanas (Git remoto, ZIP/Carpeta, Pegar codigo);
+            formulario Git (URL, rama, motor de parser); zona drag & drop de
+            ZIP con validacion de extension y tamano; animacion de 4 pasos;
+            mensaje de error con reintento.
+  Backend : recepcion del digest del proyecto; descarga de repos Git o sitios
+            web; extraccion de ZIP y calculo de metricas (SLOC, lenguajes,
+            dependencias).
+
+M4. CHAT IA (3 NIVELES)
+  Frontend: burbujas de conversacion (avatar, hora, nivel); entrada con boton
+            y Enter; pills de nivel; copiar respuesta; scroll automatico;
+            bienvenida contextual; prompts precargados desde otras vistas;
+            renderizado Markdown de respuestas.
+  Backend : endpoint de chat con contexto del proyecto; prompts por nivel;
+            fallback heuristico sin API key; memoria multi-turno; limites de
+            latencia.
+
+M5. VISION GENERAL
+  Frontend: dashboard con metricas clave y accesos rapidos; preguntas
+            sugeridas que abren el chat.
+  Backend : endpoint de metricas del proyecto.
+
+M6. ARQUITECTURA & MODULOS
+  Frontend: vista de modulos con dependencias y acoplamiento; seleccion de
+            modulo con detalle.
+  Backend : calculo de acoplamiento por modulo (Ca, Ce, inestabilidad).
+
+M7. DIAGRAMAS C4 & UML
+  Frontend: diagrama C4 interactivo con nodos y flujos animados; seleccion
+            de nodo con panel de detalle.
+  Backend : generacion de diagramas C4/PlantUML desde el AST.
+
+M8. MODELO DE DATOS / BD
+  Frontend: vista de tablas con PK/FK/unique y particionamiento; busqueda y
+            filtro de tablas y columnas.
+  Backend : introspeccion del esquema de base de datos del proyecto.
+
+M9. CASOS DE USO & REQUERIMIENTOS
+  Frontend: vista de casos de uso (actor, pre/postcondicion, complejidad,
+            pasos); visualizacion del escenario Gherkin.
+  Backend : extraccion de casos de uso desde rutas y controladores.
+
+M10. RIESGOS & VALIDACION
+  Frontend: vista de riesgos STRIDE con severidad, estado, impacto y
+            mitigacion.
+  Backend : analisis de dependencias vulnerables (CVE).
+
+M11. AUDITOR DE DEUDA TECNICA
+  Frontend: vista de deuda con horas estimadas y dependencias obsoletas;
+            exportacion del informe.
+  Backend : calculo de deuda tecnica a partir de metricas del codigo.
+
+M12. GENERADOR DE DOCUMENTACION
+  Frontend: selector de tipo (README, OpenAPI, C4, ADR); vista previa;
+            copiar; descargar archivo.
+  Backend : endpoint de generacion de documentos; generacion real con Gemini
+            y fallback por plantilla.
+
+M13. HISTORIAL DE CONSULTAS
+  Frontend: vista de historial (categoria, repo, tokens, pregunta, resumen);
+            marcar favorito; reenviar consulta al chat.
+  Backend : persistencia de consultas y endpoint de historial.
+
+M14. REPOSITORIOS ANALIZADOS
+  Frontend: vista de repos (rama, lenguaje, SLOC, estado AST, ultimo commit);
+            accion de re-analizar/sincronizar.
+  Backend : endpoint de estado de sincronizacion de repos.
+
+M15. CONFIGURACION / IA / SEGURIDAD
+  Frontend: (sin pantallas propias; consume el estado del servidor).
+  Backend : carga de GEMINI_API_KEY desde entorno; inicializacion segura del
+            cliente IA; proteccion de la key; limites de payload; manejo de
+            errores JSON; motor de respaldo; filtro de archivos binarios.
+
+
+==============================================================================
+ 2. REQUERIMIENTOS ATOMICOS (una sola cosa por requerimiento)
+==============================================================================
+
+Formato de cada fila:
+ID | Modulo | Funcionalidad | Capa | Tipo | Origen | Descripcion
+
+--- M1. NAVEGACION / SHELL --------------------------------------------------
+
+RF-FE-01 | Navegacion | Sidebar de 12 vistas | FE | RF | U | Muestra las 12 vistas agrupadas en 3 bloques (Explorar, Analisis, Herramientas IA).
+RF-FE-02 | Navegacion | Resaltado de vista activa | FE | RF | U | La vista seleccionada se resalta y el cambio es inmediato, sin recargar.
+RF-FE-03 | Navegacion | Selector de proyecto | FE | RF | U | Desplegable en el header que cambia el proyecto activo en toda la app.
+RF-FE-04 | Navegacion | Selector global de nivel | FE | RF | U | Permite elegir Basico/Intermedio/Avanzado y se conserva entre vistas.
+RF-FE-05 | Navegacion | Boton Subir Repo Git | FE | RF | U | Abre el modal de ingesta de proyectos desde el header.
+RF-FE-06 | Navegacion | Indicador de cuota de tokens | FE | RF | S | Muestra el consumo de tokens (hoy simulado) en la barra lateral.
+RF-FE-07 | Navegacion | Estados de carga y error | FE | RF | U | Cada vista muestra spinner al cargar y mensaje claro si algo falla.
+RF-BE-01 | Navegacion | Servicio de la SPA | BE | RF | S | Sirve la app con Vite middleware en desarrollo y estaticos en produccion.
+RF-BE-02 | Navegacion | Estado del sistema [P] | BE | RF | S | Endpoint GET /api/health devuelve estado del servidor y de la IA.
+
+--- M2. PROYECTOS -----------------------------------------------------------
+
+RF-FE-08 | Proyectos | Tarjetas de proyecto | FE | RF | U | Cada tarjeta muestra tag, lenguajes, salud AST, deuda, SPOF y actividad.
+RF-FE-09 | Proyectos | Seleccion de proyecto activo | FE | RF | U | Al elegir una tarjeta, el proyecto activo cambia en toda la aplicacion.
+RF-FE-10 | Proyectos | Boton Nuevo proyecto | FE | RF | U | Abre el modal de ingesta para agregar un proyecto.
+RF-FE-11 | Proyectos | Accesos a analisis | FE | RF | U | Desde la tarjeta se navega a las vistas de analisis del proyecto.
+RF-BE-03 | Proyectos | Persistencia de proyectos [P] | BE | RF | S | CRUD de proyectos en almacenamiento persistente (API /api/projects).
+RF-BE-04 | Proyectos | Lista de proyectos [P] | BE | RF | S | Endpoint GET /api/projects devuelve los proyectos registrados.
+RF-BE-05 | Proyectos | Alta de proyecto [P] | BE | RF | S | Endpoint POST /api/projects registra un proyecto nuevo.
+
+--- M3. INGESTA DE REPOSITORIOS ---------------------------------------------
+
+RF-FE-12 | Ingesta | Modal de 3 pestanas | FE | RF | U | Pestanas Git remoto, ZIP/Carpeta y Pegar codigo en un solo modal.
+RF-FE-13 | Ingesta | Formulario Git | FE | RF | U | Campos URL, rama y motor de parser con validacion de URL no vacia.
+RF-FE-14 | Ingesta | Drag & drop de ZIP | FE | RF | U | Acepta archivos .zip con validacion de extension y tamano (<=200 MB).
+RF-FE-15 | Ingesta | Progreso por 4 pasos | FE | RF | U | Animacion que muestra el avance del analisis paso a paso.
+RF-FE-16 | Ingesta | Error con reintento | FE | RF | U | Si el analisis falla, muestra el motivo y permite reintentar.
+RF-BE-06 | Ingesta | Analisis de digest [P] | BE | RF | S | POST /api/analyze recibe inventario y muestra de codigo y devuelve analisis.
+RF-BE-07 | Ingesta | Analisis por URL [P] | BE | RF | S | POST /api/analyze-url descarga repos Git o sitios web y los analiza.
+RF-BE-08 | Ingesta | Extraccion y metricas [P] | BE | RF | S | Descomprime ZIP y calcula SLOC, lenguajes, archivos y dependencias.
+
+--- M4. CHAT IA -------------------------------------------------------------
+
+RF-FE-17 | Chat | Burbujas de conversacion | FE | RF | U | Mensajes de usuario/asistente con avatar, hora y nivel usado.
+RF-FE-18 | Chat | Entrada y envio | FE | RF | U | Envio por boton y Enter; entrada bloqueada mientras la IA responde.
+RF-FE-19 | Chat | Pills de nivel | FE | RF | U | Cambio de nivel dentro del chat aplicado a los mensajes siguientes.
+RF-FE-20 | Chat | Copiar respuesta | FE | RF | U | Copia la respuesta al portapapeles con confirmacion visual.
+RF-FE-21 | Chat | Scroll automatico | FE | RF | U | La conversacion se desplaza sola al ultimo mensaje.
+RF-FE-22 | Chat | Bienvenida contextual | FE | RF | U | Mensaje inicial que menciona el proyecto activo y los 3 niveles.
+RF-FE-23 | Chat | Prompt precargado | FE | RF | U | Otras vistas pueden abrir el chat con una pregunta ya cargada.
+RF-FE-24 | Chat | Renderizado Markdown [P] | FE | RF | U | Las respuestas muestran titulos, negritas, listas y bloques de codigo.
+RF-BE-09 | Chat | Endpoint de chat | BE | RF | S | POST /api/gemini/chat responde con contexto del proyecto y nivel.
+RF-BE-10 | Chat | Prompts por nivel | BE | RF | S | El sistema usa instrucciones distintas para basico, intermedio y avanzado.
+RF-BE-11 | Chat | Fallback heuristico | BE | RF | S | Sin API key o con fallo de Gemini responde con motor local por nivel.
+RF-BE-12 | Chat | Memoria multi-turno [P] | BE | RF | U | Usa el historial de la conversacion para mantener contexto.
+RNF-BE-01 | Chat | Latencia de respuesta | BE | RNF | U | Con IA activa, la respuesta llega en menos de 10 s (p95).
+RN-04 | Chat | Aviso de envio a IA [P] | FE | RN | U | La interfaz advierte que la pregunta y el contexto se envian a Gemini.
+
+--- M5. VISION GENERAL ------------------------------------------------------
+
+RF-FE-25 | Vision General | Dashboard de metricas | FE | RF | U | Resume salud AST, deuda, SPOF y repos con accesos rapidos.
+RF-FE-26 | Vision General | Preguntas sugeridas | FE | RF | U | Botones de pregunta que abren el chat con el texto precargado.
+RF-BE-13 | Vision General | Metricas calculadas [P] | BE | RF | S | GET /api/projects/:id/metrics devuelve metricas reales del proyecto.
+
+--- M6. ARQUITECTURA & MODULOS ----------------------------------------------
+
+RF-FE-27 | Arquitectura | Vista de modulos | FE | RF | U | Muestra modulos, dependencias y grado de acoplamiento.
+RF-FE-28 | Arquitectura | Detalle de modulo | FE | RF | U | Al seleccionar un modulo se muestra su informacion detallada.
+RF-BE-14 | Arquitectura | Calculo de acoplamiento [P] | BE | RF | S | Calcula Ca, Ce e inestabilidad por modulo a partir del AST.
+
+--- M7. DIAGRAMAS C4 & UML -------------------------------------------------
+
+RF-FE-29 | Diagramas | Diagrama C4 interactivo | FE | RF | U | Nodos de contenedores con lineas de flujo animadas.
+RF-FE-30 | Diagramas | Panel de nodo | FE | RF | U | Al seleccionar un nodo se muestra su detalle lateral.
+RF-BE-15 | Diagramas | Generacion C4/PlantUML [P] | BE | RF | S | Genera diagramas C4/PlantUML desde el codigo analizado.
+
+--- M8. MODELO DE DATOS / BD ------------------------------------------------
+
+RF-FE-31 | Datos BD | Vista de tablas | FE | RF | U | Tablas con columnas, PK/FK/unique y estrategia de particionamiento.
+RF-FE-32 | Datos BD | Busqueda y filtro | FE | RF | U | Filtra tablas y columnas por nombre o tipo.
+RF-BE-16 | Datos BD | Introspeccion de esquema [P] | BE | RF | S | Lee el esquema real de la base de datos del proyecto.
+
+--- M9. CASOS DE USO ---------------------------------------------------------
+
+RF-FE-33 | Casos de uso | Vista de casos | FE | RF | U | Muestra actor, pre/postcondicion, complejidad y pasos.
+RF-FE-34 | Casos de uso | Escenario Gherkin | FE | RF | U | Visualiza el escenario Gherkin de cada caso de uso.
+RF-BE-17 | Casos de uso | Extraccion desde codigo [P] | BE | RF | S | Deriva casos de uso desde rutas y controladores del proyecto.
+
+--- M10. RIESGOS & VALIDACION -----------------------------------------------
+
+RF-FE-35 | Riesgos | Vista de riesgos | FE | RF | U | Riesgos STRIDE con severidad, estado, impacto y mitigacion.
+RF-BE-18 | Riesgos | Analisis de CVE [P] | BE | RF | S | Detecta dependencias vulnerables del proyecto analizado.
+
+--- M11. AUDITOR DE DEUDA TECNICA --------------------------------------------
+
+RF-FE-36 | Deuda tecnica | Vista de deuda | FE | RF | U | Muestra horas estimadas y dependencias obsoletas.
+RF-FE-37 | Deuda tecnica | Exportar informe | FE | RF | U | Permite exportar el informe de deuda tecnica.
+RF-BE-19 | Deuda tecnica | Calculo de deuda [P] | BE | RF | S | Estima deuda tecnica a partir de metricas del codigo.
+
+--- M12. GENERADOR DE DOCUMENTACION ------------------------------------------
+
+RF-FE-38 | Documentacion | Selector de documento | FE | RF | U | Elige entre README, OpenAPI, C4 y ADR.
+RF-FE-39 | Documentacion | Vista previa | FE | RF | U | Muestra el documento generado con formato legible.
+RF-FE-40 | Documentacion | Copiar documento | FE | RF | U | Copia el documento al portapapeles con confirmacion.
+RF-FE-41 | Documentacion | Descargar documento | FE | RF | U | Descarga el documento en .md, .yaml o .puml segun el tipo.
+RF-BE-20 | Documentacion | Endpoint de documentos | BE | RF | S | POST /api/gemini/document devuelve el contenido segun tipo.
+RF-BE-21 | Documentacion | Generacion real con IA [P] | BE | RF | U | Genera el documento con Gemini y cae a plantilla si la IA falla.
+RN-01 | Documentacion | Coherencia con el proyecto | BE | RN | S | El documento generado debe corresponder al proyecto activo.
+
+--- M13. HISTORIAL DE CONSULTAS ----------------------------------------------
+
+RF-FE-42 | Historial | Vista de historial | FE | RF | U | Lista consultas con categoria, repo, tokens, pregunta y resumen.
+RF-FE-43 | Historial | Marcar favorito | FE | RF | U | Permite marcar/desmarcar una consulta como favorita.
+RF-FE-44 | Historial | Reenviar al chat | FE | RF | U | Envia una consulta del historial al chat con un clic.
+RF-BE-22 | Historial | Persistencia [P] | BE | RF | S | Guarda las consultas y las expone en GET /api/history.
+
+--- M14. REPOSITORIOS ANALIZADOS ---------------------------------------------
+
+RF-FE-45 | Repositorios | Vista de repos | FE | RF | U | Rama, lenguaje, SLOC, archivos, estado AST y ultimo commit.
+RF-FE-46 | Repositorios | Re-analizar repo [P] | FE | RF | U | Accion para sincronizar y volver a analizar un repositorio.
+RF-BE-23 | Repositorios | Estado de sincronizacion [P] | BE | RF | S | GET /api/repos devuelve el estado de cada repositorio.
+
+--- M15. CONFIGURACION / IA / SEGURIDAD --------------------------------------
+
+RF-BE-24 | Configuracion | API key por entorno | BE | RF | S | Lee GEMINI_API_KEY solo desde variables de entorno del servidor.
+RF-BE-25 | Configuracion | Inicializacion segura de IA | BE | RF | S | Crea el cliente GoogleGenAI y maneja el error si la key falta.
+RNF-BE-02 | Seguridad | Key no expuesta | BE | RNF | S | La API key nunca se envia al navegador ni aparece en respuestas.
+RNF-BE-03 | Seguridad | Limite de payload | BE | RNF | S | El servidor limita el JSON entrante a 10 MB.
+RNF-BE-04 | Seguridad | Errores JSON estandar | BE | RNF | S | Los errores de API devuelven {error} con HTTP 400 o 500.
+RNF-BE-05 | Calidad | Pruebas minimas [P] | BE | RNF | S | Lint y smoke test de endpoints antes de publicar.
+RN-02 | IA | Motor de respaldo | BE | RN | S | Sin key o con fallo de Gemini, responde el motor heuristico sin cortar la sesion.
+RN-03 | Ingesta | Solo archivos de texto | BE | RN | S | El analisis procesa texto/codigo e ignora binarios y multimedia.
+RNF-FE-01 | Rendimiento | Navegacion sin recarga | FE | RNF | U | Cambiar de vista toma menos de 100 ms sin recargar la pagina.
+RNF-FE-02 | Accesibilidad | Uso basico por teclado | FE | RNF | U | Foco visible y navegacion por teclado en controles principales.
+RE-01 | Entorno | Version de Node | BE | RE | S | Requiere Node.js 20 o superior.
+RE-02 | Entorno | Puerto configurable | BE | RE | S | El puerto se define con PORT (el proyecto usa 3100; 3000 reservado).
+RE-03 | Entorno | Ruta sin caracteres especiales | BE | RE | S | La carpeta del proyecto no debe contener "a con tilde" ni "&" (npm/Windows).
+
+
+==============================================================================
+ 3. TABLA MAESTRA CONSOLIDADA (resumen por modulo y capa)
+==============================================================================
+
++--------+----------------------------+-----+-----+-----+---------+---------+
+| Modulo | Nombre                     | FE  | BE  | RNF | RN/RE   | Total   |
++--------+----------------------------+-----+-----+-----+---------+---------+
+| M1     | Navegacion / Shell         |  7  |  2  |  0  |  0      |   9     |
+| M2     | Proyectos                  |  4  |  3  |  0  |  0      |   7     |
+| M3     | Ingesta de repositorios    |  5  |  3  |  0  |  1 (RN) |   9     |
+| M4     | Chat IA                    |  8  |  4  |  1  |  1 (RN) |  14     |
+| M5     | Vision General             |  2  |  1  |  0  |  0      |   3     |
+| M6     | Arquitectura & Modulos     |  2  |  1  |  0  |  0      |   3     |
+| M7     | Diagramas C4 & UML         |  2  |  1  |  0  |  0      |   3     |
+| M8     | Modelo de Datos / BD       |  2  |  1  |  0  |  0      |   3     |
+| M9     | Casos de Uso               |  2  |  1  |  0  |  0      |   3     |
+| M10    | Riesgos & Validacion       |  1  |  1  |  0  |  0      |   2     |
+| M11    | Auditor de Deuda Tecnica   |  2  |  1  |  0  |  0      |   3     |
+| M12    | Generador de Documentacion |  4  |  2  |  0  |  1 (RN) |   7     |
+| M13    | Historial de Consultas     |  3  |  1  |  0  |  0      |   4     |
+| M14    | Repositorios Analizados    |  2  |  1  |  0  |  0      |   3     |
+| M15    | Configuracion / IA / Seg.  |  0  |  2  |  3  |  2 (RN) |   9 (ver nota)
++--------+----------------------------+-----+-----+-----+---------+---------+
+
+NOTA M15: ademas de RF-BE-24/25 y RNF-BE-02/03/04/05, incluye RN-02,
+RN-03, RE-01, RE-02 y RE-03 (contabilizados en la seccion 4).
+
+CONTEO TOTAL
+  RF-FE   : 46 requerimientos funcionales de frontend
+  RF-BE   : 25 requerimientos funcionales de backend
+  RNF     :  6 (1 chat, 3 seguridad, 1 pruebas, 1 navegacion, 1 accesibilidad)
+  RN      :  4 reglas de negocio (RN-01 a RN-04)
+  RE      :  3 restricciones (RE-01 a RE-03)
+  TOTAL   : 84 requerimientos atomicos
+
+
+==============================================================================
+ 4. REGLAS DE NEGOCIO Y RESTRICCIONES (detalle)
+==============================================================================
+
+RN-01 (Documentacion) : Todo documento generado debe describir al proyecto
+                        activo; no se aceptan plantillas de otro proyecto.
+RN-02 (IA)            : Si no hay GEMINI_API_KEY o la API falla, el sistema
+                        responde con el motor heuristico local; la sesion
+                        nunca se interrumpe.
+RN-03 (Ingesta)       : Solo se analizan archivos de texto/codigo; los
+                        binarios (imagenes, videos, fuentes) se omiten del
+                        contenido y solo se cuentan como archivos.
+RN-04 (Privacidad)    : Antes de enviar codigo o preguntas a Gemini, la
+                        interfaz debe avisar al usuario.
+
+RE-01 (Entorno)       : Node.js 20+ y navegador con soporte ES2022.
+RE-02 (Entorno)       : Puerto configurable por variable PORT; por defecto
+                        3000 y en este equipo 3100 (3000 reservado).
+RE-03 (Entorno)       : La ruta del proyecto no debe contener caracteres
+                        especiales (a con tilde, &, etc.) por compatibilidad
+                        de npm en Windows.
+
+
+==============================================================================
+ 5. TRAZABILIDAD FASE 1 (PAIN POINTS) -> FASE 2 (REQUERIMIENTOS)
+==============================================================================
+
++----+------------------------------------+----------------------------------+
+| PP | Pain Point (Fase 1)                | Requerimientos que lo cubren     |
++----+------------------------------------+----------------------------------+
+| P1 | Documentacion de uso incompleta    | RF-FE-01..07, RF-BE-02 (docs)    |
+| P2 | Analisis de repositorios simulado  | RF-FE-12..16, RF-BE-06/07/08     |
+| P3 | Generador con plantillas fijas     | RF-BE-20/21, RN-01               |
+| P4 | Historial sin persistencia         | RF-FE-42..44, RF-BE-22           |
+| P5 | Chat sin renderizado Markdown      | RF-FE-24                        |
+| P6 | API key y modo IA poco claros      | RF-BE-24/25, RF-BE-02, RN-02     |
+| P7 | Errores de instalacion             | RE-01/02/03                      |
+| P8 | Falta politica de privacidad       | RN-04, RNF-BE-02                 |
+| P9 | Sin pruebas automatizadas          | RNF-BE-05                        |
+| P10| Sin especificacion de API          | RF-BE-02..25 (contratos)         |
++----+------------------------------------+----------------------------------+
+
+
+==============================================================================
+ 6. CHECKLIST DE ENTREGABLES DE LA FASE
+==============================================================================
+
+ [x] Funcionalidades listadas por modulo (15 modulos)
+ [x] Separacion Frontend / Backend por funcionalidad
+ [x] Requerimientos atomicos con IDs RF-FE-xx / RF-BE-xx
+ [x] Clasificacion RF / RNF / Regla / Restriccion
+ [x] Clasificacion por origen: usuario (U) / sistema (S)
+ [x] Tabla maestra consolidada con conteo por modulo
+ [x] Reglas de negocio y restricciones detalladas (RN-01..04, RE-01..03)
+ [x] Trazabilidad Pain Points -> Requerimientos
+ [x] Marca [P] para lo propuesto (no implementado aun)
+
+Nota: los requerimientos sin marca [P] existen hoy en el codigo de CodeExplain
+(vistas, endpoints /api/gemini/chat, /api/gemini/explain, /api/gemini/document,
+fallback heuristico y servidor Vite). Los [P] provienen de las brechas de la
+Fase 1 y se priorizaran en la Fase 3.
+
+==============================================================================
+ FIN DEL DOCUMENTO
+==============================================================================

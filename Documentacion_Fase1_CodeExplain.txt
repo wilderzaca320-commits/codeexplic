@@ -1,0 +1,372 @@
+==============================================================================
+ DOCUMENTACION - FASE 1: FUENTES PRIMARIAS (TEMA 2)
+ Proyecto: CodeExplain - Analisis & Explicacion de Software con IA
+ Alcance: SOLO la parte practica (pasos, tablas, instrumentos, checklist)
+ Fecha: 11/11/2026
+==============================================================================
+
+Objetivo de la fase:
+Recolectar informacion de primera mano antes de escribir los requerimientos
+de CodeExplain, usando entrevistas, cuestionarios, focus group, observacion
+directa y analisis de la documentacion existente del propio proyecto.
+
+IMPORTANTE: los datos marcados como "(muestra)" son ejemplos para llenar en
+las entrevistas reales. Los hallazgos marcados como "(verificado)" salen de
+revisar el codigo y los archivos reales del repositorio CodeExplain.
+
+
+==============================================================================
+ 1. REGISTRO Y MATRIZ DE STAKEHOLDERS
+==============================================================================
+
+1.1 REGISTRO (lista de quien se entrevistara)
+
++----+-----------------------------+-----------------------------+
+| N# | Nombre                      | Rol                         |
++----+-----------------------------+-----------------------------+
+|  1 | Wilder (por confirmar)      | Dueno del producto          |
+|  2 | Por definir                 | Desarrollador actual        |
+|  3 | Por definir                 | Usuario operativo           |
+|  4 | Por definir                 | Usuario operativo 2         |
+|  5 | Por definir                 | Cliente final               |
++----+-----------------------------+-----------------------------+
+
+1.2 MATRIZ DE STAKEHOLDERS
+
+Columnas: Nombre | Rol | Interes en CodeExplain | Poder de decision | Disponibilidad
+
+1) Wilder (dueno del producto)
+   - Rol: define alcance, prioridades y presupuesto del proyecto.
+   - Interes: que la app funcione de verdad, sea demostrable y publicable.
+   - Poder de decision: ALTO.
+   - Disponibilidad: ALTA.
+
+2) Desarrollador actual (mantenedor)
+   - Rol: mantiene el codigo (React 19 + TypeScript + Vite + Express + Gemini).
+   - Interes: codigo estable, dependencias sin conflictos, documentacion tecnica.
+   - Poder de decision: MEDIO (decide implementacion).
+   - Disponibilidad: MEDIA.
+
+3) Usuario operativo (estudiante/desarrollador que analiza repositorios)
+   - Rol: sube proyectos, usa el chat de 3 niveles, genera documentacion.
+   - Interes: entender codigo ajeno rapido, explicaciones claras por nivel.
+   - Poder de decision: BAJO (influye con feedback).
+   - Disponibilidad: ALTA.
+
+4) Usuario operativo 2 (docente / revisor tecnico)
+   - Rol: evalua la comprension y calidad de las explicaciones generadas.
+   - Interes: que las respuestas sean correctas, trazables y verificables.
+   - Poder de decision: MEDIO (aprueba entregables academicos).
+   - Disponibilidad: MEDIA.
+
+5) Cliente final (equipo que recibe la documentacion generada)
+   - Rol: consume README/OpenAPI/C4 generados por la herramienta.
+   - Interes: documentacion util, actualizada y exportable.
+   - Poder de decision: BAJO.
+   - Disponibilidad: MEDIA.
+
+6) Proveedor externo: Google AI Studio / API Gemini (no interno, pero impacta)
+   - Interes: uso correcto de la API key y cuotas.
+   - Poder de decision: N/A (proveedor).
+   - Disponibilidad: N/A.
+
+Plan de contacto practico:
+- Semana 1: entrevistas 1 y 2 (dueno y desarrollador) - 30 min cada una.
+- Semana 1: cuestionario Likert a 8-10 usuarios operativos (10 min).
+- Semana 2: focus group con 4-6 usuarios (45-60 min) + observacion directa.
+- Cierre: consolidar matriz de hallazgos y pain points.
+
+
+==============================================================================
+ 2. DISENO DEL INSTRUMENTO DE LEVANTAMIENTO
+==============================================================================
+
+2.1 ENTREVISTA SEMIESTRUCTURADA (guion de 10 preguntas abiertas)
+
+Apertura: "Gracias por participar. Esta entrevista es para mejorar CodeExplain,
+una herramienta que explica y documenta software con IA. No hay respuestas
+correctas ni incorrectas. Se grabara solo con su permiso."
+
+P1.  Como entiende hoy un proyecto de software que no escribio usted?
+P2.  Que herramientas usa actualmente para leer, entender o documentar codigo?
+P3.  Cuanto tiempo le toma entender un repositorio nuevo (horas/dias)?
+P4.  Que partes del codigo le cuestan mas (arquitectura, BD, autenticacion,
+     pagos, despliegue)?
+P5.  Como documenta sus proyectos hoy y en que formato (README, Word, diagramas)?
+P6.  Que esperaria de una herramienta que explique el codigo en 3 niveles:
+     basico, intermedio y avanzado?
+P7.  Como preferiria cargar un proyecto: ZIP, repositorio Git o URL? Por que?
+P8.  Que informacion NO estaria dispuesto a subir a una IA (codigo privado,
+     datos de clientes, credenciales)?
+P9.  Que salida le sirve mas: chat explicativo, diagramas C4/UML, documentacion
+     exportable o auditoria de deuda tecnica? Cual usaria primero?
+P10. Que haria que deje de usar la herramienta? (costo, privacidad, errores,
+     lentitud, respuestas genericas)
+
+Cierre: "Hay algo que no le pregunte y que considere importante?"
+
+Registro: grabar (con permiso) y transcribir o resumir en la matriz de hallazgos.
+
+2.2 CUESTIONARIO CON ESCALA LIKERT (1 = totalmente en desacuerdo, 5 = totalmente de acuerdo)
+
+Instruccion: marque 1 a 5 segun su experiencia real.
+
+Bloque A - Dolor (problema)
+  A1. Me cuesta entender codigo escrito por otras personas.          [1 2 3 4 5]
+  A2. La documentacion de mis proyectos esta desactualizada.          [1 2 3 4 5]
+  A3. Generar documentacion tecnica manualmente es tedioso.           [1 2 3 4 5]
+  A4. Pierdo tiempo buscando donde esta implementada una funcionalidad.[1 2 3 4 5]
+
+Bloque B - Frecuencia de uso
+  B1. Uso IA (ChatGPT/Gemini) para explicar codigo.                   [1 2 3 4 5]
+  B2. Leo repositorios ajenos al menos una vez por semana.            [1 2 3 4 5]
+  B3. Necesito explicaciones distintas segun quien las lee
+      (basico para estudiantes, avanzado para arquitectos).           [1 2 3 4 5]
+
+Bloque C - Confianza y riesgo
+  C1. Confiaria en diagramas generados automaticamente.               [1 2 3 4 5]
+  C2. Me preocupa subir codigo de mi trabajo/empresa a una IA.        [1 2 3 4 5]
+  C3. Revisaria la salida de la IA antes de usarla en produccion.     [1 2 3 4 5]
+
+Bloque D - Adopcion
+  D1. Usaria una herramienta asi al menos una vez por semana.         [1 2 3 4 5]
+  D2. Pagaria una suscripcion mensual por ella.                       [1 2 3 4 5]
+
+Como tabular (practico):
+- Promedio por bloque: A = dolor, B = frecuencia, C = confianza, D = adopcion.
+- Promedio >= 4.0 = necesidad alta; 3.0-3.9 = media; < 3.0 = baja.
+- Ordenar los items por promedio descendente para priorizar requerimientos.
+
+2.3 OPCIONAL: FOCUS GROUP (4-6 usuarios) Y OBSERVACION DIRECTA
+
+Plan del focus group (45-60 min):
+- Roles: 1 moderador + 1 observador (toma notas).
+- Material: CodeExplain corriendo en http://localhost:3100.
+- Dinamica:
+  1) Demo de 5 min (chat con 3 niveles, cambio de nivel en vivo).
+  2) Tarea guiada: cada participante pide una explicacion del mismo modulo.
+  3) Discusion: que les sirvio, que confundio, que falta.
+  4) Cierre: votacion rapida de las 3 mejoras mas urgentes.
+- Registrar: audio (con permiso), fotos de notas y lista de mejoras votadas.
+
+Observacion directa (checklist por usuario, 15 min):
+  [ ] Abre la app sin ayuda (tiempo: ____)
+  [ ] Encuentra el boton "Subir Repo Git" (tiempo: ____)
+  [ ] Cambia el nivel Basico/Intermedio/Avanzado (tiempo: ____)
+  [ ] Hace una pregunta al chat y entiende la respuesta (si/no: ____)
+  [ ] Encuentra el Generador de Documentacion (tiempo: ____)
+  [ ] Exporta o copia un documento generado (si/no: ____)
+  [ ] Dudas o errores observados: ______________________________
+
+
+==============================================================================
+ 3. EJECUTA Y DOCUMENTA
+==============================================================================
+
+3.1 PROTOCOLO DE EJECUCION (paso a paso)
+
+1) Antes de cada entrevista: enviar consentimiento breve (grabacion y uso de
+   datos solo para el proyecto).
+2) Grabar audio/video con permiso; si no hay permiso, tomar notas.
+3) Transcribir o resumir en maximo 10 lineas por entrevista.
+4) Etiquetar cada cita con: fuente (E1, E2...), fecha y tema.
+5) Volcar todo en la matriz de hallazgos (3.2).
+6) Actualizar la lista de pain points (3.3) despues de cada 2 entrevistas.
+
+3.2 MATRIZ DE HALLAZGOS (lo que dice el usuario vs. lo que muestra la documentacion)
+
++----+----------------+--------------------------------------+----------------------------------------------+------------------------------------------+
+| N# | Fuente         | Lo que dice el usuario (muestra)     | Lo que muestra la documentacion/codigo       | Conclusion / brecha                      |
++----+----------------+--------------------------------------+----------------------------------------------+------------------------------------------+
+|  1 | E3 / obs.      | "No sabia que existian 3 niveles     | README.md no menciona los niveles;           | Funcionalidad clave no visible en la     |
+|    |                | de explicacion."                     | metadata.json si los describe. (verificado)  | documentacion de uso.                    |
++----+----------------+--------------------------------------+----------------------------------------------+------------------------------------------+
+|  2 | E3 / obs.      | "Pense que el analisis del repo era  | UploadModal.tsx simula el analisis con       | Funcionalidad simulada no documentada;   |
+|    |                | real, pero siempre da el mismo       | setInterval y crea un proyecto generico.     | riesgo de expectativa incorrecta.        |
+|    |                | proyecto."                           | (verificado)                                 |                                          |
++----+----------------+--------------------------------------+----------------------------------------------+------------------------------------------+
+|  3 | E1             | "Mis consultas no quedan guardadas." | HistorialConsultas.tsx usa datos mock        | Falta persistencia; no hay aviso en la   |
+|    |                |                                      | (MOCK_QUERY_HISTORY). (verificado)           | interfaz ni en la documentacion.         |
++----+----------------+--------------------------------------+----------------------------------------------+------------------------------------------+
+|  4 | E1 / E4        | "El generador de documentacion da    | GeneradorDocumentacion.tsx usa plantillas    | La IA no esta conectada al generador;    |
+|    |                | siempre el mismo texto."             | fijas; /api/gemini/document devuelve texto   | falta especificar el comportamiento      |
+|    |                |                                      | estatico. (verificado)                       | esperado.                                |
++----+----------------+--------------------------------------+----------------------------------------------+------------------------------------------+
+|  5 | E4             | "No se si mis respuestas usan la IA  | .env.example exige GEMINI_API_KEY; server.ts | Falta guia de configuracion y aviso del  |
+|    |                | o el modo de respaldo."              | cae a respuestas heuristicas sin key.        | modo activo (IA real vs fallback).       |
+|    |                |                                      | (verificado)                                 |                                          |
++----+----------------+--------------------------------------+----------------------------------------------+------------------------------------------+
+|  6 | E3 / obs.      | "El chat muestra simbolos raros       | ChatAsistenteIA.tsx renderiza texto plano    | Falta renderizado Markdown en el chat.   |
+|    |                | (###, **) en las respuestas."        | (whitespace-pre-wrap). (verificado)          |                                          |
++----+----------------+--------------------------------------+----------------------------------------------+------------------------------------------+
+|  7 | E2             | "No encontre como instalarlo ni por  | README.md solo indica npm install, key y     | Guia de instalacion incompleta.          |
+|    |                | que fallaba al iniciar."             | npm run dev; sin troubleshooting.            |                                          |
+|    |                |                                      | (verificado)                                 |                                          |
++----+----------------+--------------------------------------+----------------------------------------------+------------------------------------------+
+|  8 | E2             | "Al iniciar daba error de puerto y   | .env define PORT=3100; conflicto con otra    | Falta documentar puertos y conflictos    |
+|    |                | de dependencias."                    | instancia previa. (verificado)               | de dependencias (esbuild/vite).          |
++----+----------------+--------------------------------------+----------------------------------------------+------------------------------------------+
+|  9 | E5             | "Necesito exportar la documentacion  | GeneradorDocumentacion descarga Markdown,    | Documentar formatos de salida y su uso   |
+|    |                | en un formato que mi equipo entienda."| pero no hay guia de formatos. (muestra)     | en equipo.                               |
++----+----------------+--------------------------------------+----------------------------------------------+------------------------------------------+
+| 10 | E5             | "No se que pasa con mi codigo cuando | No existe politica de datos ni aviso de      | Brecha de privacidad (critica para       |
+|    |                | lo subo a la IA."                    | envio a Gemini. (verificado)                 | adopcion empresarial).                   |
++----+----------------+--------------------------------------+----------------------------------------------+------------------------------------------+
+
+3.3 LISTA PRELIMINAR DE PAIN POINTS (ordenada por frecuencia e impacto)
+
+Criterio: Frecuencia (Alta/Media/Baja) x Impacto (Alto/Medio/Bajo) = Prioridad.
+P1 = atacar primero, P2 = siguiente iteracion, P3 = backlog.
+
++----+--------------------------------------------------+------------+----------+-----------+
+| N# | Dolor (Pain Point)                                | Frecuencia | Impacto  | Prioridad |
++----+--------------------------------------------------+------------+----------+-----------+
+|  1 | Documentacion de uso inexistente/incompleta      | ALTA       | ALTO     | P1        |
+|    | (README generico de AI Studio)                    |            |          |           |
++----+--------------------------------------------------+------------+----------+-----------+
+|  2 | Analisis de repositorios simulado (no real)       | ALTA       | ALTO     | P1        |
++----+--------------------------------------------------+------------+----------+-----------+
+|  3 | Generador de documentacion con plantillas fijas   | MEDIA      | ALTO     | P1        |
++----+--------------------------------------------------+------------+----------+-----------+
+|  4 | Sin persistencia del historial de consultas       | MEDIA      | MEDIO    | P2        |
++----+--------------------------------------------------+------------+----------+-----------+
+|  5 | Chat sin renderizado Markdown (ilegible)          | ALTA       | MEDIO    | P2        |
++----+--------------------------------------------------+------------+----------+-----------+
+|  6 | Configuracion de API key y modo IA poco claros    | MEDIA      | MEDIO    | P2        |
++----+--------------------------------------------------+------------+----------+-----------+
+|  7 | Errores de instalacion (puerto, ruta con          | MEDIA      | MEDIO    | P2        |
+|    | caracteres especiales, dependencias)              |            |          |           |
++----+--------------------------------------------------+------------+----------+-----------+
+|  8 | Falta politica de privacidad del codigo enviado   | BAJA       | ALTO     | P2        |
++----+--------------------------------------------------+------------+----------+-----------+
+|  9 | Sin pruebas automatizadas (solo lint)             | BAJA       | ALTO     | P3        |
++----+--------------------------------------------------+------------+----------+-----------+
+| 10 | Sin especificacion formal de la API interna       | BAJA       | MEDIO    | P3        |
++----+--------------------------------------------------+------------+----------+-----------+
+
+
+==============================================================================
+ 4. ANALISIS DOCUMENTAL (revision de la documentacion existente de CodeExplain)
+==============================================================================
+
+4.1 INVENTARIO DE DOCUMENTACION EXISTENTE (archivos reales del proyecto)
+
+ 1) README.md
+    - Contenido: instrucciones minimas de AI Studio (npm install, definir
+      GEMINI_API_KEY, npm run dev).
+    - Ubicacion: raiz del proyecto.
+
+ 2) .env.example
+    - Contenido: GEMINI_API_KEY y APP_URL (comentados).
+    - Ubicacion: raiz del proyecto.
+
+ 3) metadata.json
+    - Contenido: nombre, descripcion oficial y capability
+      "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API".
+    - Ubicacion: raiz del proyecto.
+
+ 4) package.json
+    - Contenido: scripts (dev, start, build, preview, clean, lint) y
+      dependencias (React 19, Vite, Express, @google/genai, jszip...).
+    - Ubicacion: raiz del proyecto.
+
+ 5) server.ts (documentacion tecnica implicita)
+    - Contenido: 3 endpoints (/api/gemini/chat, /api/gemini/explain,
+      /api/gemini/document), fallback heuristico y servidor Vite en modo
+      middleware.
+    - Ubicacion: raiz del proyecto.
+
+ 6) Codigo fuente de las 12 vistas + src/data/mockData.ts
+    - Contenido: interfaz completa y datos de ejemplo (proyectos, repos,
+      historial, tablas BD, casos de uso, riesgos).
+    - Ubicacion: src/.
+
+ 7) Materiales externos (fuera del repositorio)
+    - CodeExplain_Analisis_y_Diseno_de_Sistemas.docx (diseno del sistema).
+    - Carpeta "analisis web presentacion" (presentacion del proyecto).
+    - Ubicacion: Downloads/analisis-web/analisis web/.
+
+ 8) Normativas / politicas
+    - No existe politica de datos, privacidad ni terminos de uso del codigo
+      que se envia a la API de Gemini.
+
+4.2 QUE CUBRE Y QUE NO CUBRE CADA DOCUMENTO
+
++-------------------+--------------------------------+----------------------------------------+
+| Documento         | SI cubre                       | NO cubre                               |
++-------------------+--------------------------------+----------------------------------------+
+| README.md         | Instalacion basica y arranque  | Funcionalidades, arquitectura, niveles,|
+|                   |                                | API, limitaciones, troubleshooting     |
++-------------------+--------------------------------+----------------------------------------+
+| .env.example      | Variables de entorno requeridas| Valores de ejemplo, permisos, rotacion |
+|                   |                                | de la API key                          |
++-------------------+--------------------------------+----------------------------------------+
+| metadata.json     | Identidad y capability de la   | Alcance funcional y casos de uso       |
+|                   | app                            |                                        |
++-------------------+--------------------------------+----------------------------------------+
+| package.json      | Scripts y dependencias         | Requisitos de entorno (version Node,   |
+|                   |                                | puertos, conflicto esbuild/vite)       |
++-------------------+--------------------------------+----------------------------------------+
+| server.ts         | Contrato tecnico implicito     | Especificacion formal de API           |
+|                   |                                | (request/response, codigos de error)   |
++-------------------+--------------------------------+----------------------------------------+
+| Vistas + mocks    | Interfaz y datos de ejemplo    | Manual de usuario, criterios de        |
+|                   |                                | aceptacion, pruebas                   |
++-------------------+--------------------------------+----------------------------------------+
+| DOCX + presentac. | Diseno y contexto academico    | No esta enlazado desde el README;      |
+|                   |                                | puede quedar desactualizado            |
++-------------------+--------------------------------+----------------------------------------+
+| Politicas         | (no existen)                   | Privacidad, retencion y uso del codigo |
+|                   |                                | enviado a Gemini                       |
++-------------------+--------------------------------+----------------------------------------+
+
+4.3 BRECHAS DOCUMENTALES ENCONTRADAS
+
+ B1. No hay manual de usuario (12 vistas, 3 niveles, flujos principales).
+ B2. No hay especificacion de API (endpoints /api/gemini/* y sus formatos).
+ B3. No hay guia de despliegue en produccion (build, variables, puertos).
+ B4. No se distingue lo real de lo simulado (mock) en ningun documento.
+ B5. No hay politica de privacidad ni aviso de envio de codigo a Gemini.
+ B6. El README contradice a metadata.json (uno es generico, el otro describe
+     la app real).
+ B7. No hay criterios de aceptacion ni casos de prueba documentados.
+
+4.4 ACCIONES PRACTICAS RECOMENDADAS (checklist para la Fase 2)
+
+ [ ] Reescribir README.md: descripcion, 12 vistas, 3 niveles, requisitos
+     (Node 20+), instalacion, configuracion de API key, ejecucion y
+     troubleshooting (puerto ocupado, ruta con caracteres especiales).
+ [ ] Crear docs/API.md con los 3 endpoints: metodo, request, response y
+     errores (400/500).
+ [ ] Crear docs/LIMITACIONES.md: tabla "real vs simulado" por vista.
+ [ ] Crear docs/MANUAL_USUARIO.md con capturas de las 12 vistas.
+ [ ] Crear docs/PRIVACIDAD.md: que se envia a Gemini, cuando y con que
+     consentimiento.
+ [ ] Enlazar el DOCX de diseno y la presentacion desde el README.
+ [ ] Completar .env.example con valores de ejemplo y comentarios.
+ [ ] Documentar criterios de aceptacion por funcionalidad.
+
+
+==============================================================================
+ 5. ENTREGABLES DE LA FASE (checklist)
+==============================================================================
+
+ [x] Matriz de stakeholders (6 actores)
+ [x] Guion de entrevista semiestructurada (10 preguntas)
+ [x] Cuestionario Likert (12 items en 4 bloques)
+ [x] Plan de focus group (4-6 usuarios) y observacion directa
+ [x] Protocolo de ejecucion, grabacion y transcripcion
+ [x] Matriz de hallazgos (10 filas: usuario vs documentacion)
+ [x] Lista preliminar de pain points priorizada (10 dolores)
+ [x] Inventario documental (8 fuentes reales)
+ [x] Tabla de cobertura documental
+ [x] Brechas documentales (7) y acciones recomendadas (8)
+
+Nota final: los hallazgos verificados se obtuvieron leyendo el codigo real de
+CodeExplain (README.md, .env.example, metadata.json, package.json, server.ts y
+src/). Los hallazgos "(muestra)" deben completarse con las entrevistas reales
+antes de pasar a la Fase 2 (requerimientos).
+
+==============================================================================
+ FIN DEL DOCUMENTO
+==============================================================================

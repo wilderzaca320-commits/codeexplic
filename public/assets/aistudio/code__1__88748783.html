@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"surface-container-low":"#1a1c1b","surface-container-high":"#282a29","on-primary-fixed":"#00210c","secondary-fixed-dim":"#4edea3","secondary":"#4edea3","surface-dim":"#121413","surface":"#121413","inverse-surface":"#e2e3e0","on-secondary-fixed":"#002113","primary":"#f1ffef","tertiary-fixed-dim":"#ffb3ad","background":"#121413","surface-tint":"#00e478","secondary-container":"#00a572","surface-variant":"#333534","tertiary-container":"#ffd5d1","primary-fixed-dim":"#00e478","on-tertiary":"#68000a","error-container":"#93000a","on-tertiary-fixed-variant":"#930013","surface-container-lowest":"#0c0f0e","secondary-fixed":"#6ffbbe","inverse-on-surface":"#2f312f","error":"#ffb4ab","tertiary":"#fffaf9","on-tertiary-container":"#bf1f27","on-surface-variant":"#b9cbb9","on-error-container":"#ffdad6","on-primary":"#003919","surface-container":"#1e201f","inverse-primary":"#006d36","on-error":"#690005","on-background":"#e2e3e0","primary-fixed":"#60ff98","on-surface":"#e2e3e0","on-primary-fixed-variant":"#005227","surface-bright":"#383a38","on-tertiary-fixed":"#410004","on-secondary":"#003824","on-secondary-fixed-variant":"#005236","surface-container-highest":"#333534","outline-variant":"#3b4b3d","on-primary-container":"#007138","tertiary-fixed":"#ffdad7","on-secondary-container":"#00311f","primary-container":"#00ff87","outline":"#849585"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-md":"0.75rem","space-xs":"0.25rem","gutter-desktop":"1.25rem","gutter":"1rem","space-xl":"2rem","space-lg":"1.25rem","margin":"1rem","space-sm":"0.5rem","margin-desktop":"2rem"},fontFamily:{"body-md":["Geist"],"label-lg":["JetBrains Mono"],"data-metric":["JetBrains Mono"],"label-sm":["JetBrains Mono"],"headline-xl-mobile":["Geist"],"headline-lg":["Geist"],"body-lg":["Geist"],"headline-xl":["Geist"],"headline-md":["Geist"],"body-sm":["Geist"],"headline-sm":["Geist"],"label-md":["JetBrains Mono"]},fontSize:{"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"label-lg":["14px",{lineHeight:"20px",fontWeight:"500"}],"data-metric":["20px",{lineHeight:"26px",fontWeight:"700"}],"label-sm":["10px",{lineHeight:"14px",fontWeight:"500"}],"headline-xl-mobile":["26px",{lineHeight:"34px",fontWeight:"600"}],"headline-lg":["24px",{lineHeight:"32px",fontWeight:"600"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],"headline-xl":["32px",{lineHeight:"40px",fontWeight:"600"}],"headline-md":["20px",{lineHeight:"28px",fontWeight:"600"}],"body-sm":["12px",{lineHeight:"16px",fontWeight:"400"}],"headline-sm":["16px",{lineHeight:"24px",fontWeight:"600"}],"label-md":["12px",{lineHeight:"16px",fontWeight:"500"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col justify-between shadow-[0_0_24px_rgba(0,0,0,0.85)] border-r border-outline-variant/30"><div class="flex flex-col"><div class="h-16 px-gutter-desktop flex items-center justify-between border-b border-outline-variant/20 bg-surface-dim/90 backdrop-blur-md"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded bg-primary-container/10 border border-primary-container/40 flex items-center justify-center text-primary-container shadow-[0_0_12px_rgba(0,255,135,0.25)]"><span class="material-symbols-outlined text-[20px]">terminal</span></div><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold">CodeExplain</span><span class="px-1.5 py-0.5 rounded text-[9px] font-label-sm uppercase bg-primary-container text-on-primary-container font-bold tracking-wider">AI CORE</span></div><span class="font-label-sm text-label-sm text-secondary tracking-widest">v2.4 CYBERNETIC</span></div></div></div><div class="overflow-y-auto px-space-sm py-space-md space-y-space-md"><div class="space-y-space-xs"><div class="px-space-sm py-space-xs flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest"><span class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[13px] text-outline">explore</span> Explorar</span><span class="font-label-sm text-[9px] text-outline">03</span></div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary-container font-semibold shadow-[0_0_16px_rgba(0,255,135,0.2)]"><a class="group flex items-center gap-space-sm px-space-sm py-2 rounded font-body-md text-body-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="proyectos" href="#"><span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary-container">folder_open</span> Proyectos</a><a class="group flex items-center gap-space-sm px-space-sm py-2 rounded font-body-md text-body-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="repositorios-analizados" href="#"><span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary-container">source</span> Repositorios Analizados</a><a class="group flex items-center gap-space-sm px-space-sm py-2 rounded font-body-md text-body-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="historial-de-consultas" href="#"><span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary-container">history</span> Historial de Consultas</a></nav></div><div class="space-y-space-xs"><div class="px-space-sm py-space-xs flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest"><span class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[13px] text-outline">hub</span> Análisis de Sistemas</span><span class="font-label-sm text-[9px] text-outline">06</span></div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary-container font-semibold shadow-[0_0_16px_rgba(0,255,135,0.2)]"><a class="group flex items-center gap-space-sm px-space-sm py-2 rounded font-body-md text-body-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="vision-general" href="#"><span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary-container">grid_view</span> Visión General</a><a class="group flex items-center gap-space-sm px-space-sm py-2 rounded font-body-md text-body-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="arquitectura-y-modulos" href="#"><span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary-container">account_tree</span> Arquitectura & Módulos</a><a aria-current="page" class="group flex items-center gap-space-sm px-space-sm py-2 rounded transition-all bg-primary-container text-on-primary-container font-semibold shadow-[0_0_16px_rgba(0,255,135,0.2)]" data-path="diagramas-c4-y-uml" href="#"><span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary-container">schema</span> Diagramas C4 & UML</a><a class="group flex items-center gap-space-sm px-space-sm py-2 rounded font-body-md text-body-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="modelo-de-datos-bd" href="#"><span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary-container">database</span> Modelo de Datos / BD</a><a class="group flex items-center gap-space-sm px-space-sm py-2 rounded font-body-md text-body-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="casos-de-uso-y-requerimientos" href="#"><span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary-container">checklist</span> Casos de Uso & Requerimientos</a><a class="group flex items-center gap-space-sm px-space-sm py-2 rounded font-body-md text-body-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="riesgos-y-validacion" href="#"><span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary-container">security</span> Riesgos & Validación</a></nav></div><div class="space-y-space-xs"><div class="px-space-sm py-space-xs flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest"><span class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[13px] text-outline">psychology</span> Herramientas IA</span><span class="font-label-sm text-[9px] text-outline">03</span></div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary-container font-semibold shadow-[0_0_16px_rgba(0,255,135,0.2)]"><a class="group flex items-center gap-space-sm px-space-sm py-2 rounded font-body-md text-body-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="chat-asistente-ia" href="#"><span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary-container">chat</span> Chat con Asistente IA (Gemini)</a><a class="group flex items-center gap-space-sm px-space-sm py-2 rounded font-body-md text-body-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="generador-de-documentacion" href="#"><span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary-container">auto_stories</span> Generador de Documentación</a><a class="group flex items-center gap-space-sm px-space-sm py-2 rounded font-body-md text-body-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="auditor-de-deuda-tecnica" href="#"><span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary-container">bug_report</span> Auditor de Deuda Técnica</a></nav></div></div></div><div class="p-space-md border-t border-outline-variant/20 bg-surface-container-lowest/80 backdrop-blur-md"><div class="p-3 rounded-lg bg-surface-container-low border border-outline-variant/30 space-y-2"><div class="flex items-center justify-between"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-primary-container shadow-[0_0_8px_rgba(0,255,135,0.8)]"></span> Cuota de Tokens</span><span class="font-label-sm text-label-sm text-primary-container font-bold">68%</span></div><div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-primary-container rounded-full shadow-[0_0_10px_rgba(0,255,135,0.6)] w-[68%]"></div></div><div class="flex items-center justify-between text-[11px] font-label-sm text-outline"><span class="text-on-surface-variant">680K / 1.0M</span><span class="text-secondary">ACTIVO</span></div></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-dim/85 backdrop-blur-xl border-b border-outline-variant/25 z-40 flex items-center justify-between px-gutter-desktop shadow-[0_4px_24px_rgba(0,0,0,0.4)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm px-3 py-1.5 rounded bg-surface-container-low border border-outline-variant/40 hover:border-primary-container/40 transition-colors"><span class="material-symbols-outlined text-[18px] text-primary-container">folder_zip</span><span class="font-label-md text-label-md text-on-surface font-semibold">ecommerce-microservices-v2</span><span class="font-label-sm text-[11px] text-on-surface-variant border-l border-outline-variant/40 pl-2">Python / React</span><span class="material-symbols-outlined text-[16px] text-outline">unfold_more</span></div><div class="hidden xl:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-low/70 border border-outline-variant/20"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-primary-container"></span></span><span class="font-label-sm text-label-sm text-secondary font-medium tracking-wide uppercase">Sistema En Línea • Motor Activo</span></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-low border border-outline-variant/30 text-on-surface-variant font-label-md text-label-md"><span class="material-symbols-outlined text-[16px] text-secondary">memory</span><span class="text-primary font-bold">42.8k</span><span class="text-outline text-label-sm font-normal">ctx</span></div><button class="flex items-center gap-space-xs px-3.5 py-1.5 rounded bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold tracking-tight shadow-[0_0_16px_rgba(0,255,135,0.35)] hover:shadow-[0_0_24px_rgba(0,255,135,0.55)] transition-all"><span class="material-symbols-outlined text-[18px]">cloud_upload</span><span>Subir Repo Git</span></button><div class="h-5 w-px bg-outline-variant/40"></div><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="relative pt-16 w-full px-gutter-desktop min-h-screen bg-background"><div class="flex flex-col w-full pb-16 space-y-space-lg text-on-surface">
+<!-- Style extensions for cybernetic glowing flows -->
+<style>
+    @keyframes dataStream {
+      0% { stroke-dashoffset: 48; }
+      100% { stroke-dashoffset: 0; }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.4; filter: drop-shadow(0 0 3px #00ff87); }
+      50% { opacity: 1; filter: drop-shadow(0 0 10px #00ff87); }
+    }
+    .flow-stream {
+      stroke-dasharray: 6 6;
+      animation: dataStream 1.6s linear infinite;
+    }
+    .flow-stream-reverse {
+      stroke-dasharray: 6 6;
+      animation: dataStream 2.2s linear infinite reverse;
+    }
+    .glow-node:hover {
+      box-shadow: 0 0 24px rgba(0, 255, 135, 0.35);
+      border-color: #00ff87;
+    }
+    .cyber-grid {
+      background-size: 24px 24px;
+      background-image: radial-gradient(circle, rgba(0, 255, 135, 0.08) 1px, transparent 1px);
+    }
+  </style>
+<!-- 1. Header de sección & Toolbar Genesis FX -->
+<section class="flex flex-col xl:flex-row xl:items-end justify-between gap-space-lg pt-space-xs">
+<div class="space-y-space-xs max-w-4xl">
+<!-- Badge superior -->
+<div class="inline-flex items-center gap-space-xs px-2.5 py-1 rounded-full bg-surface-container border border-outline-variant/40">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary-container shadow-[0_0_8px_rgba(0,255,135,0.9)]"></span>
+</span>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest font-semibold">MOTOR DE MODELADO FORMAL • SINTAXIS PLANTUML / MERMAID REACTIVA</span>
+</div>
+<!-- Título & Subtítulo -->
+<h1 class="font-headline-xl text-headline-xl text-primary tracking-tight font-semibold">
+        Diagramas C4 & Especificación UML
+      </h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl leading-relaxed">
+        Explora la jerarquía C4 multinivel reconstruida por ingeniería inversa del AST y diagramas de secuencia UML dinámicos para transacciones críticas y arquitectura distribuida.
+      </p>
+</div>
+<!-- Acciones superiores -->
+<div class="flex flex-wrap items-center gap-space-xs shrink-0">
+<div class="inline-flex rounded-lg bg-surface-container-low p-1 border border-outline-variant/30">
+<button class="px-3 py-1.5 rounded font-label-sm text-label-sm text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all flex items-center gap-1.5" id="btn-export-puml">
+<span class="material-symbols-outlined text-[15px]">code_blocks</span>
+          PlantUML (.puml)
+        </button>
+<button class="px-3 py-1.5 rounded font-label-sm text-label-sm text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all flex items-center gap-1.5" id="btn-export-svg">
+<span class="material-symbols-outlined text-[15px]">image</span>
+          SVG Vectorial
+        </button>
+<button class="px-3 py-1.5 rounded font-label-sm text-label-sm text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all flex items-center gap-1.5" id="btn-sync-mermaid">
+<span class="material-symbols-outlined text-[15px]">sync_alt</span>
+          Mermaid.js
+        </button>
+</div>
+<button class="px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold tracking-tight shadow-[0_0_20px_rgba(0,255,135,0.4)] hover:shadow-[0_0_28px_rgba(0,255,135,0.65)] hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>Generar Diagrama Secuencia</span>
+</button>
+</div>
+</section>
+<!-- 2. Barra de control de capas y vistas -->
+<section class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-space-md p-space-sm rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-md">
+<!-- C4 Layer Pills -->
+<div class="flex items-center gap-1 overflow-x-auto pb-1 lg:pb-0">
+<span class="font-label-sm text-label-sm text-outline px-2 uppercase tracking-wider shrink-0">C4 MODEL:</span>
+<button class="c4-pill px-3 py-1.5 rounded font-label-md text-label-md text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all shrink-0">
+        L1 Contexto
+      </button>
+<button class="c4-pill px-3 py-1.5 rounded font-label-md text-label-md bg-primary-container text-on-primary-container font-semibold shadow-[0_0_12px_rgba(0,255,135,0.35)] shrink-0">
+        L2 Contenedores (Activo)
+      </button>
+<button class="c4-pill px-3 py-1.5 rounded font-label-md text-label-md text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all shrink-0">
+        L3 Componentes
+      </button>
+<button class="c4-pill px-3 py-1.5 rounded font-label-md text-label-md text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all shrink-0">
+        L4 Código & Clases
+      </button>
+</div>
+<!-- Divisor -->
+<div class="hidden lg:block h-6 w-px bg-outline-variant/30"></div>
+<!-- UML Views & Tools -->
+<div class="flex flex-wrap items-center justify-between lg:justify-end gap-space-sm">
+<div class="flex items-center gap-1 bg-surface-container-low px-1.5 py-1 rounded-lg border border-outline-variant/25">
+<span class="font-label-sm text-label-sm text-outline px-1.5 uppercase">UML:</span>
+<button class="px-2.5 py-1 rounded text-on-primary-container bg-primary-container/20 border border-primary-container/30 font-label-sm text-label-sm font-semibold text-secondary">
+          Secuencia SAGA
+        </button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-primary font-label-sm text-label-sm">
+          Estados Redlock
+        </button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-primary font-label-sm text-label-sm">
+          Infra K8s
+        </button>
+</div>
+<!-- Controls: Zoom & Data Stream Flow Toggle -->
+<div class="flex items-center gap-2">
+<div class="flex items-center bg-surface-container-low rounded-lg border border-outline-variant/30 text-on-surface-variant">
+<button class="p-1.5 hover:text-primary hover:bg-surface-container rounded-l" id="zoom-out" title="Reducir Zoom">
+<span class="material-symbols-outlined text-[18px]">remove</span>
+</button>
+<span class="font-label-sm text-label-sm px-2 text-outline">100%</span>
+<button class="p-1.5 hover:text-primary hover:bg-surface-container rounded-r" id="zoom-in" title="Aumentar Zoom">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container border border-outline-variant/40 hover:border-primary-container/40 transition-colors" id="toggle-stream">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse shadow-[0_0_6px_#00ff87]"></span>
+<span class="font-label-sm text-label-sm text-secondary font-medium tracking-wide">Flujo Animado [ON]</span>
+</button>
+</div>
+</div>
+</section>
+<!-- 3. Canvas Central C4 + Inspector Lateral Bento Matrix -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- Canvas C4 & Secuencia Central (8 Cols) -->
+<div class="lg:col-span-8 flex flex-col space-y-space-md">
+<!-- Panel Contenedor Principal del Diagrama -->
+<div class="relative w-full rounded-xl bg-surface-container-lowest border border-outline-variant/30 cyber-grid overflow-hidden shadow-2xl min-h-[640px] flex flex-col justify-between">
+<!-- Canvas Status HUD Overlay -->
+<div class="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-2 pointer-events-none">
+<div class="px-2.5 py-1 rounded bg-surface-dim/90 backdrop-blur-md border border-outline-variant/30 flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Límite de Dominio:</span>
+<span class="font-label-sm text-label-sm text-primary font-bold">E-Commerce Orchestration</span>
+</div>
+<div class="px-2.5 py-1 rounded bg-surface-dim/90 backdrop-blur-md border border-outline-variant/30 flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container shadow-[0_0_6px_#00ff87]"></span>
+<span class="font-label-sm text-label-sm text-secondary">6 Contenedores Sincronizados</span>
+</div>
+</div>
+<!-- Canvas Controls Float Top-Right -->
+<div class="absolute top-4 right-4 z-20 flex items-center gap-1 bg-surface-dim/90 backdrop-blur-md p-1 rounded-lg border border-outline-variant/30">
+<button class="p-1.5 text-outline hover:text-primary hover:bg-surface-container rounded" title="Auto-organizar nodos">
+<span class="material-symbols-outlined text-[18px]">account_tree</span>
+</button>
+<button class="p-1.5 text-outline hover:text-primary hover:bg-surface-container rounded" title="Restablecer centro">
+<span class="material-symbols-outlined text-[18px]">filter_center_focus</span>
+</button>
+<button class="p-1.5 text-outline hover:text-primary hover:bg-surface-container rounded" title="Modo pantalla completa">
+<span class="material-symbols-outlined text-[18px]">fullscreen</span>
+</button>
+</div>
+<!-- SVG Vectorial Wiring Layer (Cables reactivos) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none z-10" preserveaspectratio="none" viewbox="0 0 800 600">
+<defs>
+<lineargradient id="grad-cyber" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#00ff87" stop-opacity="0.8"></stop>
+<stop offset="100%" stop-color="#4edea3" stop-opacity="0.3"></stop>
+</lineargradient>
+<lineargradient id="grad-err" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#ef4444" stop-opacity="0.9"></stop>
+<stop offset="100%" stop-color="#93000a" stop-opacity="0.4"></stop>
+</lineargradient>
+<marker id="arrow" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="8" refy="5" viewbox="0 0 10 10">
+<path d="M 0 1 L 9 5 L 0 9 z" fill="#00ff87"></path>
+</marker>
+<marker id="arrow-warn" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="8" refy="5" viewbox="0 0 10 10">
+<path d="M 0 1 L 9 5 L 0 9 z" fill="#f59e0b"></path>
+</marker>
+</defs>
+<!-- SPA -> Gateway (Horizontal Line) -->
+<path class="flow-stream" d="M 170 120 L 270 120" fill="none" marker-end="url(#arrow)" stroke="url(#grad-cyber)" stroke-width="2"></path>
+<!-- Gateway -> Auth Service (Diagonal Down-Left) -->
+<path class="flow-stream" d="M 370 160 L 370 240 L 260 260" fill="none" marker-end="url(#arrow)" stroke="#00ff87" stroke-opacity="0.35" stroke-width="2"></path>
+<!-- Gateway -> Order Orchestrator (Horizontal Right) -->
+<path class="flow-stream" d="M 430 120 L 520 120" fill="none" marker-end="url(#arrow)" stroke="url(#grad-cyber)" stroke-width="2.5"></path>
+<!-- Order Orchestrator -> Event Broker Kafka (Vertical Down) -->
+<path class="flow-stream" d="M 600 170 L 600 240" fill="none" marker-end="url(#arrow)" stroke="url(#grad-cyber)" stroke-width="2.5"></path>
+<!-- Kafka -> Payment Engine (Horizontal Left) -->
+<path class="flow-stream" d="M 520 300 L 420 300" fill="none" marker-end="url(#arrow)" stroke="url(#grad-cyber)" stroke-width="2.5"></path>
+<!-- Payment Engine -> Redis Lock (Vertical Down) -->
+<path class="flow-stream" d="M 340 360 L 340 430" fill="none" stroke="#00ff87" stroke-opacity="0.4" stroke-width="1.8"></path>
+<!-- Payment Engine -> PostgreSQL Ledger (Diagonal Down-Right) -->
+<path class="flow-stream" d="M 390 360 L 460 430" fill="none" stroke="#00ff87" stroke-opacity="0.4" stroke-width="1.8"></path>
+<!-- Payment Engine -> Stripe Externa (Horizontal Left) -->
+<path d="M 260 300 L 160 300" fill="none" marker-end="url(#arrow)" stroke="#4edea3" stroke-dasharray="4 4" stroke-width="2"></path>
+<!-- Fallo Simulado / Retry Idempotente hacia DLQ (Dashed curved amber line) -->
+<path d="M 340 270 C 340 200, 480 200, 520 220" fill="none" marker-end="url(#arrow-warn)" stroke="#f59e0b" stroke-dasharray="5 5" stroke-width="1.8"></path>
+</svg>
+<!-- Dynamic Nodes Placement Container -->
+<div class="relative z-20 w-full h-[600px] p-6">
+<!-- NODE 1: Cliente Web SPA -->
+<div class="absolute left-6 top-16 w-36 rounded-lg bg-surface-container border border-outline-variant/40 p-3 glow-node transition-all group cursor-pointer shadow-lg">
+<div class="flex items-center justify-between mb-1.5">
+<span class="px-1.5 py-0.5 rounded text-[9px] font-label-sm bg-surface-container-high text-on-surface-variant font-bold">SPA</span>
+<span class="w-2 h-2 rounded-full bg-primary-container shadow-[0_0_6px_#00ff87]"></span>
+</div>
+<div class="font-headline-sm text-body-md text-primary font-semibold truncate">Web App Client</div>
+<div class="font-label-sm text-[10px] text-outline">React 18 / Vite</div>
+<div class="mt-2 pt-2 border-t border-outline-variant/20 flex items-center justify-between text-[10px] font-label-sm">
+<span class="text-on-surface-variant">HTTPS :443</span>
+<span class="text-secondary font-semibold">0.8ms</span>
+</div>
+</div>
+<!-- NODE 2: API Gateway Kong -->
+<div class="absolute left-[270px] top-16 w-44 rounded-lg bg-surface-container border border-outline-variant/40 p-3 glow-node transition-all group cursor-pointer shadow-xl">
+<div class="flex items-center justify-between mb-1.5">
+<span class="px-1.5 py-0.5 rounded text-[9px] font-label-sm bg-secondary-container/20 text-secondary font-bold">REVERSE PROXY</span>
+<span class="font-label-sm text-[10px] text-primary-container font-mono">p95 4ms</span>
+</div>
+<div class="font-headline-sm text-body-md text-primary font-semibold">API Gateway</div>
+<div class="font-label-sm text-[10px] text-outline">Kong / NestJS Guard</div>
+<div class="mt-2 pt-2 border-t border-outline-variant/20 flex items-center justify-between text-[10px] font-label-sm">
+<span class="text-on-surface-variant">Rate Limiting</span>
+<span class="text-primary-container font-semibold">99.98% UP</span>
+</div>
+</div>
+<!-- NODE 3: Auth Service (Derivación) -->
+<div class="absolute left-[130px] top-[240px] w-40 rounded-lg bg-surface-container-low border border-outline-variant/30 p-2.5 glow-node transition-all cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<span class="px-1.5 py-0.2 rounded text-[9px] font-label-sm bg-surface-container-highest text-on-surface-variant">MICROSERVICE</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+</div>
+<div class="font-label-md text-label-md text-primary font-semibold">Auth Service</div>
+<div class="font-label-sm text-[10px] text-outline">Go 1.22 / JWT Ed25519</div>
+<div class="mt-1.5 text-[9px] font-label-sm text-secondary">Token Cache Redis: 1ms</div>
+</div>
+<!-- NODE 4: Order Orchestrator -->
+<div class="absolute left-[520px] top-16 w-48 rounded-lg bg-surface-container border border-primary-container/40 p-3 glow-node transition-all group cursor-pointer shadow-[0_0_20px_rgba(0,255,135,0.15)]">
+<div class="flex items-center justify-between mb-1.5">
+<span class="px-1.5 py-0.5 rounded text-[9px] font-label-sm bg-primary-container text-on-primary-container font-bold">SAGA MASTER</span>
+<span class="font-label-sm text-[10px] text-primary-container font-mono">12ms</span>
+</div>
+<div class="font-headline-sm text-body-md text-primary font-semibold">Order Orchestrator</div>
+<div class="font-label-sm text-[10px] text-outline">Python / FastAPI Async</div>
+<div class="mt-2 pt-2 border-t border-outline-variant/20 flex items-center justify-between text-[10px] font-label-sm">
+<span class="text-on-surface-variant">gRPC :50051</span>
+<span class="text-secondary font-semibold">Idempotente</span>
+</div>
+</div>
+<!-- NODE 5: Event Broker Apache Kafka -->
+<div class="absolute left-[520px] top-[240px] w-48 rounded-lg bg-surface-container-high border border-outline-variant/40 p-3 glow-node transition-all cursor-pointer shadow-lg">
+<div class="flex items-center justify-between mb-1.5">
+<span class="px-1.5 py-0.5 rounded text-[9px] font-label-sm bg-surface-container text-on-surface-variant font-bold">EVENT BROKER</span>
+<span class="w-2 h-2 rounded-full bg-primary-container shadow-[0_0_8px_#00ff87]"></span>
+</div>
+<div class="font-headline-sm text-body-md text-primary font-semibold">Apache Kafka</div>
+<div class="font-label-sm text-[10px] text-outline">KRaft Cluster (3 Brokers)</div>
+<div class="mt-2 text-[10px] font-label-sm text-secondary bg-surface-container-lowest/80 px-1.5 py-0.5 rounded flex items-center justify-between">
+<span class="truncate">orders.v1.created</span>
+<span class="text-outline">p99: 2ms</span>
+</div>
+</div>
+<!-- RETRY BADGE FLOATING -->
+<div class="absolute left-[400px] top-[195px] px-2 py-0.5 rounded bg-surface-container-lowest border border-yellow-500/40 text-[10px] font-label-sm text-yellow-400 flex items-center gap-1 shadow-md">
+<span class="material-symbols-outlined text-[12px]">replay</span>
+            Retry Poly: DLQ Exponential
+          </div>
+<!-- NODE 6: Payment Engine -->
+<div class="absolute left-[260px] top-[270px] w-44 rounded-lg bg-surface-container border border-outline-variant/40 p-3 glow-node transition-all cursor-pointer shadow-xl">
+<div class="flex items-center justify-between mb-1.5">
+<span class="px-1.5 py-0.5 rounded text-[9px] font-label-sm bg-secondary-container/20 text-secondary font-bold">PROCESSOR</span>
+<span class="font-label-sm text-[10px] text-primary-container">7ms</span>
+</div>
+<div class="font-headline-sm text-body-md text-primary font-semibold">Payment Engine</div>
+<div class="font-label-sm text-[10px] text-outline">Node.js / Express Workers</div>
+<div class="mt-2 pt-2 border-t border-outline-variant/20 flex items-center justify-between text-[10px] font-label-sm">
+<span class="text-on-surface-variant">Consumer Group</span>
+<span class="text-secondary font-semibold">Active</span>
+</div>
+</div>
+<!-- NODE 7: Stripe Gateway Externa -->
+<div class="absolute left-6 top-[270px] w-36 rounded-lg bg-surface-container-low border border-dashed border-outline-variant/50 p-2.5 glow-node cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<span class="px-1.5 py-0.2 rounded text-[9px] font-label-sm bg-surface-variant text-outline">EXT SISTEMA</span>
+<span class="material-symbols-outlined text-[13px] text-outline">cloud</span>
+</div>
+<div class="font-label-md text-label-md text-primary font-semibold">Stripe API</div>
+<div class="font-label-sm text-[10px] text-outline">v2024-04 TLS 1.3</div>
+<div class="mt-1.5 text-[9px] font-label-sm text-on-surface-variant">Idempotency-Key</div>
+</div>
+<!-- NODE 8: Redis Redlock -->
+<div class="absolute left-[260px] top-[430px] w-40 rounded-lg bg-surface-container-low border border-outline-variant/30 p-2.5 glow-node cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<span class="px-1.5 py-0.2 rounded text-[9px] font-label-sm bg-surface-container text-on-surface-variant">IN-MEMORY</span>
+<span class="font-label-sm text-[9px] text-secondary">0.4ms</span>
+</div>
+<div class="font-label-md text-label-md text-primary font-semibold">Redis Redlock</div>
+<div class="font-label-sm text-[10px] text-outline">Distributed Locking</div>
+</div>
+<!-- NODE 9: PostgreSQL Payments Ledger -->
+<div class="absolute left-[440px] top-[430px] w-48 rounded-lg bg-surface-container-low border border-outline-variant/30 p-2.5 glow-node cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<span class="px-1.5 py-0.2 rounded text-[9px] font-label-sm bg-surface-container text-on-surface-variant">ACID LEDGER</span>
+<span class="font-label-sm text-[9px] text-primary-container">WAL Sync</span>
+</div>
+<div class="font-label-md text-label-md text-primary font-semibold">PostgreSQL 16</div>
+<div class="font-label-sm text-[10px] text-outline">payments_ledger_db (Multi-AZ)</div>
+</div>
+</div>
+<!-- Barra inferior del canvas con telemetry strip -->
+<div class="relative z-20 px-4 py-2 bg-surface-dim/95 border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-2 text-label-sm font-label-sm">
+<div class="flex items-center gap-4 text-outline">
+<span>Ruta seleccionada: <strong class="text-secondary font-mono">POST /orders/checkout -> Saga:PayOrder</strong></span>
+<span>Carga activa: <strong class="text-primary font-mono">1,480 req/s</strong></span>
+</div>
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1 text-primary-container">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container shadow-[0_0_6px_#00ff87]"></span>
+              Diagrama sincronizado con commit 8d39f7a
+            </span>
+</div>
+</div>
+</div>
+<!-- Quick Metrics Strip abajo del Canvas (Estilo Genesis FX) -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-space-sm">
+<div class="p-3 rounded-lg bg-surface-container-lowest border border-outline-variant/20 space-y-1">
+<div class="font-label-sm text-label-sm text-outline flex items-center justify-between">
+<span>Servicios AST Mapeados</span>
+<span class="material-symbols-outlined text-[15px] text-secondary">memory</span>
+</div>
+<div class="font-data-metric text-data-metric text-primary">14 Mod.</div>
+<div class="font-label-sm text-[10px] text-secondary">100% Cobertura AST</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-lowest border border-outline-variant/20 space-y-1">
+<div class="font-label-sm text-label-sm text-outline flex items-center justify-between">
+<span>Latencia E2E P95</span>
+<span class="material-symbols-outlined text-[15px] text-primary-container">speed</span>
+</div>
+<div class="font-data-metric text-data-metric text-primary-container font-mono">24.6 ms</div>
+<div class="font-label-sm text-[10px] text-secondary">Dentro de SLA (-6ms)</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-lowest border border-outline-variant/20 space-y-1">
+<div class="font-label-sm text-label-sm text-outline flex items-center justify-between">
+<span>Tasa de Error Saga</span>
+<span class="material-symbols-outlined text-[15px] text-error">warning</span>
+</div>
+<div class="font-data-metric text-data-metric text-primary font-mono">0.012 %</div>
+<div class="font-label-sm text-[10px] text-outline">Compensaciones OK</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-lowest border border-outline-variant/20 space-y-1">
+<div class="font-label-sm text-label-sm text-outline flex items-center justify-between">
+<span>Complejidad C4</span>
+<span class="material-symbols-outlined text-[15px] text-secondary">hub</span>
+</div>
+<div class="font-data-metric text-data-metric text-secondary font-mono">Grado 4.1</div>
+<div class="font-label-sm text-[10px] text-on-surface-variant">Topología desacoplada</div>
+</div>
+</div>
+</div>
+<!-- Inspector lateral derecho / Panel de Análisis Arquitectónico (4 Cols) -->
+<div class="lg:col-span-4 flex flex-col space-y-space-md">
+<!-- Card 1: Métricas de Acoplamiento C4 con Radar Pentagonal -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/30 space-y-space-md shadow-xl">
+<div class="flex items-center justify-between border-b border-outline-variant/20 pb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-primary-container">radar</span>
+<h2 class="font-headline-sm text-headline-sm text-primary font-semibold">Métricas de Acoplamiento C4</h2>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-sm bg-surface-container text-secondary font-mono font-semibold">Score: 94/100</span>
+</div>
+<div class="flex flex-col sm:flex-row items-center gap-space-md">
+<!-- Mini SVG Radar Pentagonal -->
+<div class="w-36 h-36 shrink-0 relative flex items-center justify-center">
+<svg class="w-full h-full" viewbox="0 0 120 120">
+<!-- Radial guide levels -->
+<polygon fill="none" points="60,10 108,45 89,102 31,102 12,45" stroke="#3b4b3d" stroke-dasharray="2 2" stroke-width="0.75"></polygon>
+<polygon fill="none" points="60,25 93,50 80,90 40,90 27,50" stroke="#3b4b3d" stroke-width="0.75"></polygon>
+<polygon fill="none" points="60,40 78,55 71,80 49,80 42,55" stroke="#3b4b3d" stroke-width="0.75"></polygon>
+<!-- Radar Area Data (Inestabilidad, Cohesión, Interfaces, Abstracción, SLA) -->
+<polygon fill="rgba(0, 255, 135, 0.15)" points="60,18 96,48 83,92 37,90 22,48" stroke="#00ff87" stroke-width="1.8"></polygon>
+<!-- Vertices with glow -->
+<circle class="shadow-[0_0_8px_#00ff87]" cx="60" cy="18" fill="#00ff87" r="3"></circle>
+<circle cx="96" cy="48" fill="#00ff87" r="3"></circle>
+<circle cx="83" cy="92" fill="#00ff87" r="3"></circle>
+<circle cx="37" cy="90" fill="#00ff87" r="3"></circle>
+<circle cx="22" cy="48" fill="#00ff87" r="3"></circle>
+</svg>
+<span class="absolute text-[10px] font-label-sm text-secondary font-bold">SOLID</span>
+</div>
+<!-- Valores Clave -->
+<div class="space-y-2 w-full text-label-sm font-label-sm">
+<div class="flex items-center justify-between p-1.5 rounded bg-surface-container-low border border-outline-variant/15">
+<span class="text-on-surface-variant">Inestabilidad (I):</span>
+<span class="text-secondary font-mono font-bold">0.32 <span class="text-[10px] text-outline">(Baja)</span></span>
+</div>
+<div class="flex items-center justify-between p-1.5 rounded bg-surface-container-low border border-outline-variant/15">
+<span class="text-on-surface-variant">Cohesión Funcional (H):</span>
+<span class="text-primary font-mono font-bold">0.91 <span class="text-[10px] text-secondary">(Óptima)</span></span>
+</div>
+<div class="flex items-center justify-between p-1.5 rounded bg-surface-container-low border border-outline-variant/15">
+<span class="text-on-surface-variant">Cobertura Interfaces:</span>
+<span class="text-primary-container font-mono font-bold">96.4%</span>
+</div>
+<div class="flex items-center justify-between p-1.5 rounded bg-surface-container-low border border-outline-variant/15">
+<span class="text-on-surface-variant">Distancia Secuencia:</span>
+<span class="text-primary font-mono font-bold">D=0.08</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: Código Fuente PlantUML / Mermaid Generado -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/30 space-y-space-sm shadow-xl flex flex-col">
+<div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-secondary">terminal</span>
+<span class="font-headline-sm text-headline-sm text-primary font-semibold">Definición Formal</span>
+</div>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition-all text-[11px] font-label-sm flex items-center gap-1" id="copy-code-btn">
+<span class="material-symbols-outlined text-[13px]">content_copy</span>
+<span>Copiar Definición</span>
+</button>
+</div>
+<!-- Code Language Switcher Tabs -->
+<div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-lg">
+<button class="px-2.5 py-1 rounded bg-primary-container text-on-primary-container font-label-sm text-label-sm font-bold">PlantUML</button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-primary font-label-sm text-label-sm">Mermaid</button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-primary font-label-sm text-label-sm">Structurizr DSL</button>
+</div>
+<!-- Code Mirror Syntax Box -->
+<div class="relative bg-surface-dim rounded-lg p-3 font-label-sm text-[11px] leading-relaxed overflow-x-auto border border-outline-variant/20 max-h-48 scrollbar-none font-mono">
+<pre class="text-on-surface-variant"><span class="text-secondary font-bold">@startuml</span> C4_Container_Orchestrator
+<span class="text-outline">!include</span> <span class="text-primary-container"><C4/C4_Container></span>
+
+<span class="text-secondary">Person</span>(customer, <span class="text-primary">"Shopper"</span>, <span class="text-outline">"Comprador en SPA"</span>)
+<span class="text-secondary">Container</span>(spa, <span class="text-primary">"Web SPA"</span>, <span class="text-outline">"React 18"</span>)
+<span class="text-secondary">Container</span>(gateway, <span class="text-primary">"API Gateway"</span>, <span class="text-outline">"Kong / NestJS"</span>)
+<span class="text-secondary">ContainerQueue</span>(kafka, <span class="text-primary">"Order Events"</span>, <span class="text-outline">"Kafka Topic"</span>)
+<span class="text-secondary">Container</span>(saga, <span class="text-primary">"Orchestrator"</span>, <span class="text-outline">"FastAPI Async"</span>)
+<span class="text-secondary">Container</span>(pay, <span class="text-primary">"Payment Worker"</span>, <span class="text-outline">"Node.js Worker"</span>)
+
+<span class="text-outline">Rel</span>(customer, spa, <span class="text-primary">"Navega & Paga"</span>, <span class="text-secondary">"HTTPS"</span>)
+<span class="text-outline">Rel</span>(spa, gateway, <span class="text-primary">"POST /orders/checkout"</span>, <span class="text-secondary">"JSON/REST"</span>)
+<span class="text-outline">Rel</span>(gateway, saga, <span class="text-primary">"Inicia Transacción"</span>, <span class="text-secondary">"gRPC"</span>)
+<span class="text-outline">Rel</span>(saga, kafka, <span class="text-primary">"orders.created"</span>, <span class="text-secondary">"Event Stream"</span>)
+<span class="text-outline">Rel</span>(kafka, pay, <span class="text-primary">"Consume evento"</span>, <span class="text-secondary">"TLS TCP"</span>)
+<span class="text-secondary font-bold">@enduml</span></pre>
+</div>
+</div>
+<!-- Card 3: Explicación del Flujo por Gemini AI -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/30 space-y-space-sm shadow-xl relative overflow-hidden">
+<div class="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-primary-container/5 blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-primary-container">psychology</span>
+<span class="font-headline-sm text-headline-sm text-primary font-semibold">Explicación por Gemini AI</span>
+</div>
+<span class="font-label-sm text-[10px] text-secondary font-bold px-2 py-0.5 rounded bg-surface-container border border-primary-container/20">
+            AUDITORÍA DE ARQUITECTURA
+          </span>
+</div>
+<div class="space-y-space-xs text-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+<p>
+            El diseño implementa el patrón <span class="text-primary font-semibold">Saga Coreografiada con Orquestador Local</span>. Tras recibir <code class="text-secondary font-mono text-[11px]">POST /orders/checkout</code>, el Orquestador emite un mensaje idempotente a Kafka con clave de partición por <code class="text-primary font-mono text-[11px]">tenant_id</code>.
+          </p>
+<div class="p-2.5 rounded bg-surface-container-low border border-outline-variant/20 space-y-1">
+<div class="flex items-center gap-1.5 text-secondary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">verified_user</span>
+              Garantía de Tolerancia a Fallos
+            </div>
+<p class="text-[11px] text-outline">
+              Si Stripe excede los 3,500ms o arroja error 5xx, el Payment Engine aborta el candado distribuido en Redis (<code class="text-primary font-mono">Redlock.release()</code>) y publica una transacción de compensación en la DLQ sin riesgo de doble cobro.
+            </p>
+</div>
+</div>
+<div class="pt-2 flex items-center justify-between border-t border-outline-variant/20 text-label-sm font-label-sm text-outline">
+<span>Tiempo de inferencia: <strong class="text-primary font-mono">240ms</strong></span>
+<button class="text-secondary hover:text-primary-container hover:underline flex items-center gap-1">
+<span>Pedir análisis de cuello de botella</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Interactive script for client actions -->
+<script>
+    // Copy definition micro-interaction
+    const copyBtn = document.getElementById('copy-code-btn');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', () => {
+        const text = `@startuml C4_Container_Orchestrator\n!include <C4/C4_Container>\n...`;
+        navigator.clipboard?.writeText(text).then(() => {
+          copyBtn.innerHTML = '<span class="material-symbols-outlined text-[13px] text-primary-container">check</span> <span class="text-primary-container">¡Copiado!</span>';
+          setTimeout(() => {
+            copyBtn.innerHTML = '<span class="material-symbols-outlined text-[13px]">content_copy</span> <span>Copiar Definición</span>';
+          }, 2000);
+        });
+      });
+    }
+
+    // Toggle animated flows
+    const toggleStreamBtn = document.getElementById('toggle-stream');
+    let streamActive = true;
+    if (toggleStreamBtn) {
+      toggleStreamBtn.addEventListener('click', () => {
+        streamActive = !streamActive;
+        const streams = document.querySelectorAll('.flow-stream');
+        streams.forEach(s => {
+          s.style.animationPlayState = streamActive ? 'running' : 'paused';
+        });
+        toggleStreamBtn.innerHTML = streamActive 
+          ? '<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse shadow-[0_0_6px_#00ff87]"></span><span class="font-label-sm text-label-sm text-secondary font-medium tracking-wide">Flujo Animado [ON]</span>'
+          : '<span class="w-2 h-2 rounded-full bg-outline"></span><span class="font-label-sm text-label-sm text-outline font-medium tracking-wide">Flujo Animado [OFF]</span>';
+      });
+    }
+
+    // Pill selectors interaction
+    const pills = document.querySelectorAll('.c4-pill');
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        pills.forEach(p => {
+          p.className = 'c4-pill px-3 py-1.5 rounded font-label-md text-label-md text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all shrink-0';
+        });
+        pill.className = 'c4-pill px-3 py-1.5 rounded font-label-md text-label-md bg-primary-container text-on-primary-container font-semibold shadow-[0_0_12px_rgba(0,255,135,0.35)] shrink-0';
+      });
+    });
+  </script>
+</div></main></div></body></html>
