@@ -1,0 +1,292 @@
+================================================================================
+ PRUEBA DE USABILIDAD - CODEEXPLAIN
+ Tema 7: Arquitectura de Software | Documento de apoyo al SAD
+================================================================================
+
+ Nombre del Sistema / Proyecto : CodeExplain - Análisis & Explicación de Software con IA
+ Código del Proyecto           : PRJ-2026-CEX-01
+ Fecha                         : 2026-11-23
+ Versión                       : 1.0
+ Autor / Arquitecto             : WILDER
+ Fuente de verdad               : código en C:\Users\WILDER\Proyectos\codeexplic
+ Documento relacionado          : Documentacion_Tema7_SAD_CodeExplain.txt (no se modifica)
+
+ ALCANCE
+   Este archivo es NUEVO e independiente. Contiene el test de usabilidad:
+     (a) de la aplicacion CodeExplain (secciones 3 a 6 y registro en 8);
+     (b) del propio documento SAD en formato .txt (seccion 7).
+   No sustituye ni ajusta el SAD. Las pruebas funcionales de la API (T-01..T-06)
+   ya estan en el SAD, seccion 5.2, y no se repiten aqui: usabilidad y
+   funcionalidad son cosas distintas.
+
+ CONVENCION DE ESTADO
+   [R] REAL      : comprobable en el codigo.
+   [S] SIMULADO  : la interfaz lo muestra terminado, pero es demostracion.
+   [P] PENDIENTE : no existe hoy.
+
+ NOTA SOBRE LOS DOS SISTEMAS
+   CodeExplain (real) = SPA React + API Express en un proceso, sin BD, sin AST real.
+   "OpenCommerce Core v2.4" (ejemplo) = microservicios/Redis/PostgreSQL que la UI
+   muestra en diagramas y respuestas. Distinguirlos es parte del test (tarea T-U03).
+
+
+================================================================================
+ 1. OBJETIVO
+================================================================================
+
+ Medir si una persona de los perfiles objetivo (estudiante, desarrollador,
+ arquitecto, docente) puede:
+   - entender que hace CodeExplain sin leer el README;
+   - usar los tres niveles de audiencia;
+   - interpretar correctamente los diagramas y el chat;
+   - distinguir una funciones real de una demostracion;
+   - exportar documentacion sin ayuda.
+
+ Criterio de exito global: tasa de exito >= 80% en las tareas, tiempo medio
+ <= 3 min por tarea y puntuacion SUS >= 68.
+
+
+================================================================================
+ 2. METODOLOGIA Y LIMITACIONES
+================================================================================
+
+ 2.1. METODOS EMPLEADOS
+   M1 Inspeccion heuristica (seccion 3): revision de la UI con las 10
+      heuristicas de Nielsen, usando evidencia de archivo:linea.
+   M2 Test con usuarios (secciones 4, 5 y 8): protocolo disenado para ejecutar.
+   M3 Autoevaluacion documental (seccion 7): Prueba de lectura rapida del SAD .txt.
+
+ 2.2. LIMITACION QUE DEBE RESPETARSE
+   NO se reclutaron participantes reales y NO se ejecuto ninguna sesion. Por eso:
+     - La seccion 3 son OBSERVACIONES de inspeccion, no opiniones de usuarios.
+     - No se reporta ninguna puntuacion SUS inventada. La plantilla esta lista
+       para completarse con datos reales en la seccion 8.
+     - Los umbrales de la seccion 4 son objetivos de diseno.
+   Cuando se ejecute el test, se completan las tablas de la seccion 8 y se
+   reordenan las prioridades de la seccion 6 segun lo observado.
+
+
+================================================================================
+ 3. INSPECCION HEURISTICA DE LA INTERFAZ REAL
+================================================================================
+
+ Severidad: ALTA = bloquea comprension o genera desconfianza;
+            MEDIA = friccion clara; BAJA = mejora deseable.
+
+ #  Heuristica                       Hallazgo con evidencia               Sev.
+ --  ------------------------------  ----------------------------------  ----
+ 1  Visibilidad del estado          UploadModal muestra 4 pasos con      MEDIA
+    del sistema                     progreso animado (UploadModal.tsx:
+                                    36-41, 246-265), pero no hay estado
+                                    de error ni cancelacion real.
+ 2  Correspondencia                 Textos "AST v3.9", "Gemini Pro       ALTA
+    sistema / mundo real            v2.4", "Grafo AST", "Ingiriendo
+                                    repositorio" (UploadModal.tsx:37-40,
+                                    93, 238): jerga para nivel basico.
+ 3  Control y libertad              "Cancelar" se deshabilita durante    ALTA
+                                    el analisis (UploadModal.tsx:273)
+                                    y no hay logica de aborto; unico
+                                    camino es esperar ~4,4 s.
+ 4  Consistencia y estandares       Tema visual uniforme en las 12       BAJA
+                                    vistas. Sin deep-links: no se puede
+                                    compartir la URL de una vista (ADR-08).
+ 5  Prevencion de errores           URL Git sin validacion                MEDIA
+                                    (UploadModal.tsx:151-164). Selector
+                                    de motor AST (tree-sitter/babel/syn,
+                                    lineas 182-190) es decorativo.
+ 6  Reconocer en lugar de recordar  Sidebar con 12 etiquetas e iconos    BAJA
+                                    (Sidebar.tsx:41) y nivel siempre
+                                    visible en Header. Bien resuelto.
+ 7  Flexibilidad y eficiencia       Sin busqueda entre vistas ni atajos  MEDIA
+                                    de teclado; hay que usar el sidebar.
+ 8  Estetica minimalista            Diseno sobrio, contraste alto,       BAJA
+                                    jerarquia visual clara. Sin hallazgos.
+ 9  Ayuda para diagnosticar         Si se activa el digest, /api/analyze  ALTA
+    errores                         y /api/analyze-url dan 404 sin
+                                    mensaje en la UI (analyzeProject.ts:
+                                    258, 271). Las vistas con datos
+                                    simulados no avisan de que lo son.
+ 10 Ayuda y documentacion           README y Fases 1-6 existen, pero no   MEDIA
+                                    hay ayuda contextual por vista; los
+                                    diagramas C4 ajenos estan sin etiquetar.
+
+ Resultado de la inspeccion: 3 ALTO, 5 MEDIO, 2 BAJO.
+ Los tres hallazgos altos coinciden con las brechas G-01, G-02 y G-08 del SAD:
+ corregir la arquitectura tambien mejora la usabilidad percibida.
+
+
+================================================================================
+ 4. PROTOCOLO DE TEST CON USUARIOS
+================================================================================
+
+ 4.1. PARTICIPANTES Y CONDICIONES
+   Perfil: 6 personas - 2 estudiantes, 2 desarrolladores, 1 arquitecto,
+   1 docente (perfil mixto por los tres niveles de audiencia).
+   Duracion: 20-25 min por persona.
+     - 5 min bienvenida y consentimiento
+     - 15 min tareas (pensar en voz alta)
+     - 5 min cuestionario SUS y entrevista breve
+   Modalidad: remoto, pantalla compartida, grabacion solo con consentimiento.
+   Condicion comun: http://localhost:3100 sin GEMINI_API_KEY, para que todos
+   vean el mismo motor de fallback. No dar instrucciones de la UI por adelantado.
+
+ 4.2. TAREAS
+   Cada tarea se entrega por escrito, una a la vez. No se explica donde esta
+   cada control.
+
+   ID    Tarea entregada al participante             Criterio de exito      Tiempo
+   ---   -----------------------------------------  ---------------------  ------
+   T-U01 "Sin leer el README, dime que hace esta     Nombra analizar,       <= 2 min
+          app y para quien es"                       explicar, documentar
+   T-U02 "Cambia el nivel a basico y haz una         El nivel cambia y la   <= 3 min
+          pregunta sobre el proyecto activo en chat" respuesta usa analogias
+   T-U03 "Abre Diagramas C4/UML y explica si esos    Identifica que         <= 3 min
+          contenedores son CodeExplain o un ejemplo" describe OpenCommerce
+   T-U04 "Inicia la ingesta de un ZIP y dime si el   Distingue progreso     <= 3 min
+          resultado que ves es real o de demostracion" animado de dato real
+   T-U05 "En nivel avanzado, pregunta por            Recibe respuesta con   <= 4 min
+          concurrencia y senala que mecanismo usa"   model de nivel avanzado
+   T-U06 "Descarga la documentacion en Markdown y    Archivo .md con        <= 3 min
+          comprueba su nombre y contenido"           contenido del proyecto
+
+ 4.3. METRICAS Y UMBRALES
+   Por tarea y participante se registra:
+     - exito (1/0) segun criterio de la tabla;
+     - tiempo empleado (segundos);
+     - ayudas o pistas solicitadas (0, 1, 2...);
+     - clics erroneos o navegacion a la vista equivocada;
+     - comentario verbal relevante (literal, sin interpretar).
+
+   Umbrales:
+     - tasa de exito global >= 80%;
+     - tiempo medio <= 3 min por tarea;
+     - <= 1 pista por tarea;
+     - SUS >= 68 (seccion 5).
+
+   Senal de alerta especifica: si mas de 2 de 6 participantes creen que los
+   microservicios del diagrama son CodeExplain, el fallo no es del usuario:
+   es el hallazgo G-08 del SAD y debe corregirse en la interfaz.
+
+
+================================================================================
+ 5. CUESTIONARIO SUS (System Usability Scale)
+================================================================================
+
+ Escala: 1 = totalmente en desacuerdo ... 5 = totalmente de acuerdo.
+ Items impares positivos; pares negativos. Aplicar al terminar las tareas.
+
+  1. Creo que usaria CodeExplain con frecuencia.
+  2. Encontre CodeExplain innecesariamente complejo.
+  3. Creo que CodeExplain es facil de usar.
+  4. Creo que necesitaria apoyo tecnico para usar CodeExplain.
+  5. Las funciones de CodeExplain estan bien integradas.
+  6. Creo que CodeExplain tiene demasiadas inconsistencias.
+  7. Imagino que la mayoria de la gente podria aprenderlo rapido.
+  8. Encontre CodeExplain muy complicado de usar.
+  9. Me senti seguro usando CodeExplain.
+ 10. Necesitaria aprender muchas cosas antes de empezar.
+
+ Calificacion:
+   - item impar: puntos = respuesta - 1
+   - item par:   puntos = 5 - respuesta
+   - suma de los 10 puntos x 2,5 = resultado de 0 a 100.
+ Referencia: >= 68 aceptable; >= 80 bueno; >= 90 excelente.
+ No hay resultados todavia: ver seccion 8 para registrarlos.
+
+
+================================================================================
+ 6. PRIORIDADES DE CORRECCION (derivadas de la inspeccion)
+================================================================================
+
+ Prio  Hallazgo de usabilidad                    Accion minima             Brecha SAD
+ ----  ---------------------------------------  ------------------------  ----------
+ P0    No se distingue real de simulado y el     Etiquetar [DEMO] en la    G-01 / G-02
+       flujo real termina en 404                 UI y cablear el digest
+ P0    No se puede cancelar ni se muestra error  Boton activo + estado de  G-02
+                                                 error real
+ P1    Jerga AST/Gemini Pro en nivel basico;     Texto segun nivel de      G-08
+       diagramas C4 ajenos sin etiquetar         audiencia
+ P1    URL Git sin validar; selector AST sin     Validar y desactivar      G-02
+       efecto real                               opciones no reales
+ P2    Sin deep links, busqueda ni ayuda         Router + tooltips         ADR-08
+       contextual
+
+ Estas prioridades salen de la inspeccion (M1). Despues de ejecutar M2 se
+ reordenan por frecuencia e impacto observados; el cambio queda registrado
+ en la seccion 8.
+
+
+================================================================================
+ 7. USABILIDAD DEL DOCUMENTO SAD .txt (autoevaluacion)
+================================================================================
+
+ Otro objeto de test es el propio artefacto de documentacion. Criterio: una
+ persona debe poder responder preguntas concretas sin leer 1.008 lineas
+ seguidas. Se evalua Documentacion_Tema7_SAD_CodeExplain.txt tal como quedo
+ (version 1.0, sin modificaciones).
+
+ Criterio                                  Estado   Observacion
+ ----------------------------------------  -------  -------------------------------
+ Encabezado con nombre/codigo/fecha/autor  OK       cabecera del SAD
+ Numeracion de secciones 1..6 y 6.1..6.9   OK       permite referencias cortas
+ Leyenda [R]/[S]/[P]                       OK       distingue real de simulado
+ Glosario de siglas                        OK       SAD 1.3 (18 terminos)
+ Evidencia archivo:linea por subtema       OK       cumple "un ejemplo por subtema"
+ Codigo de diagramas copiable              OK       bloques @startuml en 6.1..6.7
+ Indice rapido al inicio                   MEJORA   no lo tiene: se sugiere anadirlo
+                                                    en una futura version del SAD
+ Tabla de brechas con IDs                  OK       SAD 6.8 (G-01..G-10)
+ Trazabilidad del PDF al documento         OK       SAD 6.9
+
+ Prueba de lectura rapida (sin herramientas, solo busqueda de texto):
+   L-1 En < 30 s, cuantos endpoints existen de verdad?
+       Respuesta: SAD 1.5 y 2.2 -> tres POST en /api/gemini/*.
+   L-2 En < 30 s, por que la ingesta no es real?
+       Respuesta: SAD 3.2 y G-02 -> setInterval en UploadModal.tsx:43-78.
+   L-3 En < 30 s, copiar un diagrama de secuencia listo para renderizar.
+       Respuesta: SAD 6.5, bloque @startuml.
+   L-4 En < 30 s, distinguir arquitectura real del ejemplo mostrado.
+       Respuesta: "NOTA METODOLOGICA IMPORTANTE" del SAD y SAD 1.5.
+   L-5 En < 30 s, que brecha es la mas urgente?
+       Respuesta: SAD 6.8 -> G-01 (endpoints inexistentes).
+
+ Resultado de la autoevaluacion: 5/5 respuestas localizables por encabezados.
+ Unica mejora pendiente: agregar un indice al SAD en una version futura
+ (este documento no lo modifica, segun instruccion).
+
+
+================================================================================
+ 8. REGISTRO DE EJECUCION (plantilla para completar con usuarios reales)
+================================================================================
+
+ 8.1. DATOS DE LA SESION
+   Participante: ......................  Perfil: estudiante / dev / arquitecto / docente
+   Fecha: ..................  Duracion total: ........ min  Modo: remoto / presencial
+   Version de la app probada: main @ 2026-11-23  Navegador: ..................
+
+ 8.2. TAREAS
+   ID    Exito (1/0)  Tiempo (s)  Ayudas  Clics erroneos  Comentario literal
+   ---   -----------  ----------  ------  --------------  -------------------
+   T-U01
+   T-U02
+   T-U03
+   T-U04
+   T-U05
+   T-U06
+
+ 8.3. SUS
+   Item  1  2  3  4  5  6  7  8  9  10
+   Valor  _  _  _  _  _  _  _  _  _  _
+   Puntos _  _  _  _  _  _  _  _  _  _      (impar: r-1 | par: 5-r)
+   Total ..........  x 2,5  = SUS ..........
+
+ 8.4. CIERRE
+   Tasa de exito: .......%   Tiempo medio: ....... min   SUS: .......
+   ¿Se cumplieron los umbrales? si / no
+   Hallazgos nuevos no previstos en la seccion 3: ..........................
+   Cambio de prioridades respecto a la seccion 6: ..........................
+
+================================================================================
+ FIN DEL DOCUMENTO - Version 1.0 - 2026-11-23
+ Code fuente analizado: C:\Users\WILDER\Proyectos\codeexplic
+================================================================================

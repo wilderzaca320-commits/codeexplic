@@ -1,0 +1,1008 @@
+================================================================================
+ DOCUMENTO DE ARQUITECTURA DE SOFTWARE (SAD) - CODEEXPLAIN
+ Tema 7: Arquitectura de Software | Práctica: SAD del proyecto propio + diagramas
+================================================================================
+
+ Nombre del Sistema / Proyecto : CodeExplain - Análisis & Explicación de Software con IA
+ Código del Proyecto           : PRJ-2026-CEX-01
+ Fecha                         : 2026-11-22
+ Versión                       : 1.0
+ Autor / Arquitecto             : WILDER
+ Repositorio                    : codeexplic (rama main, sin cambios locales al analizar)
+ Fuente de verdad               : código fuente en C:\Users\WILDER\Proyectos\codeexplic
+ Plantilla aplicada             : PDF "Tema 7 Arquitectura de Software", páginas 6-8 (SAD)
+                                  y páginas 10-11 (UML: diagramas aplicados al sistema)
+
+ ALCANCE DE ESTE DOCUMENTO
+   Se desarrollan SOLAMENTE los puntos de la práctica que piden el SAD del proyecto
+   propio y su aplicacion en diagramas. Se omiten deliberadamente, por instruccion
+   explicita, el compendio APA, las infografias, los cuestionarios en PDF, el
+   guion/grabacion de podcast, el mapa conceptual y el diario de aprendizaje.
+   Tampoco se reproducen las Fases 1-6: se toman como entrada y se citan.
+
+ CONVENCION DE ESTADO (evidencia verificada en codigo el 22/11/2026)
+   [R] REAL      : implementado y comprobable en el codigo.
+   [S] SIMULADO  : la interfaz lo muestra como terminado, pero el dato o el flujo
+                   es de demostracion (no es un bug de diseno: es una pieza sin motor).
+   [P] PENDIENTE : no existe en el repositorio actual.
+
+ NOTA METODOLOGICA IMPORTANTE
+   En la aplicacion conviven dos sistemas distintos que NO hay que confundir:
+     (A) CODEEXPLAIN, el producto real: una SPA + API Express de un solo proceso,
+         sin base de datos, sin autenticacion y sin AST real. Es el sistema que
+         documenta este SAD.
+     (B) "OpenCommerce Core v2.4", el proyecto de demostracion que la interfaz
+         finge analizar: microservicios, PostgreSQL 16, Redis/Redlock, RabbitMQ.
+         Aparece en server.ts:49, server.ts:160-221, mockData.ts y DiagramasC4UML.tsx.
+     Los diagramas C4 de la UI describen (B). La arquitectura real es (A).
+     Este SAD documenta (A) y senala donde (B) es solo contenido de ejemplo.
+
+
+================================================================================
+ RESUMEN EJECUTIVO
+================================================================================
+
+ CodeExplain es una aplicacion web local que opera en el puerto 3100 y se
+ arranca con `npm run dev` (tsx server.ts). El frontend (React 19 + TypeScript +
+ Vite 8 + Tailwind 4) ofrece 12 vistas y tres niveles de audiencia
+ (basico / intermedio / avanzado). El backend (Express 4) expone tres endpoints
+ POST bajo /api/gemini/* y delega la generacion a Gemini 2.5 Flash cuando existe
+ GEMINI_API_KEY; si no existe o falla, responde un motor heuristico local.
+
+ Medidas tomadas hoy sobre el codigo:
+   - src/: 20 archivos (17 .tsx + 3 .ts), 5 988 lineas.
+   - server.ts: 251 lineas. Total de codigo propio: 6 239 lineas.
+   - 12 vistas, 3 componentes compartidos, 9 tipos de dominio, 7 conjuntos de
+     datos de ejemplo en mockData.ts (447 lineas).
+   - Endpoints REALIZADOS: 3. Endpoints que el cliente llama y el servidor NO
+     implementa: 2 (/api/analyze, /api/analyze-url). Endpoint documentado en
+     Fases 2/4/6 pero ausente: 1 (/api/health).
+
+ Decision arquitectonica dominante: monolito modular de dos capas desplegado como
+ un unico proceso, con degradacion elegante (fallback) como mecanismo principal
+ de disponibilidad. El estilo "microservicios" que muestra la pantalla de
+ diagramas NO es la arquitectura de CodeExplain, sino un ejemplo de salida.
+
+ Riesgo arquitectonico numero uno: desconexion entre la capa de presentacion y
+ el motor de analisis. `src/lib/analyzeProject.ts` construye un digest real desde
+ un ZIP JSZip (290 lineas), pero `UploadModal.tsx` nunca lo invoca: usa un
+ setInterval de 900 ms y datos fijos (UploadModal.tsx:43-78). Ademas, las dos
+ funciones que si llaman al servidor (analyzeProject.ts:257 y :270) apuntan a
+ rutas no registradas en server.ts. Esto se detalla en 6.8.
+
+
+================================================================================
+ 1. INTRODUCCION Y CONTEXTO
+================================================================================
+
+ 1.1. PROPOSITO
+   Este SAD fija y justifica la estructura actual de CodeExplain para tres
+   audiencias:
+     - Desarrolladores: saben donde esta cada responsabilidad y que contratos
+       exponer antes de tocar codigo (ver AGENTS.md).
+     - Administradores de sistemas: saben que se necesita para arrancarlo
+       (Node, puerto 3100, variable de entorno, dist/ en produccion).
+     - Stakeholders academicos/profesionales: entienden el valor (explicar
+       software a estudiantes, desarrolladores y arquitectos), el costo (un solo
+       proceso, sin infraestructura de datos) y los limites (demo con datos
+       simulados).
+
+   Finalidad del producto: analizar, comprender, explicar y documentar proyectos
+   de software usando IA, en tres niveles de profundidad (README.md:1-3).
+
+ 1.2. ALCANCE DEL SISTEMA Y SUS LIMITES
+   Dentro del alcance [R]:
+     - Ingesta de entrada en la interfaz: tres pestañas (Git / ZIP / pegar
+       codigo) en UploadModal.tsx:27,196,208.
+     - Navegacion entre 12 vistas sin recargar, por estado en React
+       (App.tsx:26-49, 72-162).
+     - Selector global de nivel de audiencia (Header.tsx, App.tsx:29).
+     - Chat con contexto del proyecto activo contra POST /api/gemini/chat
+       (ChatAsistenteIA.tsx:86-99).
+     - Motor de respuestas de IA con prompt por nivel (server.ts:32-36).
+     - Fallback heuristico por palabra clave: pagos/Stripe, JWT/auth y generico
+       (server.ts:77-101).
+     - Explicacion de codigo estructurada y generacion de documentos (readme,
+       openapi, c4) en server.ts:109-228, con plantillas fijas.
+     - Descarga local de artefactos: .txt, .md, .json y .csv mediante Blob
+       (ChatAsistenteIA.tsx:416-420, GeneradorDocumentacion.tsx:135-139,
+       HistorialConsultas.tsx:91-96, RiesgosValidacion.tsx:66-70,357).
+     - Arranca sin API key, en modo fallback (server.ts:21-29).
+
+   Dentro del alcance como pieza construida pero NO conectada [S]:
+     - Motor de analisis de ZIP en cliente: JSZip, deteccion de 40+ extensiones,
+       conteo de SLOC, extraccion de dependencias de 4 ecosistemas, muestreo
+       priorizado y topes duros (analyzeProject.ts:44-253).
+     - Graficos, diagramas C4/Mermaid y tablas de riesgo/BD: renderizan datos de
+       mockData.ts, no resultado de analizar el repositorio del usuario.
+
+   Fuera del alcance [P]:
+     - Base de datos, persistencia, historial real, multiusuario, login/JWT,
+       control de acceso, colas de mensajes, cache, metrics, trazas, healthcheck,
+       Docker/Kubernetes, CI/CD y pruebas automaticas.
+     - Ademas: el proyecto no incluye Dockerfile ni docker-compose.yml, aunque
+       Fase6 los propone (Documentacion_Fase6_UX_DX_CodeExplain.txt:836,850).
+
+ 1.3. DEFINICIONES, ACRONIMOS Y ABREVIATURAS
+   ADR      Architecture Decision Record: registro de decision arquitectonica.
+   API      Application Programming Interface: contrato de comunicacion.
+   ASR      Architectural Significant Requirement: requisito que moldea la
+            arquitectura (equivale a un driver de calidad).
+   AST      Abstract Syntax Tree: arbol sintactico del codigo fuente.
+   BFF      Backend for Frontend (no implementado).
+   C4       Modelo de documentacion: Contexto, Contenedores, Componentes, Codigo.
+   CORS     Cross-Origin Resource Sharing (no configurado: mismo origen).
+   DDD      Domain-Driven Design: bounded contexts, agregados, entidades.
+   Digest   Resumen compacto de un proyecto (<= 48 KB de muestra) pensado para
+            enviar a la IA sin subir el codigo privado.
+   DTO      Data Transfer Object: contrato de datos de entrada/salida.
+   HMR      Hot Module Replacement: recarga en caliente de Vite.
+   JWT      JSON Web Token (previsto en ADR-12, NO implementado).
+   OWASP    Open Web Application Security Project: guia de seguridad web.
+   RPO/RTO  Recovery Point / Recovery Time Objective: objetivos de recuperacion.
+   SAD      Software Architecture Document: este documento.
+   SLOC     Source Lines Of Code: lineas de codigo fuente.
+   SPA      Single Page Application: aplicacion de una sola pagina.
+   SPOF     Single Point Of Failure: punto unico de fallo.
+   SSR      Server-Side Rendering (no usado).
+   STRIDE   Modelo de amenazas: Spoofing, Tampering, Repudiation, Information
+            Disclosure, Denial of Service, Elevation of Privilege.
+   TCO      Total Cost of Ownership: costo total de propiedad.
+
+ 1.4. REFERENCIAS
+   Internas (en el repositorio, se toman como entrada, no se reproducen):
+     - README.md                                    Instalacion, API,Git y seguridad.
+     - AGENTS.md                                    Reglas de modificacion y mando.
+     - package.json                                 Dependencias y scripts (fuente
+                                                    de verdad del stack).
+     - server.ts                                    Contrato HTTP real y prompts.
+     - src/types/index.ts                           Modelo de dominio del frontend.
+     - src/lib/analyzeProject.ts                    Motor de ingesta desconectado.
+     - Documentacion_Fase3_SRS_CodeExplain.txt      SRS: requisitos RF/RNF, CU-01..12.
+     - Documentacion_Fase4_ARD_CodeExplain.txt      18 ASR, drivers, 13 ADR.
+     - Documentacion_Fase5_ArquitecturaConocimiento_CodeExplain.txt
+     - Documentacion_Fase6_UX_DX_CodeExplain.txt    UX/DX, SDK y despliegue propuesto.
+     - Mapa_Estructurado_CodeExplain.txt            Mapa del software al 12/11/2026.
+     - Mapa_Conocimiento_CodeExplain.html           Grafo de conocimiento del producto.
+   Externa:
+     - Portafolio de conocimiento, Tema 7: Arquitectura de Software (PDF adjunto),
+       plantilla SAD en paginas 6-8 y UML en paginas 10-11.
+
+ 1.5. FICHA DE VERDAD DEL SISTEMA (medicion 22/11/2026)
+   Proposito         : analizar, explicar y documentar software con IA.
+   Tipo              : aplicacion web (SPA + API en el mismo proceso Node).
+   Usuario           : estudiante, desarrollador, arquitecto, docente.
+   Puerto            : 3100 (el 3000 esta reservado para Sparkhub, server.ts:14-15).
+   Arranque          : npm install -> npm run dev (o npm start en produccion).
+   Codigo            : 5 988 lineas en src/ + 251 en server.ts = 6 239.
+   Vistas            : 12 (src/types/index.ts:3-15).
+   Endpoints reales  : POST /api/gemini/chat, /explain, /document.
+   Estado            : en memoria (useState). Sin BD. Sin login.
+   IA                : Gemini 2.5 Flash si hay key; si no, motor heuristico.
+   Estilo real       : monolito modular en capas (UI / API / dominio de prompt).
+   Estilo mostrado   : microservicios C4 (ejemplo de salida, no implementacion).
+
+
+================================================================================
+ 2. DRIVERS Y CONSTRAINTS ARQUITECTONICOS
+================================================================================
+
+ 2.1. OBJETIVOS DEL NEGOCIO (BUSINESS DRIVERS)
+   ID    Objetivo                          Impacto en la arquitectura
+   ----  --------------------------------  -------------------------------------
+   BG-01 Costo minimo de infraestructura   Un solo proceso Node; sin BD ni brokers;
+         (TCO ~ 0 en local)                arranque con `npm run dev`. [R]
+   BG-02 Time-to-market corto              Reutilizar React + Vite + Express y
+         (demo academica/profesional)      plantillas de documento. [R]
+   BG-03 Explicar a 3 audiencias           Un unico selector de nivel que reescribe
+         con distinta profundidad          el prompt del sistema (server.ts:32-36). [R]
+   BG-04 Funcionar sin servicio externo    Fallback heuristico y arranque tolerante
+         (demo/aulas sin key)              sin GEMINI_API_KEY (server.ts:21-29). [R]
+   BG-05 No competir con Sparkhub          Puerto propio 3100 por convencion. [R]
+   BG-06 Privacidad del codigo del usuario El ZIP se procesa en el navegador y solo
+                                           se enviaria un digest (ADR-01). [S: el
+                                           digest existe, pero no esta cableado]
+
+ 2.2. REQUERIMIENTOS FUNCIONALES CRITICOS (ASR)
+   Los ID se reconstruyen de la tabla de trazabilidad de Fase4 (lineas 799-819).
+   "Estado" indica si hoy hay codigo detras del requisito.
+
+   ASR    Requisito critico                                   Estado  Evidencia
+   -----  -------------------------------------------------  ------  ------------------
+   ASR-01 Ingerir un proyecto y limitar el payload            S       analyzeProject.ts:66-69;
+                                                                     UploadModal.tsx:43-78
+   ASR-02 Ingerir repositorio Git por URL/branch              S       UploadModal.tsx:28-29,151-193
+   ASR-03 Responder con IA en 3 niveles                       R       server.ts:32-106
+   ASR-04 Mantener la sesion si falla Gemini                  R       server.ts:59-101
+   ASR-05 No subir codigo privado al servidor                 S       ADR-01; digest no enviado
+   ASR-06 Persistir proyectos, historial y chat               P       ADR-04 / ADR-11
+   ASR-07 Multiusuario y autorizacion                         P       ADR-12
+   ASR-08 Configuracion por entorno y arranque tolerante      R       server.ts:8,15,21-29
+   ASR-09 Respuesta Markdown legible y segura                 R       ChatAsistenteIA.tsx:287
+                                                                     (whitespace-pre-wrap)
+   ASR-10 Contrato de errores uniforme                        R       server.ts:44,112,151,
+                                                                     225 -> {error:...}
+   ASR-11 Integracion CVE con degradacion                     P       ADR-10; datos fijos
+   ASR-12 Mantenibilidad con 12 vistas y tipos compartidos    R       types/index.ts; App.tsx
+   ASR-13 Navegacion instantanea sin recarga                  R       App.tsx:26,44-49
+   ASR-14 Bajo costo de operacion                             R       un proceso, sin BD
+   ASR-15 Escalabilidad futura sin romper el diseno           P/R     ADR-02 + ADR-11 (futuro)
+   ASR-16 Generar README/OpenAPI/C4 descargables              S/R     server.ts:163-221
+                                                                     (plantillas), UI Blob [R]
+   ASR-17 Visualizar arquitectura y C4                        S       DiagramasC4UML.tsx:30-76
+
+ 2.3. ESCENARIOS DE ATRIBUTOS DE CALIDAD (DRIVERS)
+   Atributo       Escenario concreto                          Estado de la medida
+   -------------  -----------------------------------------  ---------------------------
+   Rendimiento    POST /api/gemini/chat con prompt y contexto  No instrumentado. Limite
+                  de 10 MB en el body (server.ts:18). Muestra  de body 10 MB [R]; latencia
+                  IA de 48 KB (analyzeProject.ts:68).          real depende de Gemini.
+   Escalabilidad  Un proceso atiende UI + API.                 Escalado vertical o replicas
+                  Sin estado en servidor -> replicas posibles. sin estado [diseno], sin
+                  (ADR-02)                                     balanceador en el repo [P].
+   Disponibilidad Si no hay GEMINI_API_KEY o falla la llamada, No hay healthcheck pese a
+                  la API sigue respondiendo con fallback.       que Fase 2/4/6 lo describen.
+                  Arranque tolerante (server.ts:21-29).         Disponibilidad real del
+                                                               77: no medida.
+   Seguridad      La clave se lee solo en servidor desde .env. .env en .gitignore [R]; no
+                  Nunca se envia al navegador.                  hay CORS, rate limit ni
+                                                                sanitizacion explicita.
+   Mantenibilidad 20 archivos en src/, tipos centralizados.    npm run lint (tsc --noEmit)
+                  Sin refactorizaciones grandes recientes.     es la unica verificación
+                                                               automatica [R].
+   Modificabilidad Cambiar de nivel no toca las vistas:        Alto: el prompt vive en un
+                  solo cambia LEVEL_PROMPTS.                    solo objeto [R].
+   Usabilidad     12 vistas, tema visual consistente, levels.  Sin router: no hay URLs
+                  Navegacion por sidebar.                       profundas (ADR-08).
+   Testeabilidad  Contrato HTTP simple y funciones puras en    Sin suite de pruebas ni
+                  analyzeProject.ts (extOf, countSloc...).      script "test" [P].
+   Privacidad     Digest pensado para no enviar el ZIP.        Implementado a medias [S].
+   Resiliencia    Un unico proceso = SPOF. Sin retry, timeout Riesgo abierto; sin RTO/RPO
+                  ni circuit breaker.                          definidos.
+
+ 2.4. RESTRICCIONES (CONSTRAINTS)
+   Tecnicas:
+     C-TEC-01 Node + TypeScript obligatorios por el stack (package.json:14-36).
+     C-TEC-02 GEMINI_API_KEY es la unica dependencia externa de servicio; se
+              configura por .env y no se versiona (AGENTS.md, seccion Seguridad).
+     C-TEC-03 El navegador impone techo de memoria: 300 archivos de texto, 4 MB
+              de texto total, 6 KB por archivo, 48 KB de muestra (analyzeProject.ts:66-69).
+     C-TEC-04 express.json limita el cuerpo a 10 MB (server.ts:18).
+     C-TEC-05 Vite se monta como middleware en desarrollo y sirve dist/ en
+              produccion (server.ts:230-244). No hay servidor separado.
+     C-TEC-06 Node >= 20 segun README; `npm start` requiere >= 22.6 segun el
+              mapa estructurado. Verificar version antes de desplegar.
+     C-TEC-07 Puerto 3100 fijo por convencion del equipo (server.ts:14-15).
+   Regulatorias / de negocio:
+     C-REG-01 Codigo de terceros potencialmente privado: no subir el ZIP al servidor.
+     C-REG-02 Proyecto academico/profesional: la claridad de la explicacion y de
+              la UI pesa mas que incorporar funcionalidades nuevas (AGENTS.md).
+     C-REG-03 Sin datos personales hoy: no hay base legal que resolver, pero
+              ADR-12 ya reserva user_id para el futuro.
+
+ 2.5. TRADE-OFFS EXPLICITOS
+   - CAP: al ser un sistema centralizado de un solo nodo, elige consistencia
+     fuerte dentro del proceso (estado en React) y no necesita resolver
+     particiones de red. Si se distribuyera, la prioridad seria disponibilidad
+     (fallback) antes que consistencia entre replicas de historial.
+   - Costo vs complejidad vs time-to-market: se eligio monolito + plantillas
+     fijas en lugar de microservicios + BD + buses. Resultado: costo operativo
+     minimo y entrega rapida, a cambio de simulacion en varias vistas y deuda
+     funcional documentada en 6.8.
+   - Calidad de IA vs disponibilidad: Gemini primero, heuristica despues
+     (ADR-03). Se sacrifica riqueza de respuesta cuando no hay key o hay cuota
+     agotada, pero nunca se corta la sesion.
+   - Privacidad vs profundidad: enviar solo un digest protege el codigo, pero
+     limita el analisis a estadisticas y muestra de texto (no AST real).
+
+
+================================================================================
+ 3. VISTAS ARQUITECTONICAS (MODELO 4+1)
+================================================================================
+
+ 3.0. C4 - NIVEL 1 (CONTEXTO, sistema real)
+   +----------------+        HTTPS (mismo origen :3100)       +------------------+
+   |  Usuario final |  ------------------------------------>  |   CodeExplain    |
+   | estudiante /   |  <------------------------------------  | (SPA + API Node) |
+   | dev / arquitecto|       HTML, JSON, Markdown, archivos  +---------+--------+
+   +----------------+                                                  |
+                                                                       | HTTPS / SDK
+                                                                       v
+                                                           +------------------------+
+                                                           | Google Gemini 2.5 Flash|
+                                                           | (@google/genai, opcional)
+                                                           +------------------------+
+   Nota: el "repo analizado" NO es un sistema externo conectado hoy; es un ZIP
+   que el usuario selecciona o un dato de ejemplo en memoria.
+
+ 3.1. VISTA LOGICA (estructura conceptual)
+   Patron real: MONOLITO MODULAR EN CAPAS con SPA desacoplada por HTTP.
+   No es hexagonal, no es DDD implementado, no es microservicios.
+
+   +-------------------------------------------------------------------------+
+   | CAPA DE PRESENTACION (navegador, React 19)                              |
+   |  App.tsx (router por estado)                                            |
+   |  +-- components/ : Sidebar | Header | UploadModal                       |
+   |  +-- views/      : 12 pantallas (VisionGeneral, ChatAsistenteIA, ...)   |
+   |  +-- types/      : 9 tipos del dominio (contrato compartido)           |
+   |  +-- data/       : mockData.ts (7 datasets de demostracion)            |
+   |  +-- lib/        : analyzeProject.ts (digest ZIP, sin cablear)         |
+   +-------------------------------+-----------------------------------------+
+                                   | fetch JSON (solo ChatAsistenteIA)
+   +-------------------------------v-----------------------------------------+
+   | CAPA DE API / APLICACION (Express, server.ts, un proceso)              |
+   |  express.json(10mb) -> POST /api/gemini/chat | /explain | /document    |
+   |  LEVEL_PROMPTS (basico/intermedio/avanzado)                            |
+   |  Cliente GoogleGenAI (si hay key)  +  motor heuristico (fallback)      |
+   |  Vite middleware (dev) o express.static(dist) (prod)                   |
+   +-------------------------------------------------------------------------+
+   Reglas de dependencia observadas:
+     - las vistas dependen de types/ y data/, nunca de Express;
+     - el servidor no importa codigo de src/ (comparte contrato por convencion,
+       no por modulo TypeScript: no hay tipos compartidos reales entre capas);
+     - el estado del proyecto vive en App.tsx:27-31 y se pasa por props.
+
+   Patrones presentes:
+     - State Router (ADR-08) en lugar de React Router.
+     - Proveedor de contexto por props (project, level) en lugar de Context API.
+     - Strategy/Plantilla por nivel de audiencia: LEVEL_PROMPTS.
+     - Fallback pattern: try Gemini -> catch -> heuristica.
+     - Adapter de salida: Blob + <a download> para exportar artefactos.
+   Patrones ausentes (no inventar): Repository, Unit of Work, DI container,
+     Circuit Breaker, Outbox, Saga, CQRS, Event Sourcing, Service Mesh.
+
+ 3.2. VISTA DE PROCESOS (comunicacion en tiempo de ejecucion)
+   Flujo REAL del chat (unico flujo que cruza la red hoy):
+
+   Usuario -> ChatAsistenteIA (escribe) -> setMessages (optimista)
+           -> POST /api/gemini/chat {message, level, projectContext}
+           -> server.ts valida `message` (400 si falta)
+           -> selecciona LEVEL_PROMPTS[level]
+           -> [alt: hay clave y Gemini responde]
+                GoogleGenAI.models.generateContent("gemini-2.5-flash")
+                -> {reply, level, model:"gemini-2.5-flash"}
+              [else: sin clave / excepcion]
+                motor heuristico por palabra clave -> {reply, level,
+                model:"codeexplain-core-v2.4"}
+           -> setMessages con la respuesta -> scroll automatico.
+   Concurrencia: un unico event loop de Node; no hay hilos, locks ni colas.
+   El "Redlock / TTL 5000 ms" que aparece en las respuestas avanzadas es
+   CONTENIDO GENERADO, no mecanismo del sistema (server.ts:85, DiagramasC4UML.tsx:43).
+
+   Flujo de ingesta SIMULADO (UploadModal.tsx:43-78):
+   abrir modal -> elegir pestaña -> pulsar "Iniciar" -> setInterval(900 ms)
+   -> 4 mensajes de progreso preescritos -> setTimeout(800 ms)
+   -> crear ProjectWorkspace con astHealth: 88, debtHours: 12, spofCount: 1
+   -> inyectarlo en App -> cerrar modal. No hay clonacion, no hay AST, no hay fetch.
+
+   Flujo de ingesta CONSTRUIDO PERO SIN CONECTAR (analyzeProject.ts):
+   File ZIP -> JSZip.loadAsync -> filtrar SKIP_DIRS -> priorizar package.json,
+   README, configs y entrada -> leer hasta 300 archivos/4 MB -> SLOC por
+   extension -> extraer dependencias (package.json, requirements.txt, go.mod,
+   Cargo.toml) -> construir textSample de 48 KB -> analyzeDigest() ->
+   POST /api/analyze. El servidor NO registra /api/analyze (server.ts:39,109,156).
+   Resultado: este flujo termina en 404 si se activa.
+
+   Sincronia/asincronia: todo es asincrono a nivel de red (fetch/await); la UI
+   usa setInterval/setTimeout solo para animar progreso. No hay Web Workers,
+   no hay streaming, no hay websockets.
+
+ 3.3. VISTA DE DESARROLLO / IMPLEMENTACION (estructura fisica)
+   codeexplic/                          (medicion del 22/11/2026)
+   +-- package.json                     scripts: dev, start, build, preview,
+   |                                    clean, lint. Sin script "test".
+   +-- tsconfig.json                    ES2022 / ESNext / jsx react-jsx / noEmit
+   +-- vite.config.ts                   plugins react + tailwindcss; alias '@' -> raiz;
+   |                                    HMR condicionado por DISABLE_HMR
+   +-- index.html                       entrada HTML, lang="es"
+   +-- metadata.json                    identidad de la app
+   +-- server.ts                   251 L Express + prompts + IA + fallback + SPA
+   +-- .env / .env.example              configuracion local / plantilla
+   +-- .gitignore                       excluye node_modules, dist, .env
+   +-- AGENTS.md                        contrato de trabajo para IAs y personas
+   +-- src/
+       +-- main.tsx                  5 L   createRoot
+       +-- App.tsx                 173 L  estado global + 12 ramas de vista
+       +-- index.css                      tokens CSS, grid, glow, scrollbars
+       +-- components/
+       |   +-- Header.tsx          160 L  selector de proyecto y nivel
+       |   +-- Sidebar.tsx         173 L  navegacion de 12 vistas
+       |   +-- UploadModal.tsx     300 L  ingesta simulada (setInterval)
+       +-- views/                        12 pantallas
+       |   VisionGeneral 792 | ModeloDatosBD 591 | HistorialConsultas 478 |
+       |   ChatAsistenteIA 450 | Proyectos 371 | RiesgosValidacion 371 |
+       |   DiagramasC4UML 375 | ArquitecturaModulos 236 |
+       |   GeneradorDocumentacion 213 | AuditorDeudaTecnica 172 |
+       |   CasosDeUso 151 | RepositoriosAnalizados 133
+       +-- lib/analyzeProject.ts   290 L  digest ZIP real (desconectado)
+       +-- data/mockData.ts        447 L  7 datasets de ejemplo
+       +-- types/index.ts          107 L  9 tipos del dominio
+
+   Dependencias (package.json):
+     UI      react 19.0.1, react-dom 19.0.1, lucide-react 0.546.0, motion 12.23.24
+     Build   vite 8.3.0, @vitejs/plugin-react 6.1.1, typescript 7.0.2, tsx 4.21.0
+     Estilos tailwindcss 4.3.3, @tailwindcss/vite 4.3.3
+     API     express 4.21.2, dotenv 17.2.3
+     IA      @google/genai 2.4.0
+     Datos   jszip 3.10.1
+     Empaquetado: esbuild 0.28.2 (presente, sin script que lo use)
+   Convenciones: componentes funcionales, codigo en ingles, textos de UI en
+   español, PropTypes via interfaces TS, sin refactorizar vistas grandes sin necesidad.
+
+ 3.4. VISTA DE DESPLIEGUE / FISICA
+   DESARROLLO [R]                         PRODUCCION [R en codigo, no probada]
+   +---------------------------+          +---------------------------+
+   | Navegador (Chrome/Edge)   |          | Navegador del usuario     |
+   +------------+--------------+          +------------+--------------+
+                | HTTP :3100                           | HTTP :PORT (3100)
+   +------------v---------------------------+         +------v--------------------+
+   | Proceso Node (tsx server.ts)          |         | Proceso Node (node server.ts)
+   |  + Express 4                           |         |  + Express 4
+   |  + Vite middleware (HMR segun env)     |         |  + express.static(dist/)
+   |  + /api/gemini/*                       |         |  + /api/gemini/*
+   |  + dotenv -> GEMINI_API_KEY            |         |  + secret del hosting (env)
+   +------------+---------------------------+         +------+--------------------+
+                | HTTPS (SDK)                                 | HTTPS (SDK)
+   +------------v--------------+             +---------v--------------+
+   | Gemini 2.5 Flash (Google) |             | Gemini 2.5 Flash       |
+   +---------------------------+             +------------------------+
+   Artefactos: dist/ generado por `npm run build` (no versionado).
+   No hay contenedores, balanceador, firewall, reverse proxy ni BD en el repo.
+   La configuracion de Docker/Kubernetes que aparece en Fase6 es propuesta [P].
+   Topologia real: 1 nodo de cómputo, 1 proceso, 2 caps de red (local + Google).
+
+ 3.5. VISTA DE CASOS DE USO (+1)
+   Actores: Estudiante, Desarrollador, Arquitecto, Docente (todos comparten UI;
+   se diferencian por el nivel elegido). Actor secundario: Google Gemini.
+
+   CU-01 Seleccionar proyecto activo                      [R] Header/Proyectos
+   CU-02 Cambiar nivel de explicacion                     [R] Header:32-36
+   CU-03 Ingerir proyecto (Git / ZIP / codigo)            [S] UploadModal
+   CU-04 Explorar arquitectura y diagramas C4             [S] DiagramasC4UML
+   CU-05 Consultar chat con contexto                      [R] ChatAsistenteIA
+   <<include>> construir prompt por nivel (server.ts:32-56)
+   <<extend>>  usar fallback si falla Gemini (server.ts:59-101)
+   CU-06 Explicar un bloque de codigo                     [S] endpoint [R], UI no lo llama
+   CU-07 Generar y descargar documentacion                [S/R] plantilla fija [S] + Blob [R]
+   CU-08 Ver historial de consultas                       [S] datos en mockData
+   CU-09 Evaluar deuda tecnica y riesgos                  [S] datos fijos
+   CU-10 Ver estado del sistema (/api/health)             [P] documentado, no implementado
+   La arquitectura actual soporta bien CU-01, CU-02 y CU-05; el resto son
+   demostraciones de interfaz o funcionalidades incompletas.
+
+
+================================================================================
+ 4. REGISTRO DE DECISIONES ARQUITECTONICAS (ADR)
+================================================================================
+   Estados: [R] vigente en codigo | [S] decidida pero implementada a medias |
+            [P] planificada, no implementada.
+
+ ADR-01 | Extraccion en el navegador y envio solo del digest .............. [S]
+   Contexto/fuerza: ZIP de hasta 200 MB con codigo privado; C-TEC-03, C-REG-01.
+   Alternativas: subir el ZIP (descartada por payload y privacidad); parser en
+   servidor (descartada por memoria del unico proceso).
+   Decision: JSZip en cliente, muestra <= 48 KB.
+   Consecuencias: servidor liviano, analisis superficial. El digest existe en
+   analyzeProject.ts:167-253, pero UploadModal.tsx no lo llama: la decision
+   esta documentada y codificada, no integrada.
+
+ ADR-02 | Backend monolitico Express en un solo proceso ................... [R]
+   Contexto: demo local, un servidor, bajo costo.
+   Alternativas: microservicios (operacion costosa); serverless (requisito local).
+   Decision: un proceso Node con Express + Vite middleware.
+   Consecuencias: arranque simple; SPOF; escalado vertical o multiples instancias
+   sin estado (aun sin balanceador en el repo). server.ts:13,230-249.
+
+ ADR-03 | Gemini 2.5 Flash + motor heuristico de respaldo ................. [R]
+   Contexto: calidad de IA sin garantizar disponibilidad/cuota.
+   Alternativas: solo IA (caidas); solo reglas (calidad baja).
+   Decision: try Gemini -> catch -> fallback por nivel.
+   Consecuencias: la sesion nunca se corta; el campo `model` identifica el motor.
+   server.ts:21-29,59-101. Modelo: gemini-2.5-flash (server.ts:66,129).
+
+ ADR-04 | Sin base de datos en v1.0, con DER preparado .................... [R]
+   Contexto: alcance sin persistencia (Fase3/4).
+   Alternativas: SQLite desde el inicio (postergada); Postgres (descartada).
+   Decision: estado en React (useState) + DER de 13 tablas en el SRS.
+   Consecuencias: demo simple; al activar persistencia cambian proyectos,
+   historial y chat. App.tsx:26-31.
+
+ ADR-05 | Limites duros de ingesta ...................................... [S/R]
+   Contexto: techo de memoria del navegador y del body HTTP.
+   Decision: 200 MB ZIP (texto de UI), 300 archivos, 4 MB de texto, 6 KB por
+   archivo, 48 KB de muestra, 30 dependencias; express.json a 10 MB.
+   Consecuencias: costos acotados; proyectos grandes se analizan parcialmente.
+   analyzeProject.ts:66-69,134-163; server.ts:18. Los limites de ZIP no se
+   aplican porque la carga real no esta cableada.
+
+ ADR-06 | Sanitizacion del Markdown del chat ............................. [R por diseno]
+   Contexto: la IA puede devolver HTML malicioso.
+   Alternativas: render crudo (XSS); texto plano (pierde legibilidad).
+   Decision vigente en codigo: el contenido se muestra como texto con
+   `whitespace-pre-wrap` (ChatAsistenteIA.tsx:287); no hay
+   dangerouslySetInnerHTML ni libreria Markdown. Riesgo mitigado por diseño.
+   Consecuencias: seguros hoy; si se introduce un renderizador Markdown habra
+   que anadir allowlist (Fase4 ADR-06).
+
+ ADR-07 | Contrato de errores uniforme .................................. [R]
+   Contexto: varios endpoints y clientes.
+   Decision: { error: string } con 400 (falta message/code) y 500.
+   Consecuencias: cliente simple; 413 se menciona en diseno pero express.json
+   devuelve su propio formato. server.ts:44,112,151,225.
+
+ ADR-08 | Navegacion por estado en una SPA ............................... [R]
+   Contexto: 12 vistas, sin recarga.
+   Alternativas: router con URLs (postergado); multipagina (descartada).
+   Decision: ViewType en useState + Sidebar.
+   Consecuencias: navegacion instantanea; sin deep links. App.tsx:26,44-49.
+
+ ADR-09 | Configuracion por entorno y arranque tolerante ................. [R]
+   Contexto: la key puede faltar o ser invalida.
+   Decision: dotenv + try/catch en GoogleGenAI + PORT configurable.
+   Consecuencias: siempre arranca; el "modo IA" NO se publica en /api/health
+   porque el endpoint no existe (ver 6.8). server.ts:8,15,21-29.
+
+ ADR-10 | Integracion CVE con timeout, cache y degradacion ............... [P]
+   Contexto: fuente externa con latencia y caidas.
+   Decision: timeout 5 s, cache TTL 24 h, respuesta vacia con aviso.
+   Consecuencias: vista de riesgos no se bloquearia; hoy usa datos fijos.
+
+ ADR-11 | Persistencia SQLite/Postgres cuando se active ASR-06 ........... [P]
+   Decision: SQLite para v1.1 local, Postgres si se activa multiusuario.
+   Consecuencias: aparece la capa de repositorio y migraciones.
+
+ ADR-12 | Multiusuario con JWT cuando se active ASR-07 ................... [P]
+   Decision: access token corto + refresh; user_id en todas las tablas.
+   Consecuencias: disenar la BD con user_id desde el principio para no migrar
+   dos veces. Hoy no hay login ni autorizacion.
+
+ ADR-13 | Adaptador de ingesta por proveedor Git ........................ [P]
+   Decision: interfaz comun fetchRepo(url, branch) -> zip.
+   Consecuencias: agregar GitLab/Bitbucket no toca el analizador. Hoy el
+   selector de motor AST del modal (tree-sitter/babel/syn) es decorativo.
+
+ Decision arquitectonica transversal (no numerada en Fase4): exportar por Blob
+ en el navegador evita otro endpoint de descarga y mantiene el servidor simple.
+
+
+================================================================================
+ 5. ESTRATEGIA DE CALIDAD, SEGURIDAD Y RESILIENCIA
+================================================================================
+
+ 5.1. MECANISMOS DE SEGURIDAD
+   Implementado [R]:
+     - La clave GEMINI_API_KEY se lee con dotenv solo en server.ts:22 y se pasa
+       al constructor de GoogleGenAI; nunca se serializa al cliente.
+     - .env y .env.* ignorados por Git, salvo .env.example (AGENTS.md y README).
+     - El body JSON esta limitado a 10 MB (server.ts:18).
+     - La respuesta de IA se muestra como texto, sin HTML inyectado.
+     - Los mensajes de error son genericos ("Internal server error..."), sin
+       trazas ni secretos (server.ts:104,151,226).
+   No implementado [P] (riesgos abiertos):
+     - Sin autenticacion/autorizacion: cualquier proceso local puede llamar
+       a los endpoints (no hay JWT/OIDC/RBAC).
+     - Sin CORS configurado: funciona porque frontend y API comparten origen;
+       conviene fijar politica explicita si se separan.
+     - Sin rate limiting: un cliente puede agotar cuota de Gemini.
+     - Sin validacion de esquemas (zod/class-validator): solo se comprueba que
+       `message`/`code` existan; el resto del body se confia.
+     - Sin sanitizacion central de Markdown; hoy no hace falta por el render
+       en texto, pero es deuda latente (ADR-06).
+     - Sin cifrado en reposo (no hay reposo) ni en transito mas alla de lo que
+       proporcione el hosting.
+   Modelo STRIDE aplicado (resumen):
+     Spoofing        : abierto (sin login) -> ADR-12.
+     Tampering       : mitigado parcialmente por body limit y tipos TS en cliente;
+                       sin validacion server-side de campos -> P0.
+     Repudiation     : sin auditoria; el historial es de ejemplo -> P1.
+     Info disclosure : clave protegida; codigo del usuario no se envia [S] -> P1.
+     DoS             : sin rate limit; 10 MB por request -> P0.
+     Elevation       : no existe modelo de permisos -> fuera de alcance v1.
+
+ 5.2. ESTRATEGIA DE PRUEBAS (QA)
+   Hoy [R]: `npm run lint` = `tsc --noEmit` (package.json:12). Es la unica
+   comprobacion automatica. No hay script "test", fixtures ni CI.
+   Pruebas manuales recomendadas (verificables sin infraestructura):
+     T-01 POST /api/gemini/chat sin message -> 400 {error:"Message is required"}.
+     T-02 POST /api/gemini/chat con level="basico" y GEMINI_API_KEY ausente ->
+          200 con model="codeexplain-core-v2.4".
+     T-03 POST /api/gemini/explain sin code -> 400.
+     T-04 POST /api/gemini/document con docType="c4" -> contenido @startuml.
+     T-05 GET / -> index.html (dev via Vite, prod via dist/).
+     T-06 body > 10 MB -> error de payload.
+   Fitness functions propuestas para-evitar-regresiones arquitectonicas:
+     - "Todo endpoint llamado por el cliente existe en server.ts": buscar
+       fetch('/api/...') en src/ y compararlo con app.post/app.get en server.ts
+       (hoy falla: /api/analyze y /api/analyze-url).
+     - "Sin secretos en el frontend": grep GEMINI_API_KEY en src/ debe dar 0.
+     - "Sin async sin manejo de error en endpoints": cada app.post debe tener
+       try/catch y responder {error:...}.
+     - "Sin setInterval en la ingesta": UploadModal.tsx debe usar el digest real.
+     - "Puerto 3100": ningun archivo debe fijar 3000.
+   Nota: ejecutar `npm run lint` antes de cerrar cualquier tarea (AGENTS.md).
+
+ 5.3. MONITOREO Y OBSERVABILIDAD
+   Hoy [R]: console.log al arrancar (server.ts:247), console.warn en fallos de
+   Gemini/fallback (server.ts:27,73,136) y console.error en errores 500
+   (server.ts:103). No hay logs estructurados, metricas ni trazas.
+   Ausente [P]: GET /api/health,Prometheus/Grafana, ELK, OpenTelemetry,
+   correlation-id y medicion de latencia p95. Los Escenarios de Fase4 que dan
+   por supuesto /api/health no son verificables hoy.
+   Impacto: no es posible confirmar desde fuera si el motor activo es Gemini o
+   fallback, aunque el campo `model` de la respuesta lo sugiere.
+
+ 5.4. RESILIENCIA Y RECUPERACION
+   - Fallback de IA [R]: degradacion graceful, la sesion no se corta.
+   - Arranque tolerante [R]: sin key la app sigue levantando.
+   - SPOF [riesgo]: un proceso; si cae, cae UI y API juntos.
+   - Sin timeout en la llamada a Gemini: una respuesta lenta bloquea el handler
+     (Express es asincrono, pero no hay AbortController ni limite de tiempo).
+   - Sin retry, backoff, circuit breaker, bulkhead ni DLQ propios (los textos
+     "Redlock", "DLQ", "429 Retry-After" son ejemplos generados, no codigo).
+   - RPO/RTO: no aplican hoy porque no hay estado persistente; deberan
+     definirse en cuanto se active ADR-11.
+   - Recomendacion P1: timeout de 8-10 s + AbortController, healthcheck real,
+     y un circuit breaker simple antes de añadir BD.
+
+
+================================================================================
+ 6. ANEXOS Y DIAGRAMAS (APLICACION UML AL PROYECTO PROPIO)
+================================================================================
+   Los bloques `@startuml` son codigo fuente de diagrama: se pueden pegar en
+   plantuml.com/plantuml para generar la imagen. Los bloques ASCII son la
+   representacion legible en texto plano de este SAD.
+
+ 6.1. DIAGRAMA DE CLASES (vista estatica del dominio real)
+   Tipos reales: src/types/index.ts:1-107 e interfaces de analyzeProject.ts:12-40.
+
+   +---------------------------+
+   | <<type>> ExplanationLevel |
+   | 'basico'|'intermedio'|... |
+   +---------------------------+
+              ^ (usado por)
+              | 
+   +---------------------------+       1       *      +-------------------+
+   | ChatMessage               |-------------------->| ChatMessage.code  |
+   | +id: string               |                      | Snippet           |
+   | +sender: 'user'|'assistant'|                      | +code: string     |
+   | +content: string          |                      | +language: string |
+   | +timestamp: string        |                      +-------------------+
+   | +level?: ExplanationLevel |
+   +---------------------------+
+
+   +---------------------------+   *     1   +----------------------+
+   | ProjectWorkspace          |------------>| <<type>> Tag         |
+   | +id, +name, +repoIdentifier|             | PROD|STAGE|LABS|...  |
+   | +languages: string[]      |             +----------------------+
+   | +astHealth: number (0-100)|
+   | +debtHours, +spofCount    |
+   +-------------+-------------+
+                 | 1  (enviado como projectContext a /api/gemini/chat)
+                 v
+   +---------------------------+       +---------------------------+
+   | ProjectDigest [lib]       |       | ProjectAnalysis [lib]     |
+   | +files: DigestFile[]      |------>| +name, +description       |
+   | +totalSloc: number        | 1..1  | +languages: string[]      |
+   | +languages: Record        |       | +astHealth, +debtHours    |
+   | +dependencies: string[]   |       | +spofCount, +model        |
+   | +textSample: string       |       +---------------------------+
+   | +sourceKind: 'zip'|'url'  |
+   +---------------------------+
+
+   Otras clases del dominio: MonitoredRepo (31-43), QueryHistoryItem (45-56),
+   DatabaseTable (58-71), UseCaseItem (73-83), RiskItem (85-95).
+   Relaciones: #9 ViewType; agregacion de DatabaseTable.columns; todo consumido
+   por vistas en src/views/*.tsx.
+
+   Codigo PlantUML:
+   @startuml
+   skinparam classAttributeIconSize 0
+   class ExplanationLevel <<enumeration>> {
+     basico
+     intermedio
+     avanzado
+   }
+   class ViewType <<enumeration>> {
+     vision-general
+     arquitectura-modulos
+     ... (12 valores)
+   }
+   class ProjectWorkspace {
+     +id: string
+     +name: string
+     +repoIdentifier: string
+     +tag: Tag
+     +languages: string[]
+     +astHealth: number
+     +debtHours: number
+     +spofCount: number
+   }
+   class ChatMessage {
+     +id: string
+     +sender: 'user' | 'assistant'
+     +content: string
+     +level: ExplanationLevel
+   }
+   class ProjectDigest {
+     +files: DigestFile[]
+     +totalSloc: number
+     +languages: Record<string, number>
+     +dependencies: string[]
+     +textSample: string
+   }
+   class ProjectAnalysis {
+     +name: string
+     +languages: string[]
+     +astHealth: number
+     +model: string
+   }
+   ProjectWorkspace "1" --> "1" ExplanationLevel : nivel activo
+   ChatMessage "*" --> "1" ExplanationLevel
+   ChatMessage "*" --> "1" ProjectWorkspace : contexto
+   ProjectDigest "1" --> "1" ProjectAnalysis : analyzeDigest()
+   note right of ProjectDigest
+     Construido en el navegador con JSZip.
+     No esta conectado a UploadModal.
+   end note
+   @enduml
+
+ 6.2. DIAGRAMA DE COMPONENTES (vista de desarrollo / C4 nivel 3 real)
+   Interfaces ofrecidas (provided) y requeridas (required):
+
+   [Navegador]
+     App.tsx ------ ofrece: cambio de vista, proyecto activo, nivel
+       |--requiere--> Sidebar.tsx      (onSelectView)
+       |--requiere--> Header.tsx       (proyectos, nivel)
+       |--requiere--> UploadModal.tsx  (onAddProject)  [S: dato fijo]
+       |--requiere--> 12 vistas        (props project/level)
+       |--requiere--> mockData.ts      (datos de demostracion)
+       `--requiere--> analyzeProject.ts (digest)  [S: no invocado]
+     ChatAsistenteIA.tsx --requiere--> POST /api/gemini/chat (JSON)
+   [Proceso Node]
+     server.ts --ofrece--> /api/gemini/chat | /explain | /document
+       |--requiere--> LEVEL_PROMPTS (objeto local)
+       |--requiere--> GoogleGenAI (si GEMINI_API_KEY)
+       `--requiere--> Vite middleware (dev) / dist (prod)
+
+   Codigo PlantUML:
+   @startuml
+   skinparam componentStyle rectangle
+   package "Navegador (React 19)" {
+     [App.tsx] as app
+     [Sidebar / Header] as nav
+     [UploadModal] as upload
+     [12 vistas] as views
+     [mockData.ts] as mock
+     [analyzeProject.ts\n(digest ZIP)] as digest
+     [ChatAsistenteIA] as chat
+   }
+   package "Proceso Node (Express 4)" {
+     [server.ts\n3 endpoints] as api
+     [LEVEL_PROMPTS] as prompts
+     [GoogleGenAI] as ai
+     [Motor heuristico] as fallback
+     [Vite middleware / dist] as web
+   }
+   [Gemini 2.5 Flash] as gemini
+   app --> nav
+   app --> upload
+   app --> views
+   views --> mock
+   views ..> digest : no cableado
+   chat --> api : POST /api/gemini/chat
+   api --> prompts
+   api --> ai : si hay key
+   ai --> gemini : HTTPS
+   api --> fallback : catch / sin key
+   api --> web : SPA
+   note right of digest
+     Interfaces requeridas: File (ZIP)
+     Interfaz ofrecida: ProjectDigest
+     Las funciones analyzeDigest() y
+     analyzeUrl() llaman a rutas ausentes.
+   end note
+   @enduml
+
+ 6.3. DIAGRAMA DE DESPLIEGUE (topologia fisica real)
+   Codigo PlantUML:
+   @startuml
+   skinparam nodeBackgroundColor #EEEEEE
+   node "Navegador del usuario" as browser {
+     artifact "bundle React (dist/ o HMR)"
+     artifact "JSZip (cliente)"
+   }
+   node "Host local :3100 (1 proceso Node)" as node {
+     artifact "server.ts (Express)"
+     artifact "index.html / dist/"
+     artifact ".env (GEMINI_API_KEY)"
+     artifact "LEVEL_PROMPTS + fallback"
+   }
+   cloud "Google Gemini API" as gemini {
+     artifact "gemini-2.5-flash"
+   }
+   browser --> node : HTTP/HTTPS :3100 (JSON REST)
+   node --> gemini : HTTPS (SDK @google/genai)
+   note bottom of node
+     Desarrollo: Vite middleware + HMR
+     Produccion: express.static(dist) + fallback SPA
+     Sin BD, sin colas, sin contenedores, sin balanceador.
+   end note
+   @enduml
+
+ 6.4. DIAGRAMA DE CASOS DE USO (actor -funcionalidad - relacion)
+   Codigo PlantUML:
+   @startuml
+   left to right direction
+   actor "Estudiante" as est
+   actor "Desarrollador" as dev
+   actor "Arquitecto" as arq
+   actor "Docente" as doc
+   actor "Gemini 2.5 Flash" as ia <<External>>
+   rectangle "CodeExplain" {
+     usecase "CU-01 Seleccionar proyecto" as cu1
+     usecase "CU-02 Elegir nivel" as cu2
+     usecase "CU-03 Ingerir proyecto [S]" as cu3
+     usecase "CU-04 Explorar C4/UML [S]" as cu4
+     usecase "CU-05 Consultar chat" as cu5
+     usecase "CU-06 Explicar codigo [S]" as cu6
+     usecase "CU-07 Descargar documentos" as cu7
+     usecase "Construir prompt por nivel" as prompt
+     usecase "Usar motor de respaldo" as fb
+   }
+   est --> cu1
+   dev --> cu1
+   arq --> cu1
+   doc --> cu1
+   est --> cu2
+   dev --> cu2
+   arq --> cu2
+   doc --> cu2
+   est --> cu5
+   dev --> cu5
+   arq --> cu5
+   doc --> cu5
+   dev --> cu3
+   dev --> cu4
+   dev --> cu6
+   arq --> cu7
+   cu5 ..> prompt : <<include>>
+   cu5 ..> fb : <<extend>>
+   cu5 ..> ia : <<include>> (si hay key)
+   @enduml
+
+ 6.5. DIAGRAMA DE SECUENCIA (flujo critico REAL: chat con nivel)
+   Codigo PlantUML:
+   @startuml
+   autonumber
+   actor Usuario as u
+   participant "ChatAsistenteIA" as ui
+   participant "server.ts" as api
+   participant "LEVEL_PROMPTS" as p
+   participant "GoogleGenAI" as ai
+   participant "Motor heuristico" as fallback
+
+   u -> ui : escribe pregunta
+   ui -> ui : setMessages(mensaje optimista)
+   ui -> api : POST /api/gemini/chat\n{message, level, projectContext}
+   api -> api : valida message (400 si falta)
+   api -> p : LEVEL_PROMPTS[level]
+   p -->> api : instruccion de nivel
+   alt existe GEMINI_API_KEY y Gemini responde
+     api -> ai : models.generateContent(gemini-2.5-flash)
+     ai -->> api : response.text()
+     api -->> ui : {reply, level, model:"gemini-2.5-flash"}
+   else sin key o excepcion
+     api -> fallback : clasifica por palabra clave
+     fallback -->> api : respuesta por nivel
+     api -->> ui : {reply, level, model:"codeexplain-core-v2.4"}
+   end
+   ui -> ui : setMessages(respuesta) + scroll
+   ui -->> u : Markdown en texto (whitespace-pre-wrap)
+   @enduml
+
+ 6.6. DIAGRAMA DE ACTIVIDADES (ingesta: la real vs la simulada)
+   Carriles: Usuario | Interfaz (UploadModal) | Motor (analyzeProject) | Servidor.
+
+   Codigo PlantUML:
+   @startuml
+   |Usuario|
+   start
+   :Abre "Ingerir y Analizar";
+   :Elige pestaña Git / ZIP / Codigo;
+   |Interfaz|
+   :Pulsa "Iniciar Ingestión";
+   fork
+     :Animacion: 4 pasos c/900 ms;
+   fork again
+     note right
+       CAMINO REAL [S]: buildDigestFromZipFile()
+       deberia ejecutarse aqui. Hoy no se llama.
+     end note
+     :JSZip -> 300 archivos / 4 MB;
+     :SLOC + dependencias + textSample 48 KB;
+     :analyzeDigest() -> POST /api/analyze;
+   end fork
+   |Servidor|
+   if (ruta registrada?) then (no)
+     :HTTP 404 (hoy: /api/analyze no existe);
+   else (si, despues de corregir)
+     :Gemini / fallback -> ProjectAnalysis;
+   endif
+   |Interfaz|
+   :Inyecta ProjectWorkspace simulado\n(astHealth 88, debtHours 12);
+   |Usuario|
+   :Ve "analisis terminado";
+   stop
+   @enduml
+
+ 6.7. DIAGRAMA DE ESTADOS (ciclo de vida de la ingesta)
+   Codigo PlantUML:
+   @startuml
+   [*] --> Cerrado
+   Cerrado --> Configurando : abrir modal
+   Configurando --> Analizando : pulsar "Iniciar" [S: setInterval]
+   Analizando --> Analizando : avanzar paso (0..3)
+   Analizando --> Listo : setTimeout 800 ms + onAddProject
+   Analizando --> Cancelado : pulsar "Cancelar" (boton deshabilitado hoy)
+   Listo --> Cerrado : onClose()
+   Cancelado --> Cerrado
+   note right of Analizando
+     No hay estado de error ni de cancelacion
+     real en UploadModal.tsx:43-78.
+   end note
+   @enduml
+
+ 6.8. BRECHAS DE ARQUITECTURA Y PLAN DE CIERRE (hallazgos del analisis)
+   ID  Brecha verificada                                  Prio  Accion concreta
+   ---  ------------------------------------------------  ----  -------------------------------
+   G-01 /api/analyze y /api/analyze-url son llamados por  P0    Registrar ambos endpoints en
+        analyzeProject.ts:258,271 pero no existen en             server.ts (o eliminar las
+        server.ts. Cualquier intento de analisis real da 404.     funciones si se descarta).
+   G-02 UploadModal.tsx:43-78 nunca invoca                P0    Conectar la pestaña ZIP con
+        buildDigestFromZipFile ni analyzeDigest: el progreso      buildDigestFromZipFile y
+        es un setInterval y el proyecto es fijo.                  mostrar errores reales.
+   G-03 /api/gemini/explain y /document estan              P1    Llamarlos desde "Explicar
+        implementados (server.ts:109,156) pero ninguna           codigo" y "Generador de
+        vista de src/ los consume.                               documentacion".
+   G-04 /api/health se describe en Fases 2/4/6 y en        P1    Anadir GET /api/health con
+        diagramas de despliegue, pero no existe.                 {status, ai:"gemini|fallback"}.
+   G-05 No hay timeout/AbortController en la llamada a     P1    Envolver generateContent en
+        Gemini; un proveedor lento bloquea la peticion.          Promise.race con timeout.
+   G-06 Sin rate limit, CORS explicito ni validacion de    P1    Middlewares ligeros en
+        esquemas en el servidor.                                 server.ts + zod opcional.
+   G-07 Sin pruebas ni CI: solo tsc --noEmit.              P1    Anadir script "test" y las
+                                                                 fitness functions de 5.2.
+   G-08 Los diagramas C4 de la UI muestran microservicios  P2    Etiquetarlos como "ejemplo
+        que CodeExplain no tiene; pueden confundir.              de salida" y anadir un C4
+                                                                 real del monolito.
+   G-09 Documentacion anterior describe 7 endpoints y      P2    Alinear Fase4 y Mapa con los
+        5.609 lineas; hoy son 3 endpoints y 5.988.              3 endpoints y el conteo actual.
+   G-10 Sin persistencia: recargar la pagina borra         P2    Ejecutar ADR-11 (SQLite) cuando
+        proyectos, historial y chat.                             se apruebe el alcance v1.1.
+
+   Orden sugerido: G-01 + G-02 (hacen que el producto haga lo que promete),
+   luego G-03 + G-04 + G-05 (consistencia y operabilidad), y por ultimo el resto.
+
+ 6.9. TRAZABILIDAD DE LA PRACTICA (PDF -> este documento)
+   Punto del PDF (pagina 6-8 / 10-11)              Seccion(es) de este SAD
+   ----------------------------------------------  ------------------------------
+   Encabezado: nombre, codigo, fecha, version,      Cabecera
+   autor/arquitecto
+   1. Introduccion y contexto (1.1-1.4)            1.1, 1.2, 1.3, 1.4 (+1.5)
+   2. Drivers y constraints (2.1-2.4)              2.1, 2.2, 2.3, 2.4 (+2.5)
+   3. Vistas 4+1 (logica, procesos, desarrollo,    3.0, 3.1, 3.2, 3.3, 3.4, 3.5
+      despliegue, casos de uso)
+   4. ADR (decision / alternativas / consecuencias) 4 (ADR-01..ADR-13)
+   5. Calidad, seguridad, resiliencia              5.1, 5.2, 5.3, 5.4
+   6. Anexos y diagramas                           6.1..6.8
+   UML diagramas de estructura: clases,            6.1, 6.2, 6.3
+     componentes, despliegue
+   UML diagramas de comportamiento: casos de uso,  6.4, 6.5, 6.6, 6.7
+     secuencia, actividades, estados
+   "Un o mas ejemplos por subtema"                  Cada seccion incluye evidencia
+                                                    con archivo:linea del codigo real.
+
+================================================================================
+ FIN DEL DOCUMENTO - Version 1.0 - 2026-11-22
+ Codigo fuente analizado: C:\Users\WILDER\Proyectos\codeexplic
+================================================================================
